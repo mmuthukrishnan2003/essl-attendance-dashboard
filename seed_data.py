@@ -31,6 +31,14 @@ DEFAULT_SHIFTS = [
         "is_night_shift": True,
         "description": "Overnight rotational cross-midnight shift",
     },
+    {
+        "name": "Work From Home (WFH)",
+        "code": "SHIFT_WFH",
+        "start_time": "09:30",
+        "end_time": "18:30",
+        "is_night_shift": False,
+        "description": "Remote Work From Home arrangement with flexible office logging",
+    },
 ]
 
 

@@ -320,6 +320,9 @@
               <button type="button" id="pill-filter-absent" onclick="setTodayFilter('ABSENT')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-rose-700 transition">
                 Absent (<span id="pill-count-absent">--</span>)
               </button>
+              <button type="button" id="pill-filter-wfh" onclick="setTodayFilter('WFH')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-emerald-700 transition">
+                WFH (<span id="pill-count-wfh">--</span>)
+              </button>
             </div>
 
             <input type="text" id="dashboard-search-input" onkeyup="filterTodayTable()" placeholder="Search employee..." class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
@@ -408,6 +411,7 @@
                 <option value="ALL">All Staff</option>
                 <option value="PRESENT">Present Only</option>
                 <option value="ABSENT">Absent Only</option>
+                <option value="WFH">WFH Only</option>
               </select>
             </div>
 
@@ -427,6 +431,7 @@
                 <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
                 <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
                 <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
+                <option value="SHIFT_WFH">Work From Home (WFH)</option>
               </select>
             </div>
 
@@ -465,6 +470,7 @@
             <span>Total Staff: <strong id="report-banner-total" class="text-slate-800">--</strong></span>
             <span>Present: <strong id="report-banner-in" class="text-emerald-700">--</strong></span>
             <span>Absent: <strong id="report-banner-absent" class="text-rose-600">--</strong></span>
+            <span>WFH: <strong id="report-banner-wfh" class="text-teal-700">--</strong></span>
             <span>Punched OUT: <strong id="report-banner-out" class="text-blue-700">--</strong></span>
           </div>
           <div class="text-[11px] text-slate-400">
@@ -518,7 +524,7 @@
       </div>
 
       <!-- Shifts Cards Grid -->
-      <div id="shifts-cards-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div id="shifts-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <!-- Dynamically rendered shifts -->
       </div>
 
@@ -527,7 +533,7 @@
         <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h3 class="text-sm font-bold text-slate-900">Employee Shift Assignment</h3>
-            <p class="text-xs text-slate-500">Assign employees to General Shift (9-7), Standard Shift (9-6), or Night Shift (9 PM - 6 AM next day)</p>
+            <p class="text-xs text-slate-500">Assign employees to General Shift (9-7), Standard Shift (9-6), Night Shift, or Work From Home (WFH)</p>
           </div>
 
           <div class="flex items-center space-x-2">
@@ -535,6 +541,7 @@
               <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
               <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
               <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
+              <option value="SHIFT_WFH">Work From Home (WFH) - Remote</option>
             </select>
             <button onclick="applyQuickShiftAssignment()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
               Assign to Selected
@@ -1099,6 +1106,7 @@
             <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
             <option value="SHIFT_9_6" selected>Standard Shift (09:00 AM - 06:00 PM)</option>
             <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
+            <option value="SHIFT_WFH">Work From Home (WFH) - Remote (09:30 AM - 06:30 PM)</option>
           </select>
         </div>
 
@@ -1318,6 +1326,6 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- JavaScript -->
-  <script src="/static/js/app.js?v=2.3"></script>
+  <script src="/static/js/app.js?v=2.4"></script>
 </body>
 </html>

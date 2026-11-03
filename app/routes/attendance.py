@@ -49,6 +49,7 @@ def get_daily_attendance(
         total_emp = 0
         total_punched_in = 0
         total_punched_out = 0
+        total_wfh = 0
 
         while cur <= e_date:
             day_res = calculate_daily_attendance_for_date(
@@ -62,10 +63,13 @@ def get_daily_attendance(
             total_emp = max(total_emp, day_res.get("total_employees", 0))
             total_punched_in += day_res.get("punched_in_count", 0)
             total_punched_out += day_res.get("punched_out_count", 0)
+            total_wfh += day_res.get("wfh_count", 0)
             cur += timedelta(days=1)
 
         days_count = (e_date - s_date).days + 1
-        absent_count = max(0, (total_emp * days_count) - total_punched_in)
+        wfh_remote_total = sum(1 for r in all_records if r.get("is_wfh") and r.get("total_punches", 0) == 0)
+        present_count = total_punched_in + wfh_remote_total
+        absent_count = max(0, (total_emp * days_count) - present_count)
 
         return {
             "date": f"{s_date.strftime('%d-%b-%Y')} to {e_date.strftime('%d-%b-%Y')}",
@@ -76,7 +80,8 @@ def get_daily_attendance(
             "total_employees": total_emp,
             "punched_in_count": total_punched_in,
             "punched_out_count": total_punched_out,
-            "present_count": total_punched_in,
+            "wfh_count": total_wfh,
+            "present_count": present_count,
             "absent_count": absent_count,
             "records": all_records
         }
@@ -193,14 +198,20 @@ def export_attendance_csv(
             shift_filter=shift if shift != "ALL" else None
         )
         for r in daily_res["records"]:
+            if r.get("is_wfh") and not r.get("first_in"):
+                first_in_val = "🏠 WFH (Remote)"
+                last_out_val = "🏠 WFH (Remote)"
+            else:
+                first_in_val = f"{r['first_in_time']} ({r['first_in_device']})" if r.get("first_in") else "--"
+                last_out_val = f"{r['last_out_time']} ({r['last_out_device']})" if r.get("last_out") else "--"
             writer.writerow([
                 r["date"],
                 r["emp_code"],
                 r["name"],
                 r["department"],
                 r["shift"],
-                f"{r['first_in_time']} ({r['first_in_device']})" if r["first_in"] else "--",
-                f"{r['last_out_time']} ({r['last_out_device']})" if r["last_out"] else "--",
+                first_in_val,
+                last_out_val,
                 r["intermediate_count"]
             ])
         cur += timedelta(days=1)

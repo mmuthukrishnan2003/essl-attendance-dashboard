@@ -234,22 +234,34 @@ def calculate_daily_attendance_for_date(
     total_punched_in = 0
     total_punched_out = 0
     total_seconds_worked = 0
+    total_wfh_count = 0
 
     is_today = (target_date == date.today())
     now_time = datetime.now()
 
     for emp in employees:
         shift_obj = shifts_map.get(emp.shift_code)
-        is_night = shift_obj.is_night_shift if shift_obj else (
-            "NIGHT" in (emp.shift_code or "").upper() or (emp.shift_start and emp.shift_start >= "20:00")
+        is_wfh = (
+            (emp.shift_code == "SHIFT_WFH") or 
+            ("WFH" in (emp.shift_code or "").upper()) or 
+            ("WFH" in (emp.shift_name or "").upper())
         )
+        is_night = False
+        if not is_wfh:
+            is_night = shift_obj.is_night_shift if shift_obj else (
+                "NIGHT" in (emp.shift_code or "").upper() or (emp.shift_start and emp.shift_start >= "20:00")
+            )
 
-        # Determine window for punches based on whether Daytime or Overnight Night Shift
+        # Determine window for punches based on whether Daytime, Overnight Night Shift, or WFH
         if is_night:
             # Night Shift window: from 19:30 on target_date to 08:30 on target_date + 1 day
             window_start = datetime.combine(target_date, time(19, 30))
             window_end = datetime.combine(target_date + timedelta(days=1), time(8, 30))
             shift_label = emp.shift_name or "Night Shift (09:00 PM - Next Day 06:00 AM)"
+        elif is_wfh:
+            window_start = datetime.combine(target_date, time(5, 0))
+            window_end = datetime.combine(target_date, time(23, 59, 59))
+            shift_label = emp.shift_name or "Work From Home (WFH)"
         else:
             # Daytime window: 05:00 to 23:59:59 on target_date
             window_start = datetime.combine(target_date, time(5, 0))
@@ -265,13 +277,42 @@ def calculate_daily_attendance_for_date(
         # Process punches using alternating IN/OUT sequence logic
         processed = process_punches_sequence(emp_punches, devices, is_today=is_today)
 
-        if processed["total_punches"] > 0:
-            total_punched_in += 1
-            if not processed["is_in_office"]:
-                total_punched_out += 1
-            total_seconds_worked += processed["total_seconds_worked"]
+        if is_wfh:
+            total_wfh_count += 1
+            if processed["total_punches"] > 0:
+                total_punched_in += 1
+                if not processed["is_in_office"]:
+                    total_punched_out += 1
+                total_seconds_worked += processed["total_seconds_worked"]
+                is_present = True
+                first_in_time = processed["first_in_time"]
+                first_in_device = processed["first_in_device"]
+                last_out_time = processed["last_out_time"]
+                last_out_device = processed["last_out_device"]
+                duration = processed["duration"]
+            else:
+                # WFH employee without biometric door punches: counted as remote present
+                is_present = True
+                first_in_time = "🏠 WFH"
+                first_in_device = "Remote Work"
+                last_out_time = "🏠 WFH"
+                last_out_device = "Remote Work"
+                duration = {"text": "9h 00m", "hours": 9.0, "total_seconds": 32400}
+                total_seconds_worked += 32400
+        else:
+            if processed["total_punches"] > 0:
+                total_punched_in += 1
+                if not processed["is_in_office"]:
+                    total_punched_out += 1
+                total_seconds_worked += processed["total_seconds_worked"]
 
-        is_present = processed["total_punches"] > 0
+            is_present = processed["total_punches"] > 0
+            first_in_time = processed["first_in_time"]
+            first_in_device = processed["first_in_device"]
+            last_out_time = processed["last_out_time"]
+            last_out_device = processed["last_out_device"]
+            duration = processed["duration"]
+
         record = {
             "date": target_date.strftime("%Y-%m-%d"),
             "emp_id": emp.id,
@@ -280,34 +321,41 @@ def calculate_daily_attendance_for_date(
             "department": emp.department,
             "designation": emp.designation,
             "shift": shift_label,
+            "shift_code": emp.shift_code or ("SHIFT_WFH" if is_wfh else "SHIFT_9_6"),
             "is_night_shift": is_night,
+            "is_wfh": is_wfh,
             "is_present": is_present,
             "is_absent": not is_present,
             "total_punches": processed["total_punches"],
             "first_in": processed["first_in"],
-            "first_in_time": processed["first_in_time"],
-            "first_in_device": processed["first_in_device"],
+            "first_in_time": first_in_time,
+            "first_in_device": first_in_device,
             "last_out": processed["last_out"],
-            "last_out_time": processed["last_out_time"],
-            "last_out_device": processed["last_out_device"],
+            "last_out_time": last_out_time,
+            "last_out_device": last_out_device,
             "is_in_office": processed["is_in_office"],
             "intermediate_punches": processed["intermediate_punches"],
             "intermediate_count": processed["intermediate_count"],
-            "duration": processed["duration"],
+            "duration": duration,
         }
 
         records.append(record)
 
     total_employees = len(employees)
-    avg_hours = round((total_seconds_worked / 3600.0) / max(1, total_punched_out), 1)
+    wfh_remote_count = sum(1 for r in records if r["is_wfh"] and r["total_punches"] == 0)
+    total_present = total_punched_in + wfh_remote_count
+    absent_count = max(0, total_employees - total_present)
+    effective_out_count = max(1, total_punched_out + wfh_remote_count)
+    avg_hours = round((total_seconds_worked / 3600.0) / effective_out_count, 1)
 
     return {
         "date": target_date.strftime("%Y-%m-%d"),
         "total_employees": total_employees,
         "punched_in_count": total_punched_in,
         "punched_out_count": total_punched_out,
-        "present_count": total_punched_in,
-        "absent_count": max(0, total_employees - total_punched_in),
+        "wfh_count": total_wfh_count,
+        "present_count": total_present,
+        "absent_count": absent_count,
         "late_count": 0,
         "avg_working_hours": f"{int(avg_hours)}h {int((avg_hours % 1) * 60):02d}m",
         "records": records
@@ -443,10 +491,13 @@ def generate_excel_report(start_date: date, end_date: date, db: Session, departm
             ws.cell(row=row_idx, column=4, value=rec["department"]).alignment = Alignment(horizontal="left")
             ws.cell(row=row_idx, column=5, value=rec["shift"]).alignment = Alignment(horizontal="center")
 
-            first_in_val = f"{rec['first_in_time']} ({rec['first_in_device']})" if rec['first_in'] else "--"
+            if rec.get("is_wfh") and not rec["first_in"]:
+                first_in_val = "🏠 WFH (Remote)"
+                last_out_val = "🏠 WFH (Remote)"
+            else:
+                first_in_val = f"{rec['first_in_time']} ({rec['first_in_device']})" if rec['first_in'] else "--"
+                last_out_val = f"{rec['last_out_time']} ({rec['last_out_device']})" if rec['last_out'] else "--"
             ws.cell(row=row_idx, column=6, value=first_in_val).alignment = Alignment(horizontal="center")
-
-            last_out_val = f"{rec['last_out_time']} ({rec['last_out_device']})" if rec['last_out'] else "--"
             ws.cell(row=row_idx, column=7, value=last_out_val).alignment = Alignment(horizontal="center")
 
             ws.cell(row=row_idx, column=8, value=rec["intermediate_count"]).alignment = Alignment(horizontal="center")
