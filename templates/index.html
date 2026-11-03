@@ -14,11 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Custom CSS -->
-<<<<<<< HEAD
   <link rel="stylesheet" href="/static/css/style.css?v=1.7">
-=======
-  <link rel="stylesheet" href="/static/css/style.css?v=1.4">
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
   <script>
     tailwind.config = {
       theme: {
@@ -41,11 +37,7 @@
     }
   </script>
 </head>
-<<<<<<< HEAD
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex" style="zoom: 90%;">
-=======
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex">
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
 
   <!-- MOBILE SIDEBAR BACKDROP -->
   <div id="mobile-sidebar-backdrop" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
@@ -158,20 +150,14 @@
     </div>
 
     <!-- Sidebar Bottom Status -->
-<<<<<<< HEAD
     <div class="p-3 border-t border-slate-100 bg-slate-50/80 flex-shrink-0 space-y-1.5">
       <div class="flex items-center justify-between text-[11px] font-medium text-slate-600">
-=======
-    <div class="p-3 border-t border-slate-100 bg-slate-50/80 flex-shrink-0">
-      <div class="flex items-center justify-between text-[11px] font-medium text-slate-600 mb-1">
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
         <span class="flex items-center space-x-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>eSSL Port 4370</span>
         </span>
-        <span class="font-mono text-slate-700 text-[10px] font-bold">172.17.0.38:8881</span>
+        <span class="text-slate-600 text-[10px] font-semibold">Office LAN Portal</span>
       </div>
-<<<<<<< HEAD
       <div class="flex items-center justify-between text-[10px] pt-1 border-t border-slate-200/60">
         <span class="flex items-center space-x-1.5 text-slate-600">
           <span id="sidebar-db-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -179,9 +165,6 @@
         </span>
         <span id="sidebar-db-name" class="font-mono text-slate-700 font-bold truncate max-w-[110px]" title="Active Database">attendance.db</span>
       </div>
-=======
-      <p class="text-[10px] text-slate-400">Office LAN Portal &bull; 4 eSSL Units</p>
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
     </div>
 
   </aside>
@@ -202,7 +185,6 @@
         </div>
       </div>
 
-<<<<<<< HEAD
       <!-- Live Clock, Active DB Chip, Zoom Controls & Sync Action -->
       <div class="flex items-center space-x-2 sm:space-x-3">
         <!-- Global Active Database Status Pill in Header -->
@@ -211,28 +193,17 @@
           <span id="header-db-text">DB: SQLite</span>
         </div>
 
-=======
-      <!-- Live Clock, Share on LAN & Sync Action -->
-      <div class="flex items-center space-x-2 sm:space-x-3">
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
         <div class="hidden sm:flex flex-col text-right">
           <span id="live-time" class="text-xs font-mono font-semibold text-slate-800 tracking-wide">00:00:00</span>
           <span id="live-date" class="text-[11px] text-slate-500">Loading...</span>
         </div>
 
-<<<<<<< HEAD
         <!-- Dashboard Zoom Controls (Default: 90%) -->
         <div class="hidden sm:inline-flex items-center space-x-0.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs" title="Dashboard Display Zoom (90% Default)">
           <button type="button" onclick="setDashboardZoom('85%')" id="zoom-btn-85" class="px-2 py-1 rounded text-[11px] font-medium text-slate-600 hover:text-slate-900 transition">85%</button>
           <button type="button" onclick="setDashboardZoom('90%')" id="zoom-btn-90" class="px-2 py-1 rounded text-[11px] bg-white text-brand-navy shadow-xs font-bold transition">90%</button>
           <button type="button" onclick="setDashboardZoom('100%')" id="zoom-btn-100" class="px-2 py-1 rounded text-[11px] font-medium text-slate-600 hover:text-slate-900 transition">100%</button>
         </div>
-=======
-        <button onclick="openModal('modal-share-lan')" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-brand-navy border border-blue-200 hover:bg-blue-100 transition shadow-xs" title="Share with office network colleagues">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-          <span class="hidden md:inline">Share on LAN</span>
-        </button>
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
 
         <button id="btn-header-sync" onclick="syncAllDevices()" class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition-all duration-150">
           <svg id="header-sync-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,13 +214,8 @@
       </div>
     </header>
 
-<<<<<<< HEAD
     <!-- MAIN CONTAINER (Default 90% Dashboard Size) -->
     <main class="flex-1 w-[90%] max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-=======
-    <!-- MAIN CONTAINER -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
 
     <!-- TAB 1: DASHBOARD -->
     <div id="view-dashboard" class="tab-view space-y-6">
@@ -317,42 +283,18 @@
 
       </div>
 
-      <!-- Charts & Live Punch Activity Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Attendance Trend Chart (2 Cols) -->
-        <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="text-sm font-bold text-slate-800">Weekly Attendance Trend</h3>
-              <p class="text-xs text-slate-500">Daily breakdown of Present (<span class="text-brand-navy font-semibold">Navy</span>) and Absent (<span class="text-rose-600 font-semibold">Red</span>) staff</p>
-            </div>
-            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-medium">Last 7 Days</span>
+      <!-- Weekly Attendance Trend Chart (Full Width) -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">Weekly Attendance Trend</h3>
+            <p class="text-xs text-slate-500">Daily breakdown of Present (<span class="text-brand-navy font-semibold">Navy</span>) and Absent (<span class="text-rose-600 font-semibold">Red</span>) staff</p>
           </div>
-          <div class="h-64 relative">
-            <canvas id="weeklyAttendanceChart"></canvas>
-          </div>
+          <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-medium">Last 7 Days</span>
         </div>
-
-        <!-- Live Punch Feed (1 Col) -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h3 class="text-sm font-bold text-slate-800">Live Device Punches</h3>
-              <p class="text-xs text-slate-500">Real-time biometric logs feed</p>
-            </div>
-            <span class="flex h-2 w-2 relative">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-          </div>
-
-          <div id="live-punch-list" class="space-y-3 overflow-y-auto max-h-64 pr-1 text-xs divide-y divide-slate-100">
-            <!-- Dynamically populated recent punch feed -->
-            <p class="text-slate-400 text-center py-6">No recent punches recorded today</p>
-          </div>
+        <div class="h-64 relative">
+          <canvas id="weeklyAttendanceChart"></canvas>
         </div>
-
       </div>
 
       <!-- Today's Attendance Quick Summary Table -->
@@ -400,11 +342,10 @@
                 <th class="px-4 py-3 text-center bg-slate-50">First IN</th>
                 <th class="px-4 py-3 text-center bg-slate-50">Last OUT</th>
                 <th class="px-4 py-3 text-center bg-slate-50">Punches</th>
-                <th class="px-4 py-3 text-right bg-slate-50">Action</th>
               </tr>
             </thead>
             <tbody id="today-attendance-tbody" class="divide-y divide-slate-100 bg-white">
-              <tr><td colspan="8" class="px-4 py-6 text-center text-slate-400">Loading attendance data...</td></tr>
+              <tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Loading attendance data...</td></tr>
             </tbody>
           </table>
         </div>
@@ -547,11 +488,10 @@
                 <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">First IN (Time & Device)</th>
                 <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Last OUT (Time & Device)</th>
                 <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Intermediate</th>
-                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Punches Detail</th>
               </tr>
             </thead>
             <tbody id="report-tbody" class="divide-y divide-slate-100 bg-white">
-              <tr><td colspan="9" class="px-4 py-8 text-center text-slate-400">Loading daily attendance records...</td></tr>
+              <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Loading daily attendance records...</td></tr>
             </tbody>
           </table>
         </div>
@@ -692,10 +632,7 @@
             <span>Sync All 4 Devices</span>
           </button>
 
-          <button onclick="seedDemoData()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Populate sample office punches for testing">
-            <svg class="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-            <span>Seed Sample Office Data</span>
-          </button>
+
         </div>
       </div>
 
@@ -864,15 +801,18 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-<<<<<<< HEAD
+          <!-- Refresh Database Info -->
+          <button type="button" onclick="refreshDatabaseView()" id="btn-refresh-db-view" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition" title="Refresh database schema tables, row counts, and connection health">
+            <svg id="db-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span id="db-refresh-text">Refresh Data</span>
+          </button>
+
           <!-- Check Active DB Connection -->
           <button type="button" onclick="checkActiveDbConnection()" id="btn-check-active-db" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-sm transition" title="Test active database connection and query latency">
             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
             <span>Check Active DB</span>
           </button>
 
-=======
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
           <!-- Download Backup -->
           <a href="/api/database/download-backup" download class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -896,7 +836,6 @@
             </div>
             <div>
               <h3 class="text-sm font-bold text-slate-900">PostgreSQL Connection: <span class="text-blue-700">"local essl"</span></h3>
-<<<<<<< HEAD
               <p class="text-[11px] text-slate-500">Connect to pgAdmin server <strong>local essl</strong> &bull; Database: <strong>attendance</strong> or <strong>essl_att</strong> &bull; Default Schema: <strong>public</strong></p>
             </div>
           </div>
@@ -916,7 +855,7 @@
         </div>
 
         <form id="form-pg-connect" onsubmit="connectPostgres(event)" class="space-y-4 text-xs">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1">Host & Port</label>
               <input type="text" id="pg-host-port" value="127.0.0.1:5432" onchange="refreshPortStatus()" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="127.0.0.1:5432">
@@ -930,6 +869,18 @@
                   <option value="attendance">attendance</option>
                   <option value="essl_att">essl_att (Recommended)</option>
                   <option value="postgres">postgres (Default Maintenance)</option>
+                </datalist>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Schema</label>
+              <div class="relative">
+                <input list="pg-schema-options" id="pg-schema-input" value="public" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="public">
+                <datalist id="pg-schema-options">
+                  <option value="public">public (Default)</option>
+                  <option value="attendance">attendance</option>
+                  <option value="essl">essl</option>
                 </datalist>
               </div>
             </div>
@@ -979,49 +930,6 @@
         </form>
 
         <div id="pg-connect-feedback" class="hidden text-xs rounded-xl"></div>
-=======
-              <p class="text-[11px] text-slate-500">Connect to pgAdmin server <strong>local essl</strong> &bull; Database: <strong>essl_att</strong> or <strong>attendance</strong> &bull; Default Schema: <strong>public</strong></p>
-            </div>
-          </div>
-          <span class="text-xs font-mono bg-blue-100 text-blue-800 px-2.5 py-1 rounded-md font-semibold">Port 5432: Active</span>
-        </div>
-
-        <form id="form-pg-connect" onsubmit="connectPostgres(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Host & Port</label>
-            <input type="text" id="pg-host-port" value="127.0.0.1:5432" readonly class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-100 font-mono text-slate-600">
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Database Name</label>
-            <select id="pg-dbname-select" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy">
-              <option value="essl_att" selected>essl_att (Recommended)</option>
-              <option value="attendance">attendance</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Username</label>
-            <input type="text" id="pg-user-input" value="postgres" required class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">PostgreSQL Password</label>
-            <input type="password" id="pg-pass-input" placeholder="Enter password..." class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-          </div>
-
-          <div class="flex items-end space-x-2">
-            <button type="submit" id="btn-pg-connect" class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition">
-              Connect to local essl
-            </button>
-            <button type="button" onclick="switchToDefaultSqlite()" class="py-2 px-3 rounded-lg border border-slate-300 hover:bg-white text-slate-700 font-semibold text-xs transition whitespace-nowrap" title="Switch back to default local SQLite">
-              SQLite
-            </button>
-          </div>
-        </form>
-
-        <div id="pg-connect-feedback" class="hidden text-xs p-3 rounded-lg"></div>
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
       </div>
 
       <!-- Connection Details KPI Strip -->
@@ -1030,11 +938,7 @@
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Engine Dialect</span>
           <p id="db-stat-dialect" class="text-lg font-bold text-slate-900 mt-1">SQLITE (Default)</p>
-<<<<<<< HEAD
           <span id="db-stat-dialect-sub" class="text-[11px] text-emerald-600 font-medium">Embedded Local Database</span>
-=======
-          <span class="text-[11px] text-emerald-600 font-medium">Embedded Local Database</span>
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
         </div>
 
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -1091,7 +995,7 @@
       <p>&copy; Centizen IT Services & Solutions &bull; Biometric Attendance Portal</p>
       <div class="flex items-center space-x-4">
         <span>Integrated Devices: <strong>4 eSSL Units</strong></span>
-        <span>Office LAN: <strong class="font-mono text-brand-navy">http://172.17.0.38:8881</strong></span>
+        <span>Office Portal: <strong class="text-brand-navy font-semibold">Office LAN Portal</strong></span>
       </div>
     </div>
   </footer>
@@ -1358,115 +1262,62 @@
     </div>
   </div>
 
-<<<<<<< HEAD
-=======
-  <!-- MODAL 4: OFFICE LOCAL NETWORK SHARING -->
-  <div id="modal-share-lan" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-fadeIn">
-      
+  <!-- MODAL 6: EDIT BIOMETRIC DEVICE -->
+  <div id="modal-device-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
       <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-          </div>
-          <div>
-            <h3 class="font-bold text-sm">Share on Office Local Network</h3>
-            <p class="text-xs text-blue-100 mt-0.5">Allow any office device on LAN to access this portal</p>
-          </div>
-        </div>
-        <button onclick="closeModal('modal-share-lan')" class="text-white/80 hover:text-white p-1 rounded-lg">
+        <h3 class="font-bold text-sm">Edit Biometric Device</h3>
+        <button onclick="closeModal('modal-device-edit')" class="text-white/80 hover:text-white p-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-      <div class="p-6 space-y-4 text-xs overflow-y-auto">
-        
-        <!-- Primary Direct IP & Port URL Box (User's Official URL) -->
-        <div class="p-4 bg-blue-50/80 rounded-xl border-2 border-brand-navy shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-brand-navy flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Primary Office LAN URL (Recommended)</span>
-            </span>
-            <span class="text-[10px] bg-brand-navy text-white px-2 py-0.5 rounded-full font-bold">Active</span>
-          </div>
-          <div class="mt-2 flex items-center justify-between gap-2 bg-white p-2.5 rounded-lg border border-blue-200">
-            <span class="font-mono text-sm font-bold text-brand-navy select-all break-all">http://172.17.0.38:8881</span>
-            <button onclick="copyShareUrl('http://172.17.0.38:8881', this)" class="px-3.5 py-1.5 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-bold text-xs whitespace-nowrap shadow-xs transition flex items-center space-x-1.5">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-              <span>Copy Link</span>
-            </button>
-          </div>
-          <p class="text-[11px] text-slate-600 mt-2">Open directly from any computer, laptop, or mobile browser connected to the office network.</p>
+      <form id="device-edit-form" onsubmit="submitDeviceEditForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+        <input type="hidden" id="device-edit-id" value="">
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Device Name *</label>
+          <input type="text" id="device-edit-name" required placeholder="e.g. Device 4 - Door 1 (eSSL F18 + F12)" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-brand-navy">
         </div>
 
-        <!-- Alternative URLs Grid -->
-        <div class="space-y-2">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Alternative Access URLs:</span>
-          
-          <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between">
-            <div>
-              <span class="text-[11px] text-slate-400">Direct Office IP (Port 80):</span>
-              <p class="font-mono font-semibold text-slate-800">http://172.17.0.38</p>
-            </div>
-            <button onclick="copyShareUrl('http://172.17.0.38', this)" class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium">
-              Copy
-            </button>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">IP Address *</label>
+            <input type="text" id="device-edit-ip" required class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy">
           </div>
-
-          <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between">
-            <div>
-              <span class="text-[11px] text-slate-400">Office Domain + Port 8881:</span>
-              <p class="font-mono font-semibold text-slate-800">http://centizen.AttendancePortal.com:8881</p>
-            </div>
-            <button onclick="copyShareUrl('http://centizen.AttendancePortal.com:8881', this)" class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium">
-              Copy
-            </button>
-          </div>
-
-          <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between">
-            <div>
-              <span class="text-[11px] text-slate-400">Office Domain (Port 80):</span>
-              <p class="font-mono font-semibold text-slate-800">http://centizen.AttendancePortal.com</p>
-            </div>
-            <button onclick="copyShareUrl('http://centizen.AttendancePortal.com', this)" class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium">
-              Copy
-            </button>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Port</label>
+            <input type="number" id="device-edit-port" value="4370" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy">
           </div>
         </div>
 
-        <!-- Windows Firewall Instructions Box -->
-        <div class="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 space-y-1.5">
-          <div class="flex items-center space-x-1.5 text-amber-800 font-bold">
-            <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            <span>Windows Firewall Sharing Setup</span>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Device Model</label>
+            <input type="text" id="device-edit-model" value="eSSL F18 + F12" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
           </div>
-          <p class="text-[11px] text-amber-900 leading-relaxed">
-            If colleagues receive <em>"Site can't be reached"</em>, right-click <strong><code class="bg-amber-100 px-1 py-0.5 rounded font-mono text-amber-900">enable_firewall_sharing.bat</code></strong> inside the project folder and select <strong>"Run as administrator"</strong> to allow Ports 80 & 8881 through Windows Firewall.
-          </p>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Punch Type</label>
+            <select id="device-edit-type" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+              <option value="BOTH">BOTH (IN + OUT)</option>
+              <option value="IN">IN Only</option>
+              <option value="OUT">OUT Only</option>
+            </select>
+          </div>
         </div>
 
-      </div>
-
-      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
-        <button onclick="closeModal('modal-share-lan')" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">
-          Close
-        </button>
-      </div>
-
+        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('modal-device-edit')" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Save Changes</button>
+        </div>
+      </form>
     </div>
   </div>
 
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
   <!-- TOAST NOTIFICATIONS CONTAINER -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- JavaScript -->
-<<<<<<< HEAD
-  <script src="/static/js/app.js?v=1.7"></script>
-=======
-  <script src="/static/js/app.js?v=1.4"></script>
->>>>>>> f6fe4f8b003882978b801520b2cf0c265404d593
+  <script src="/static/js/app.js?v=2.3"></script>
 </body>
 </html>
-

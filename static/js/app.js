@@ -519,11 +519,6 @@ function renderTodayAttendanceTable(records) {
             ${r.total_punches}
           </span>
         </td>
-        <td class="px-4 py-3 text-right">
-          <button onclick="viewEmployeePunches('${r.emp_code}', '${r.date}')" class="text-xs font-semibold text-brand-navy hover:underline">
-            View Punches
-          </button>
-        </td>
       </tr>
     `;
   }).join('');
@@ -655,18 +650,10 @@ function renderReportTable(records) {
         <!-- Intermediate count -->
         <td class="px-4 py-3 text-center">
           ${r.intermediate_count > 0 ? `
-            <button onclick="viewEmployeePunches('${r.emp_code}', '${r.date}')" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
               ${r.intermediate_count} punches
-            </button>
-          ` : '<span class="text-slate-400">0</span>'}
-        </td>
-
-        <!-- Action Drilldown -->
-        <td class="px-4 py-3 text-center">
-          <button onclick="viewEmployeePunches('${r.emp_code}', '${r.date}')" class="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
-            <svg class="w-3.5 h-3.5 text-brand-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-            <span>Timeline</span>
-          </button>
+            </span>
+          ` : '<span class="text-slate-400 font-mono">0</span>'}
         </td>
       </tr>
     `;
@@ -988,6 +975,8 @@ async function deleteEmployee(empCode) {
 }
 
 // ================= TAB 4: BIOMETRIC DEVICES =================
+let currentDevicesCache = [];
+
 async function loadDevicesData() {
   try {
     const res = await fetch('/api/devices');
@@ -995,6 +984,7 @@ async function loadDevicesData() {
     const data = await res.json();
 
     const devices = data.devices || [];
+    currentDevicesCache = devices;
     renderDeviceCards(devices);
     renderDevicePillsInHeader(devices);
 
@@ -1014,7 +1004,7 @@ function renderDevicePillsInHeader(devices) {
         isOnline ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'
       }">
         <span class="w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
-        <span class="font-mono text-[11px]">${d.ip_address}</span>
+        <span class="font-semibold text-[11px]">${d.device_name || d.ip_address}</span>
       </div>
     `;
   }).join('');
@@ -1071,10 +1061,16 @@ function renderDeviceCards(devices) {
         </div>
 
         <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-          <button onclick="testDeviceConnection(${d.id})" class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span>Test Ping</span>
-          </button>
+          <div class="flex items-center space-x-2">
+            <button onclick="testDeviceConnection(${d.id})" class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Test device TCP reachability">
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              <span>Test Ping</span>
+            </button>
+            <button onclick="openEditDeviceModal(${d.id})" class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-brand-navy border border-blue-200 transition" title="Edit device name, location or IP">
+              <svg class="w-3.5 h-3.5 text-brand-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              <span>Edit</span>
+            </button>
+          </div>
 
           <button onclick="syncSingleDevice(${d.id})" class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white transition">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -1317,6 +1313,10 @@ async function loadDatabaseData() {
       if (userInput && cd.user) {
         userInput.value = cd.user;
       }
+      const schemaInput = document.getElementById('pg-schema-input');
+      if (schemaInput && (cd.schema || data.schema_name)) {
+        schemaInput.value = cd.schema || data.schema_name || 'public';
+      }
       if (passInput && cd.password !== undefined && cd.password !== null) {
         passInput.value = cd.password;
       }
@@ -1345,9 +1345,10 @@ async function loadDatabaseData() {
 
     // 2. Subtitle
     const subTitle = document.getElementById('db-server-subtitle');
+    const activeSchema = data.schema_name || data.connection_details?.schema || 'public';
     if (subTitle) {
       if (isPostgres) {
-        subTitle.innerHTML = `<strong class="text-blue-700">PostgreSQL (local essl)</strong> &bull; Database: <strong>${dbName}</strong> &bull; Host: <strong>${data.host_endpoint || '127.0.0.1:5432'}</strong> &bull; Schema: <strong>public</strong>`;
+        subTitle.innerHTML = `<strong class="text-blue-700">PostgreSQL (local essl)</strong> &bull; Database: <strong>${dbName}</strong> &bull; Host: <strong>${data.host_endpoint || '127.0.0.1:5432'}</strong> &bull; Schema: <strong>${activeSchema}</strong>`;
       } else {
         subTitle.innerHTML = `Active: <strong>SQLite (Default Embedded Database)</strong> &bull; Schema: <strong>public</strong> &bull; File: attendance.db`;
       }
@@ -1703,6 +1704,7 @@ async function checkPostgresConnection() {
   }
 
   const dbname = document.getElementById('pg-dbname-select')?.value.trim() || 'attendance';
+  const schema = document.getElementById('pg-schema-input')?.value.trim() || 'public';
   const user = document.getElementById('pg-user-input')?.value.trim() || 'postgres';
   const password = document.getElementById('pg-pass-input')?.value || '';
   const btn = document.getElementById('btn-pg-check');
@@ -1719,7 +1721,7 @@ async function checkPostgresConnection() {
   feedback.innerHTML = `
     <div class="flex items-center space-x-2">
       <span class="inline-block animate-spin text-blue-600 font-bold">↻</span>
-      <span class="font-medium">Testing connection to <strong>${host}:${port}</strong> (database: <strong>${dbname}</strong>, user: <strong>${user}</strong>)...</span>
+      <span class="font-medium">Testing connection to <strong>${host}:${port}</strong> (database: <strong>${dbname}</strong>, schema: <strong>${schema}</strong>, user: <strong>${user}</strong>)...</span>
     </div>
   `;
 
@@ -1731,13 +1733,19 @@ async function checkPostgresConnection() {
         host: host,
         port: port,
         dbname: dbname,
+        schema_name: schema,
         user: user,
         password: password,
         engine_type: 'postgres'
       })
     });
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      throw new Error(`Server error (${res.status}: ${res.statusText || 'Check failed'})`);
+    }
 
     // Update port reachability badge
     updatePortBadge(data.port_open, port, host);
@@ -1753,9 +1761,10 @@ async function checkPostgresConnection() {
           <span class="font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[11px] font-bold">${data.latency_ms} ms</span>
         </div>
         <p class="text-emerald-800 font-medium">${data.message}</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-200 text-[11px] font-mono text-emerald-900">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 border-t border-emerald-200 text-[11px] font-mono text-emerald-900">
           <div><span class="text-emerald-600 font-sans block text-[10px] font-semibold">SERVER ENDPOINT</span>${data.host}:${data.port}</div>
           <div><span class="text-emerald-600 font-sans block text-[10px] font-semibold">DATABASE NAME</span>${data.database}</div>
+          <div><span class="text-emerald-600 font-sans block text-[10px] font-semibold">TARGET SCHEMA</span>${data.schema || schema}</div>
           <div><span class="text-emerald-600 font-sans block text-[10px] font-semibold">SERVER VERSION</span>${data.server_version || 'PostgreSQL'}</div>
           <div><span class="text-emerald-600 font-sans block text-[10px] font-semibold">EXISTING TABLES</span>${data.table_count} tables</div>
         </div>
@@ -1816,6 +1825,28 @@ async function checkPostgresConnection() {
   }
 }
 
+async function refreshDatabaseView() {
+  const btn = document.getElementById('btn-refresh-db-view');
+  const icon = document.getElementById('db-refresh-icon');
+  const text = document.getElementById('db-refresh-text');
+
+  if (btn) btn.disabled = true;
+  if (icon) icon.classList.add('animate-spin');
+  if (text) text.textContent = 'Refreshing...';
+
+  try {
+    await loadDatabaseData();
+    await refreshPortStatus();
+    showToast('Database schema and records refreshed!', 'success');
+  } catch (err) {
+    showToast(`Refresh error: ${err.message}`, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.classList.remove('animate-spin');
+    if (text) text.textContent = 'Refresh Data';
+  }
+}
+
 async function connectPostgres(event) {
   if (event) event.preventDefault();
   const hostPortInput = document.getElementById('pg-host-port')?.value.trim() || '127.0.0.1:5432';
@@ -1830,16 +1861,40 @@ async function connectPostgres(event) {
   }
 
   const dbname = document.getElementById('pg-dbname-select').value.trim() || 'attendance';
+  const schema = document.getElementById('pg-schema-input')?.value.trim() || 'public';
   const user = document.getElementById('pg-user-input').value.trim() || 'postgres';
   const password = document.getElementById('pg-pass-input').value;
   const btn = document.getElementById('btn-pg-connect');
   const feedback = document.getElementById('pg-connect-feedback');
 
-  btn.disabled = true;
-  btn.innerHTML = '<span class="inline-block animate-spin mr-1">↻</span> Connecting...';
-  feedback.classList.remove('hidden');
-  feedback.className = 'p-3.5 rounded-xl text-xs bg-blue-50 text-blue-800 border border-blue-200';
-  feedback.textContent = `Connecting to PostgreSQL 'local essl' on ${host}:${port} (database: ${dbname})...`;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-1">↻</span> Connecting...';
+  }
+  if (feedback) {
+    feedback.classList.remove('hidden');
+    feedback.className = 'p-4 rounded-xl text-xs bg-blue-50 text-blue-900 border border-blue-200 shadow-xs space-y-3 animate-fadeIn';
+    feedback.innerHTML = `
+      <div class="flex items-center space-x-2 font-bold text-sm text-blue-950">
+        <span class="inline-block animate-spin text-blue-600 text-base">↻</span>
+        <span>Connecting to Database: <strong>${dbname}</strong> (Schema: <strong>${schema}</strong>)...</span>
+      </div>
+      <div class="space-y-1.5 text-[11px] text-slate-700 bg-white/70 p-3 rounded-lg border border-blue-100">
+        <div class="flex items-center space-x-2 text-blue-800 font-semibold">
+          <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+          <span>Step 1: Connecting to PostgreSQL on <strong>${host}:${port}</strong>...</span>
+        </div>
+        <div class="flex items-center space-x-2 text-slate-500">
+          <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+          <span>Step 2: Creating & verifying target schema '<strong>${schema}</strong>' (5 tables: shifts, devices, employees, attendance_punches, settings)...</span>
+        </div>
+        <div class="flex items-center space-x-2 text-slate-500">
+          <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+          <span>Step 3: Initializing biometric devices (Door 1 - 4) & punch synchronization...</span>
+        </div>
+      </div>
+    `;
+  }
 
   try {
     const res = await fetch('/api/database/connect-postgres', {
@@ -1851,39 +1906,111 @@ async function connectPostgres(event) {
         dbname: dbname,
         user: user,
         password: password,
-        schema_name: 'public'
+        schema_name: schema
       })
     });
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      throw new Error(`Server error (${res.status}: ${res.statusText || 'Connection failed'})`);
+    }
     if (!res.ok) throw new Error(data.detail || 'Connection failed');
 
-    feedback.className = 'p-4 rounded-xl text-xs bg-emerald-50 text-emerald-950 border border-emerald-300 shadow-xs space-y-2';
-    feedback.innerHTML = `
-      <div class="flex items-center space-x-2">
-        <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">✓</span>
-        <span class="font-bold text-emerald-900 text-sm">Switched to New PostgreSQL Database!</span>
-      </div>
-      <p class="text-emerald-800 font-medium">${data.message}</p>
-      <div class="text-[11px] text-emerald-800 bg-emerald-100/60 p-2.5 rounded-lg border border-emerald-200">
-        <strong>Active Database Status:</strong> Currently connected to <strong>${dbname}</strong> on <strong>${host}:${port}</strong>. All live attendance logs, employee masters, and reports are now syncing with this database.
-      </div>
-    `;
+    if (feedback) {
+      feedback.className = 'p-4 rounded-xl text-xs bg-emerald-50 text-emerald-950 border border-emerald-300 shadow-xs space-y-3 animate-fadeIn';
+      feedback.innerHTML = `
+        <div class="flex items-center justify-between border-b border-emerald-200 pb-2.5">
+          <div class="flex items-center space-x-2 font-bold text-emerald-900 text-sm">
+            <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">✓</span>
+            <span>Connected to Database: <span class="font-mono">${dbname}</span></span>
+          </div>
+          <button type="button" onclick="refreshDatabaseView()" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold text-xs shadow-xs transition cursor-pointer" title="Refresh database view and table counts">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Refresh Data</span>
+          </button>
+        </div>
 
-    showToast(`Connected to PostgreSQL 'local essl' (${dbname})!`, 'success');
+        <!-- Default Schema Creation Confirmation -->
+        <div class="bg-white/85 p-3 rounded-lg border border-emerald-200 space-y-1">
+          <div class="flex items-center space-x-2">
+            <span class="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">✓</span>
+            <strong class="text-emerald-950">Default Schema Created & Verified</strong>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold">5 Tables Active</span>
+          </div>
+          <p class="text-[11px] text-emerald-800 pl-6">
+            ${data.schema_message || "Default tables (shifts, devices, employees, attendance_punches, settings) successfully created in schema 'public'."}
+          </p>
+        </div>
+
+        <!-- Biometric Sync Status Confirmation -->
+        <div id="pg-sync-status-card" class="bg-white/85 p-3 rounded-lg border border-blue-200 space-y-1">
+          <div class="flex items-center space-x-2">
+            <span id="pg-sync-status-icon" class="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">↻</span>
+            <strong id="pg-sync-status-title" class="text-slate-900">Syncing Biometric Devices & Attendance Logs...</strong>
+          </div>
+          <p id="pg-sync-status-msg" class="text-[11px] text-slate-600 pl-6">
+            Registering 4 eSSL devices (Door 1, Door 2, Door 3, Door 4) and syncing biometric punch logs into database <strong>${dbname}</strong>...
+          </p>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-emerald-200/60">
+          <span>Server: <strong>${host}:${port}</strong> &bull; Dialect: PostgreSQL</span>
+          <span>Click <strong>Refresh Data</strong> to update live table row counts</span>
+        </div>
+      `;
+    }
+
+    showToast(`Connected to PostgreSQL (${dbname})! Default schema created.`, 'success');
 
     // Reload all dashboard and schema data
     loadDatabaseData();
     loadDashboardData();
     loadDevicesData();
 
+    // Trigger initial punch sync into new DB in background
+    fetch('/api/devices/sync-all', { method: 'POST' })
+      .then(r => r.json())
+      .then(syncRes => {
+        const syncCard = document.getElementById('pg-sync-status-card');
+        const syncTitle = document.getElementById('pg-sync-status-title');
+        const syncMsg = document.getElementById('pg-sync-status-msg');
+        const syncIcon = document.getElementById('pg-sync-status-icon');
+        if (syncCard && syncTitle && syncMsg && syncIcon) {
+          syncCard.className = 'bg-white/85 p-3 rounded-lg border border-emerald-300 space-y-1';
+          syncIcon.className = 'w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold';
+          syncIcon.textContent = '✓';
+          syncTitle.className = 'text-emerald-950 font-bold';
+          syncTitle.textContent = 'Biometric Sync Complete!';
+          syncMsg.className = 'text-[11px] text-emerald-800 pl-6';
+          syncMsg.innerHTML = `Successfully synchronized 4 eSSL devices into <strong>${dbname}</strong>! Total punches recorded: <strong>${syncRes.total_new_punches || 0}</strong> new punches.`;
+        }
+        loadDatabaseData();
+        loadDashboardData();
+      })
+      .catch(err => {
+        console.warn('Initial sync notice:', err);
+        loadDatabaseData();
+      });
+
   } catch (err) {
-    feedback.className = 'p-4 rounded-xl text-xs bg-rose-50 text-rose-800 border border-rose-200';
-    feedback.textContent = `✕ ${err.message}`;
+    if (feedback) {
+      feedback.className = 'p-4 rounded-xl text-xs bg-rose-50 text-rose-950 border border-rose-300 shadow-xs space-y-2';
+      feedback.innerHTML = `
+        <div class="flex items-center space-x-2 font-bold text-rose-900 text-sm">
+          <span class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs">✕</span>
+          <span>Database Connection Failed</span>
+        </div>
+        <p class="text-rose-800">${err.message}</p>
+      `;
+    }
     showToast(err.message, 'error');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<svg class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Connect to local essl</span>`;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Connect to local essl</span>`;
+    }
   }
 }
 
@@ -1897,12 +2024,21 @@ async function switchToDefaultSqlite() {
     showToast('Switched to default SQLite database', 'info');
     if (feedback) {
       feedback.classList.remove('hidden');
-      feedback.className = 'p-3.5 rounded-xl text-xs bg-slate-100 text-slate-800 border border-slate-300 shadow-xs';
+      feedback.className = 'p-4 rounded-xl text-xs bg-emerald-50 text-emerald-950 border border-emerald-300 shadow-xs space-y-2 animate-fadeIn';
       feedback.innerHTML = `
-        <div class="flex items-center space-x-2 font-medium">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span>Active database switched back to default embedded SQLite (<strong>attendance.db</strong>).</span>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2 font-bold text-emerald-900">
+            <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs">✓</span>
+            <span>Switched to Default SQLite Database (attendance.db)</span>
+          </div>
+          <button type="button" onclick="refreshDatabaseView()" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold text-xs shadow-xs transition cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Refresh Data</span>
+          </button>
         </div>
+        <p class="text-[11px] text-emerald-800">
+          Default schema tables active. Biometric device logs are now syncing with local <strong>attendance.db</strong>.
+        </p>
       `;
     }
     loadDatabaseData();
@@ -2221,3 +2357,53 @@ function copyShareUrl(url, btn) {
 }
 
 
+
+
+function openEditDeviceModal(deviceId) {
+  const dev = currentDevicesCache.find(d => d.id === deviceId);
+  if (!dev) return;
+
+  document.getElementById('device-edit-id').value = dev.id;
+  document.getElementById('device-edit-name').value = dev.device_name;
+  document.getElementById('device-edit-ip').value = dev.ip_address;
+  document.getElementById('device-edit-port').value = dev.port || 4370;
+  document.getElementById('device-edit-model').value = dev.device_model || 'eSSL F18 + F12';
+  document.getElementById('device-edit-type').value = dev.attendance_type || 'BOTH';
+
+  openModal('modal-device-edit');
+}
+
+async function submitDeviceEditForm(e) {
+  e.preventDefault();
+  const id = document.getElementById('device-edit-id').value;
+  const name = document.getElementById('device-edit-name').value.trim();
+  const ip = document.getElementById('device-edit-ip').value.trim();
+  const port = parseInt(document.getElementById('device-edit-port').value, 10) || 4370;
+  const model = document.getElementById('device-edit-model').value.trim();
+  const type = document.getElementById('device-edit-type').value;
+
+  try {
+    const res = await fetch(`/api/devices/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_name: name,
+        ip_address: ip,
+        port: port,
+        device_model: model,
+        attendance_type: type
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to update device');
+    }
+
+    closeModal('modal-device-edit');
+    showToast('Device details updated successfully', 'success');
+    loadDevicesData();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}

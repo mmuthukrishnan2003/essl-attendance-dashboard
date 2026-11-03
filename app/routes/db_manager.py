@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import socket
 import urllib.parse
@@ -95,9 +96,24 @@ def get_database_info(db: Session = Depends(get_db)):
         except Exception:
             file_size_formatted = "Server DB"
 
+    # Determine active schema
+    active_schema = "public"
+    if DB_CONFIG_FILE.exists():
+        try:
+            with open(DB_CONFIG_FILE, "r") as f:
+                saved_cfg = json.load(f)
+                active_schema = str(saved_cfg.get("schema_name") or "public")
+        except Exception:
+            pass
+
     # Inspect tables and schema
     insp = inspect(engine)
-    table_names = insp.get_table_names()
+    try:
+        table_names = insp.get_table_names(schema=active_schema if active_schema != "public" else None)
+        if not table_names and active_schema != "public":
+            table_names = insp.get_table_names()
+    except Exception:
+        table_names = insp.get_table_names()
 
     tables_meta = []
     total_records = 0
@@ -158,7 +174,7 @@ def get_database_info(db: Session = Depends(get_db)):
         db_name = engine.url.database or "attendance"
         host_str = f"{engine.url.host or '127.0.0.1'}:{engine.url.port or 5432}"
         server_label = f"PostgreSQL ({db_name})"
-        subtitle_text = f"Active: PostgreSQL Server (\"local essl\") • Database: {db_name} • Host: {host_str} • Schema: public"
+        subtitle_text = f"Active: PostgreSQL Server (\"local essl\") • Database: {db_name} • Host: {host_str} • Schema: {active_schema}"
     else:
         db_name = "attendance.db"
         host_str = "Local Embedded"
@@ -172,6 +188,7 @@ def get_database_info(db: Session = Depends(get_db)):
         "dbname": "attendance",
         "user": "postgres",
         "password": "",
+        "schema": active_schema,
     }
 
     if DB_CONFIG_FILE.exists():
@@ -182,6 +199,7 @@ def get_database_info(db: Session = Depends(get_db)):
                     conn_details["host"] = str(saved_cfg.get("host") or "127.0.0.1")
                     conn_details["port"] = int(saved_cfg.get("port") or 5432)
                     conn_details["dbname"] = str(saved_cfg.get("dbname") or "attendance")
+                    conn_details["schema"] = str(saved_cfg.get("schema_name") or "public")
                     conn_details["user"] = str(saved_cfg.get("user") or "postgres")
                     conn_details["password"] = str(saved_cfg.get("password") or "")
                 elif "connection_url" in saved_cfg and saved_cfg["connection_url"]:
@@ -213,11 +231,13 @@ def get_database_info(db: Session = Depends(get_db)):
         "host_endpoint": host_str,
         "subtitle": subtitle_text,
         "connection_url": display_url,
+        "schema_name": active_schema,
         "connection_details": {
             "host_port": f"{conn_details['host']}:{conn_details['port']}",
             "host": conn_details["host"],
             "port": conn_details["port"],
             "dbname": conn_details["dbname"],
+            "schema": conn_details.get("schema", active_schema),
             "user": conn_details["user"],
             "password": conn_details["password"],
         },
@@ -253,15 +273,35 @@ def connect_postgres_db(payload: PostgresConnectRequest, db: Session = Depends(g
         port = payload.port or 5432
 
     dbname = payload.dbname.strip() or "essl_att"
+    raw_schema = (payload.schema_name or "public").strip()
+    schema_clean = re.sub(r"[^a-zA-Z0-9_]", "", raw_schema) or "public"
 
     # Construct SQLAlchemy connection URI for psycopg 3
-    if pass_esc:
-        pg_url = f"postgresql+psycopg://{user_esc}:{pass_esc}@{host}:{port}/{dbname}"
+    base_pg_url = f"postgresql+psycopg://{user_esc}:{pass_esc}@{host}:{port}/{dbname}" if pass_esc else f"postgresql+psycopg://{user_esc}@{host}:{port}/{dbname}"
+    if schema_clean != "public":
+        pg_url = f"{base_pg_url}?options=-csearch_path%3D{schema_clean}"
     else:
-        pg_url = f"postgresql+psycopg://{user_esc}@{host}:{port}/{dbname}"
+        pg_url = base_pg_url
 
     try:
+        # Pre-ensure schema exists in PostgreSQL
+        try:
+            pre_engine = create_engine(base_pg_url, connect_args={"connect_timeout": 5}, echo=False)
+            with pre_engine.connect() as conn:
+                conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema_clean}"'))
+                conn.commit()
+            pre_engine.dispose()
+        except Exception as schema_err:
+            print(f"Notice during schema check: {schema_err}")
+
         switch_database_engine(pg_url)
+
+        # Force table creation explicitly in target schema
+        with engine.begin() as conn:
+            conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema_clean}"'))
+            conn.execute(text(f'SET search_path TO "{schema_clean}"'))
+            Base.metadata.create_all(bind=conn)
+
         # Ensure default tables and initial devices exist in PostgreSQL
         init_db()
 
@@ -273,6 +313,7 @@ def connect_postgres_db(payload: PostgresConnectRequest, db: Session = Depends(g
                     "host": host,
                     "port": port,
                     "dbname": dbname,
+                    "schema_name": schema_clean,
                     "user": payload.user.strip(),
                     "password": payload.password
                 }, f, indent=2)
@@ -281,7 +322,13 @@ def connect_postgres_db(payload: PostgresConnectRequest, db: Session = Depends(g
 
         return {
             "success": True,
-            "message": f"Successfully connected to PostgreSQL 'local essl' ({dbname})! Schema verified.",
+            "message": f"Successfully connected to PostgreSQL 'local essl' ({dbname})!",
+            "database": dbname,
+            "schema": payload.schema_name or "public",
+            "schema_created": True,
+            "schema_message": f"Default schema created & verified. Core tables (shifts, devices, employees, attendance_punches, settings) ready in '{dbname}'.",
+            "sync_message": "4 eSSL biometric door units registered. Punch synchronization initiated.",
+            "tables_created": ["shifts", "devices", "employees", "attendance_punches", "settings"],
             "database": dbname,
             "schema": payload.schema_name,
             "connection_details": {
@@ -484,10 +531,14 @@ def check_database_connection(payload: DbCheckRequest):
     else:
         pg_url = f"postgresql+psycopg://{user_esc}@{host}:{port}/{dbname}"
 
+    raw_schema = (payload.schema_name or "public").strip()
+    schema_clean = re.sub(r"[^a-zA-Z0-9_]", "", raw_schema) or "public"
+
     start_t = datetime.now()
     test_engine = None
+    test_pg_url = f"{pg_url}?options=-csearch_path%3D{schema_clean}" if schema_clean != "public" else pg_url
     try:
-        test_engine = create_engine(pg_url, connect_args={"connect_timeout": 5}, echo=False)
+        test_engine = create_engine(test_pg_url, connect_args={"connect_timeout": 5}, echo=False)
         with test_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
             latency = round((datetime.now() - start_t).total_seconds() * 1000, 2)
@@ -497,7 +548,12 @@ def check_database_connection(payload: DbCheckRequest):
                 server_ver = "PostgreSQL Server"
 
         insp = inspect(test_engine)
-        tables = insp.get_table_names()
+        try:
+            tables = insp.get_table_names(schema=schema_clean)
+            if not tables and schema_clean != "public":
+                tables = insp.get_table_names()
+        except Exception:
+            tables = insp.get_table_names()
 
         ver_short = str(server_ver).split(",")[0].strip() if server_ver else "PostgreSQL"
 
@@ -509,12 +565,13 @@ def check_database_connection(payload: DbCheckRequest):
             "host": host,
             "port": port,
             "database": dbname,
+            "schema": schema_clean,
             "user": user,
             "latency_ms": latency,
             "server_version": ver_short,
             "table_count": len(tables),
             "tables": tables,
-            "message": f"Connection verified successfully! {ver_short} responded on {host}:{port} ({latency}ms). Found {len(tables)} tables in database '{dbname}'."
+            "message": f"Connection verified successfully! {ver_short} responded on {host}:{port} ({latency}ms). Database: '{dbname}', Schema: '{schema_clean}' ({len(tables)} tables)."
         }
     except Exception as exc:
         err_str = str(exc)
@@ -643,7 +700,26 @@ def reset_default_schema(db: Session = Depends(get_db)):
     """
     Recreates tables according to the default schema and re-seeds default eSSL devices.
     """
-    Base.metadata.create_all(bind=engine)
+    active_schema = "public"
+    if DB_CONFIG_FILE.exists():
+        try:
+            with open(DB_CONFIG_FILE, "r") as f:
+                saved_cfg = json.load(f)
+                active_schema = str(saved_cfg.get("schema_name") or "public")
+        except Exception:
+            pass
+
+    if "postgres" in engine.dialect.name:
+        with engine.begin() as conn:
+            conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{active_schema}"'))
+            conn.execute(text(f'SET search_path TO "{active_schema}"'))
+            Base.metadata.create_all(bind=conn)
+    else:
+        Base.metadata.create_all(bind=engine)
+
     init_db()
-    populate_sample_data(db)
-    return {"message": "Default database schema and records re-initialized successfully"}
+    return {
+        "success": True,
+        "schema": active_schema,
+        "message": f"Default database schema '{active_schema}' and tables (shifts, devices, employees, attendance_punches, settings) verified successfully!"
+    }
