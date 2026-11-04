@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 
 from app.database import get_db
 from app.models import Employee, AttendancePunch, Device
@@ -26,7 +26,7 @@ def list_employees(
         p = f"%{search.strip()}%"
         query = query.filter((Employee.emp_code.ilike(p)) | (Employee.name.ilike(p)))
 
-    employees = query.order_by(Employee.emp_code.asc()).all()
+    employees = query.order_by(func.lower(Employee.name).asc(), Employee.emp_code.asc()).all()
 
     # Get distinct departments for filter dropdown
     depts = [d[0] for d in db.query(Employee.department).distinct().all() if d[0]]

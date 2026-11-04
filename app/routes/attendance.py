@@ -12,10 +12,55 @@ from app.schemas import ManualPunchCreate
 from app.attendance_service import (
     calculate_daily_attendance_for_date,
     get_employee_punches_history,
-    generate_excel_report
+    generate_excel_report,
+    calculate_daily_overtime_summary,
+    calculate_weekly_overtime_trend
 )
 
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
+
+
+@router.get("/overtime/summary")
+def get_overtime_summary(
+    target_date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns Overtime calculation and employee breakdown for a specific date:
+    - Office standard hours: 09:00 AM to 07:00 PM (19:00)
+    - Morning OT: Any time worked before 09:00 AM
+    - Evening OT: Any time worked after 07:00 PM
+    - Total OT: Morning OT + Evening OT
+    """
+    if target_date:
+        try:
+            d = datetime.strptime(target_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        d = date.today()
+
+    return calculate_daily_overtime_summary(target_date=d, db=db)
+
+
+@router.get("/overtime/weekly")
+def get_overtime_weekly_trend(
+    end_date: Optional[str] = Query(None, description="End date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns weekly overtime hours trend (last 7 days) for the dashboard chart.
+    """
+    if end_date:
+        try:
+            d = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        d = date.today()
+
+    return calculate_weekly_overtime_trend(end_date=d, db=db)
+
 
 
 @router.get("/daily")
@@ -229,6 +274,8 @@ def export_attendance_csv(
     )
 
 
+
+
 @router.post("/manual-punch")
 def add_manual_punch(payload: ManualPunchCreate, db: Session = Depends(get_db)):
     """Add a manual punch (admin adjustment for missed punches)."""
@@ -256,3 +303,382 @@ def add_manual_punch(payload: ManualPunchCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="A punch already exists for this employee at this exact timestamp")
 
     return {"message": "Manual punch added successfully", "punch": punch.to_dict()}
+
+
+@router.get("/monthly")
+def get_monthly_attendance(
+    year: Optional[int] = Query(None, description="Year (e.g. 2026)"),
+    month: Optional[int] = Query(None, description="Month (1-12)"),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns monthly attendance matrix (Muster Roll) for all employees across days 1 to 31.
+    """
+    from app.monthly_service import get_monthly_attendance_matrix
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    if m < 1 or m > 12:
+        raise HTTPException(status_code=400, detail="Invalid month. Must be between 1 and 12")
+
+    return get_monthly_attendance_matrix(
+        year=y,
+        month=m,
+        db=db,
+        department_filter=department,
+        shift_filter=shift,
+        search_query=search
+    )
+
+
+@router.get("/export/monthly-excel")
+def export_monthly_excel(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    db: Session = Depends(get_db)
+):
+    """
+    Exports full monthly attendance muster roll (Days 1 to 31) as a styled corporate Excel spreadsheet.
+    """
+    from app.monthly_service import generate_monthly_excel_report
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    excel_stream = generate_monthly_excel_report(
+        year=y,
+        month=m,
+        db=db,
+        department=department or "ALL",
+        shift=shift or "ALL"
+    )
+    month_name = date(y, m, 1).strftime("%B_%Y")
+    filename = f"Centizen_Monthly_Attendance_{month_name}.xlsx"
+
+    return StreamingResponse(
+        excel_stream,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/export/monthly-csv")
+def export_monthly_csv(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    db: Session = Depends(get_db)
+):
+    """
+    Exports monthly attendance summary and day-by-day status matrix as CSV.
+    """
+    from app.monthly_service import get_monthly_attendance_matrix
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    matrix = get_monthly_attendance_matrix(
+        year=y,
+        month=m,
+        db=db,
+        department_filter=department,
+        shift_filter=shift
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header: Emp Code, Name, Dept, Shift, Days 1..N, Present, Absent, WFH, WO, Rate %
+    days_headers = [f"Day_{d['day']:02d}_{d['weekday']}" for d in matrix["days_meta"]]
+    header_row = ["Emp Code", "Employee Name", "Department", "Shift"] + days_headers + [
+        "Present Count", "Late Count", "Absent Count", "WFH Count", "Week Off Count", "Attendance Rate %"
+    ]
+    writer.writerow(header_row)
+
+    for rec in matrix["records"]:
+        day_vals = [rec["days"].get(str(d["day"]), {}).get("status", "--") for d in matrix["days_meta"]]
+        row = [
+            rec["emp_code"],
+            rec["name"],
+            rec["department"],
+            rec["shift"]
+        ] + day_vals + [
+            rec["present_count"],
+            rec.get("late_count", 0),
+            rec["absent_count"],
+            rec["wfh_count"],
+            rec["wo_count"],
+            f"{rec['attendance_rate']}%"
+        ]
+        writer.writerow(row)
+
+    csv_data = output.getvalue()
+    month_name = date(y, m, 1).strftime("%B_%Y")
+    filename = f"Centizen_Monthly_Attendance_{month_name}.csv"
+
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/monthly-exceeded")
+def get_monthly_exceeded(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    threshold: Optional[float] = Query(2.0, description="Monthly quota hours (default: 2.0)"),
+    category: Optional[str] = Query("EXCEEDED", description="EXCEEDED or ALL"),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns monthly permission ledger (120 mins quota) & employees exceeding 2 hours.
+    """
+    from app.monthly_service import get_monthly_exceeded_report
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    return get_monthly_exceeded_report(
+        year=y,
+        month=m,
+        db=db,
+        threshold_hours=threshold or 2.0,
+        category=category or "EXCEEDED",
+        department_filter=department,
+        shift_filter=shift,
+        search_query=search
+    )
+
+
+@router.get("/export/monthly-exceeded-excel")
+def export_monthly_exceeded_excel(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    threshold: Optional[float] = Query(2.0),
+    category: Optional[str] = Query("EXCEEDED"),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    db: Session = Depends(get_db)
+):
+    """
+    Exports monthly 2-hour permission report as styled Excel spreadsheet.
+    """
+    from app.monthly_service import generate_exceeded_excel_report
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    excel_stream = generate_exceeded_excel_report(
+        year=y,
+        month=m,
+        db=db,
+        threshold_hours=threshold or 2.0,
+        category=category or "EXCEEDED",
+        department=department or "ALL",
+        shift=shift or "ALL"
+    )
+    month_name = date(y, m, 1).strftime("%B_%Y")
+    filename = f"Centizen_Monthly_Permission_Exceeded_{month_name}.xlsx"
+
+    return StreamingResponse(
+        excel_stream,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/export/monthly-exceeded-csv")
+def export_monthly_exceeded_csv(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    threshold: Optional[float] = Query(2.0),
+    category: Optional[str] = Query("EXCEEDED"),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    db: Session = Depends(get_db)
+):
+    """
+    Exports monthly 2-hour permission report as CSV.
+    """
+    from app.monthly_service import get_monthly_exceeded_report
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    data = get_monthly_exceeded_report(
+        year=y,
+        month=m,
+        db=db,
+        threshold_hours=threshold or 2.0,
+        category=category or "EXCEEDED",
+        department_filter=department,
+        shift_filter=shift
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "Emp ID", "Employee Name", "Department", "Shift Timing",
+        "Monthly Quota", "Morning Late", "Evening Early", "Midday Out",
+        "Total Permission Used", "Balance Left", "Exceeded Duration (> 2h)", "Status"
+    ])
+
+    for emp_s in data["summary"]:
+        writer.writerow([
+            emp_s["emp_code"],
+            emp_s["name"],
+            emp_s["department"],
+            emp_s["shift"],
+            emp_s["monthly_quota_text"],
+            emp_s["morning_late_text"],
+            emp_s["evening_early_text"],
+            emp_s["midday_break_text"],
+            emp_s["total_used_text"],
+            emp_s["balance_text"],
+            emp_s["exceeded_text"],
+            emp_s["status"]
+        ])
+
+    csv_data = output.getvalue()
+    month_name = date(y, m, 1).strftime("%B_%Y")
+    filename = f"Centizen_Monthly_Permission_Exceeded_{month_name}.csv"
+
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/monthly-late-punches")
+def get_monthly_late_punches(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    only_late: Optional[bool] = Query(True, description="Show only staff with >= 1 late punch"),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns monthly late punch summary & day-by-day late arrival incidents (First IN > 09:05 AM).
+    """
+    from app.monthly_service import get_monthly_late_count_report
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    return get_monthly_late_count_report(
+        year=y,
+        month=m,
+        db=db,
+        only_late=only_late if only_late is not None else True,
+        department_filter=department,
+        shift_filter=shift,
+        search_query=search
+    )
+
+
+@router.get("/export/monthly-late-excel")
+def export_monthly_late_excel(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    db: Session = Depends(get_db)
+):
+    """
+    Exports monthly late punch report as styled Excel spreadsheet.
+    """
+    from app.monthly_service import generate_monthly_late_excel_report
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    excel_stream = generate_monthly_late_excel_report(
+        year=y,
+        month=m,
+        db=db,
+        department=department or "ALL",
+        shift=shift or "ALL"
+    )
+    month_name = date(y, m, 1).strftime("%B_%Y")
+    filename = f"Centizen_Monthly_Late_Punch_Count_{month_name}.xlsx"
+
+    return StreamingResponse(
+        excel_stream,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/export/monthly-late-csv")
+def export_monthly_late_csv(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    only_late: Optional[bool] = Query(False),
+    department: Optional[str] = Query("ALL"),
+    shift: Optional[str] = Query("ALL"),
+    db: Session = Depends(get_db)
+):
+    """
+    Exports monthly late punch report as CSV.
+    """
+    from app.monthly_service import get_monthly_late_count_report
+    now = datetime.now()
+    y = year or now.year
+    m = month or now.month
+
+    data = get_monthly_late_count_report(
+        year=y,
+        month=m,
+        db=db,
+        only_late=only_late or False,
+        department_filter=department,
+        shift_filter=shift
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "Emp ID", "Employee Name", "Department", "Shift Timing",
+        "Present Days", "Late Punch Count", "On-Time Days", "Punctuality Rate %",
+        "Total Late Time", "Late Dates & Times"
+    ])
+
+    for emp_s in data["summary"]:
+        writer.writerow([
+            emp_s["emp_code"],
+            emp_s["name"],
+            emp_s["department"],
+            emp_s["shift"],
+            emp_s["present_days"],
+            emp_s["late_punch_count"],
+            emp_s["on_time_days"],
+            f"{emp_s['punctuality_rate']}%",
+            emp_s["total_late_text"],
+            emp_s["late_dates_list"]
+        ])
+
+    csv_data = output.getvalue()
+    month_name = date(y, m, 1).strftime("%B_%Y")
+    filename = f"Centizen_Monthly_Late_Punch_Count_{month_name}.csv"
+
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

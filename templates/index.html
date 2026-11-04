@@ -1,1331 +1,3337 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Centizen | Biometric Attendance Management System</title>
+
   <link rel="icon" type="image/x-icon" href="/static/uploads/company_logo.jpg">
+
   <!-- Tailwind CSS -->
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- Chart.js -->
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- Google Fonts: Inter -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
+
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- Custom CSS -->
+
   <link rel="stylesheet" href="/static/css/style.css?v=1.7">
+
   <script>
+
     tailwind.config = {
+
       theme: {
+
         extend: {
+
           colors: {
+
             brand: {
+
               navy: '#0a5482',
+
               navyHover: '#073e61',
+
               orange: '#f27e20',
+
               orangeHover: '#d96a12',
+
               lightBg: '#f8fafc',
+
               border: '#e2e8f0',
+
             }
+
           },
+
           fontFamily: {
+
             sans: ['Inter', 'sans-serif'],
+
           }
+
         }
+
       }
+
     }
+
   </script>
+
 </head>
+
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex" style="zoom: 90%;">
 
+
+
   <!-- MOBILE SIDEBAR BACKDROP -->
+
   <div id="mobile-sidebar-backdrop" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
 
+
+
   <!-- LEFT SIDEBAR -->
+
   <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col flex-shrink-0 transition-transform duration-200 ease-in-out -translate-x-full lg:translate-x-0 lg:static lg:h-screen lg:sticky lg:top-0">
+
     
+
     <!-- Sidebar Header: Company Logo & Brand -->
+
     <div class="h-16 px-4 border-b border-slate-100 flex items-center justify-between bg-white flex-shrink-0">
+
       <div class="flex items-center space-x-3 overflow-hidden">
+
         <img id="header-logo" src="/static/uploads/company_logo.jpg" alt="Company Logo" class="h-9 w-auto object-contain rounded flex-shrink-0" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'40\'><rect width=\'100%\' height=\'100%\' fill=\'%230a5482\'/><text x=\'50%\' y=\'50%\' fill=\'white\' font-size=\'12\' font-weight=\'bold\' text-anchor=\'middle\' dominant-baseline=\'middle\'>Centizen</text></svg>'">
+
         <div class="min-w-0">
+
           <h1 id="header-company-name" class="text-xs font-bold text-slate-900 truncate">Centizen IT</h1>
+
           <p class="text-[10px] text-slate-400 font-medium truncate">eSSL Attendance Portal</p>
+
         </div>
+
       </div>
+
       <!-- Mobile Close Button -->
+
       <button onclick="toggleMobileSidebar(false)" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+
       </button>
+
     </div>
+
+
 
     <!-- Sidebar Navigation Links (Left Side) -->
+
     <div class="flex-1 px-3 py-4 space-y-6 overflow-y-auto no-scrollbar">
+
       
+
       <!-- Group 1: Core Attendance -->
+
       <div>
+
         <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Main Menu</p>
+
         <div class="space-y-1">
+
           
+
           <!-- 1. Dashboard -->
+
           <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="nav-tab active-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-brand-navy text-white shadow-sm transition">
+
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+
             </svg>
+
             <span class="truncate">Dashboard</span>
+
           </button>
+
+
 
           <!-- 2. Daily IN/OUT & Reports -->
+
           <button onclick="switchTab('reports')" id="tab-btn-reports" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+
             </svg>
+
             <span class="truncate">Daily IN/OUT & Reports</span>
+
           </button>
+
+
+
+          <!-- 2b. Monthly Attendance Report -->
+
+          <button onclick="switchTab('monthly')" id="tab-btn-monthly" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+
+            </svg>
+
+            <span class="truncate">Monthly Attendance Report</span>
+
+          </button>
+
+          <!-- 2c. Monthly Late Punch Count -->
+
+          <button onclick="switchTab('late')" id="tab-btn-late" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+
+            </svg>
+
+            <span class="truncate">Late Punch Count</span>
+
+          </button>
+
+          <!-- 2d. Employees Exceeding 2 Hours -->
+
+          <button onclick="switchTab('exceeded')" id="tab-btn-exceeded" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+
+            </svg>
+
+            <span class="truncate">Exceeding 2 Hours</span>
+
+          </button>
+
+
 
           <!-- 3. Shift Management -->
+
           <button onclick="switchTab('shifts')" id="tab-btn-shifts" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+
             </svg>
+
             <span class="truncate">Shift Management</span>
+
           </button>
 
+
+
         </div>
+
       </div>
+
+
 
       <!-- Group 2: Personnel & Hardware -->
+
       <div>
+
         <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Personnel & Devices</p>
+
         <div class="space-y-1">
+
           
+
           <!-- 4. Employees -->
+
           <button onclick="switchTab('employees')" id="tab-btn-employees" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+
             </svg>
+
             <span class="truncate">Employees</span>
+
           </button>
+
+
 
           <!-- 5. Biometric Devices (4) -->
+
           <button onclick="switchTab('devices')" id="tab-btn-devices" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+
             </svg>
+
             <div class="flex items-center justify-between flex-1 truncate">
+
               <span>Biometric Devices</span>
+
               <span class="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-brand-navy border border-blue-200">4</span>
+
             </div>
+
           </button>
 
+
+
         </div>
+
       </div>
+
+
 
       <!-- Group 3: Administration & Settings -->
+
       <div>
+
         <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Administration</p>
+
         <div class="space-y-1">
+
           
+
           <!-- 6. Database & Schema -->
+
           <button onclick="switchTab('database')" id="tab-btn-database" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+
             </svg>
+
             <span class="truncate">Database & Schema</span>
+
           </button>
+
+
 
           <!-- 7. Logo & Settings -->
+
           <button onclick="switchTab('settings')" id="tab-btn-settings" class="nav-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+
             </svg>
+
             <span class="truncate">Logo & Settings</span>
+
           </button>
 
+
+
         </div>
+
       </div>
 
+
+
     </div>
+
+
 
     <!-- Sidebar Bottom Status -->
+
     <div class="p-3 border-t border-slate-100 bg-slate-50/80 flex-shrink-0 space-y-1.5">
+
       <div class="flex items-center justify-between text-[11px] font-medium text-slate-600">
+
         <span class="flex items-center space-x-1.5">
+
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+
           <span>eSSL Port 4370</span>
+
         </span>
+
         <span class="text-slate-600 text-[10px] font-semibold">Office LAN Portal</span>
+
       </div>
+
       <div class="flex items-center justify-between text-[10px] pt-1 border-t border-slate-200/60">
+
         <span class="flex items-center space-x-1.5 text-slate-600">
+
           <span id="sidebar-db-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+
           <span id="sidebar-db-label" class="font-semibold">DB: SQLite</span>
+
         </span>
+
         <span id="sidebar-db-name" class="font-mono text-slate-700 font-bold truncate max-w-[110px]" title="Active Database">attendance.db</span>
+
       </div>
+
     </div>
+
+
 
   </aside>
 
+
+
   <!-- RIGHT MAIN CONTENT WRAPPER -->
+
   <div class="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
+
     
+
     <!-- Top Action Navbar -->
+
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-xs flex-shrink-0">
+
       <div class="flex items-center space-x-3">
+
         <!-- Mobile Sidebar Hamburger Toggle -->
+
         <button onclick="toggleMobileSidebar(true)" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none">
+
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+
         </button>
+
         <div>
+
           <h2 id="topbar-page-title" class="text-base font-bold text-slate-900 leading-tight">Dashboard Overview</h2>
+
           <p id="topbar-page-sub" class="text-xs text-slate-500 hidden sm:block">Live attendance calculation across 4 eSSL devices</p>
+
         </div>
+
       </div>
+
+
 
       <!-- Live Clock, Active DB Chip, Zoom Controls & Sync Action -->
+
       <div class="flex items-center space-x-2 sm:space-x-3">
+
         <!-- Global Active Database Status Pill in Header -->
+
         <div id="header-db-badge" onclick="switchTab('database')" class="hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs cursor-pointer hover:bg-emerald-100 transition" title="Current Active Database (Click to view DB Explorer)">
+
           <span id="header-db-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+
           <span id="header-db-text">DB: SQLite</span>
+
         </div>
+
+
 
         <div class="hidden sm:flex flex-col text-right">
+
           <span id="live-time" class="text-xs font-mono font-semibold text-slate-800 tracking-wide">00:00:00</span>
+
           <span id="live-date" class="text-[11px] text-slate-500">Loading...</span>
+
         </div>
+
+
 
         <!-- Dashboard Zoom Controls (Default: 90%) -->
+
         <div class="hidden sm:inline-flex items-center space-x-0.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs" title="Dashboard Display Zoom (90% Default)">
+
           <button type="button" onclick="setDashboardZoom('85%')" id="zoom-btn-85" class="px-2 py-1 rounded text-[11px] font-medium text-slate-600 hover:text-slate-900 transition">85%</button>
+
           <button type="button" onclick="setDashboardZoom('90%')" id="zoom-btn-90" class="px-2 py-1 rounded text-[11px] bg-white text-brand-navy shadow-xs font-bold transition">90%</button>
+
           <button type="button" onclick="setDashboardZoom('100%')" id="zoom-btn-100" class="px-2 py-1 rounded text-[11px] font-medium text-slate-600 hover:text-slate-900 transition">100%</button>
+
         </div>
+
+
 
         <button id="btn-header-sync" onclick="syncAllDevices()" class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition-all duration-150">
+
           <svg id="header-sync-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+
           </svg>
+
           <span id="header-sync-text">Sync Devices</span>
+
         </button>
+
       </div>
+
     </header>
 
+
+
     <!-- MAIN CONTAINER (Default 90% Dashboard Size) -->
+
     <main class="flex-1 w-[90%] max-w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
+
+
     <!-- TAB 1: DASHBOARD -->
+
     <div id="view-dashboard" class="tab-view space-y-6">
+
       
+
       <!-- Top Overview Greeting & Device Bar -->
+
       <div class="flex flex-col md:flex-row md:items-center md:justify-between bg-white p-5 rounded-xl border border-slate-200 shadow-sm gap-4">
+
         <div>
+
           <h2 class="text-lg font-bold text-slate-800">Attendance Overview</h2>
+
           <p id="dashboard-date-str" class="text-xs text-slate-500 mt-0.5">Today's live attendance metrics and punch tracking</p>
+
         </div>
+
         
+
         <!-- Connected Devices Bar -->
-        <div class="flex flex-wrap items-center gap-2" id="dashboard-device-pills">
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- In-Page Refresh Dashboard Button -->
+            <button type="button" onclick="refreshDashboardView()" id="btn-refresh-dashboard-view" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh live attendance overview and punches">
+              <svg id="dashboard-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span id="dashboard-refresh-text">Refresh</span>
+            </button>
+            <div class="flex flex-wrap items-center gap-2" id="dashboard-device-pills">
+
           <!-- Dynamically populated 4 devices pills -->
+
         </div>
+
+          </div>
+
       </div>
+
+
 
       <!-- KPI Stats Grid (Total, Present, Absent) -->
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
         
+
         <!-- Total Employees Card -->
+
         <div onclick="setTodayFilter('ALL', true)" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-brand-navy hover:shadow-md transition-all group select-none" title="Click to view all employees">
+
           <div>
+
             <div class="flex items-center space-x-1.5">
+
               <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Employees</p>
+
               <span class="text-[10px] font-semibold text-brand-navy opacity-0 group-hover:opacity-100 transition-opacity">&rarr; View All</span>
+
             </div>
+
             <h3 id="stat-total" class="text-2xl font-bold text-slate-900 mt-1">--</h3>
+
             <span class="text-[11px] text-slate-400">Enrolled in system</span>
+
           </div>
+
           <div class="w-12 h-12 rounded-lg bg-blue-50 text-brand-navy flex items-center justify-center group-hover:bg-brand-navy group-hover:text-white transition">
+
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+
           </div>
+
         </div>
+
+
 
         <!-- Present Today Card -->
+
         <div onclick="setTodayFilter('PRESENT', true)" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all group select-none" title="Click to view Present employees list">
+
           <div>
+
             <div class="flex items-center space-x-1.5">
+
               <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Present Today</p>
+
               <span class="text-[10px] font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">&rarr; View Present</span>
+
             </div>
+
             <h3 id="stat-present" class="text-2xl font-bold text-emerald-600 mt-1">--</h3>
+
             <span id="stat-rate" class="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">--% Attendance</span>
+
           </div>
+
           <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition">
+
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
           </div>
+
         </div>
+
+
 
         <!-- Absent Today Card (Red / Rose) -->
+
         <div onclick="setTodayFilter('ABSENT', true)" class="bg-white p-5 rounded-xl border border-rose-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-rose-600 hover:shadow-md hover:bg-rose-50/20 transition-all group select-none" title="Click to view Absent employees list">
+
           <div>
+
             <div class="flex items-center space-x-1.5">
+
               <p class="text-xs font-semibold text-rose-600 uppercase tracking-wider">Absent Today</p>
+
               <span class="text-[10px] font-bold text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity">&rarr; View Absent</span>
+
             </div>
+
             <h3 id="stat-absent" class="text-2xl font-bold text-rose-600 mt-1">--</h3>
+
             <span class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">No punches logged</span>
+
           </div>
+
           <div class="w-12 h-12 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:bg-rose-600 group-hover:text-white transition">
+
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
           </div>
+
         </div>
+
+
 
       </div>
 
-      <!-- Weekly Attendance Trend Chart (Full Width) -->
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-        <div class="flex items-center justify-between mb-4">
+
+
+      <!-- Weekly Attendance Trend & Today's Overtime Panel (2-Column Grid) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Left: Weekly Attendance Trend Chart (7 cols) -->
+        <div class="lg:col-span-7 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+            <div>
+              <h3 id="chart-title-text" class="text-sm font-bold text-slate-800">Weekly Attendance Trend</h3>
+              <p id="chart-sub-text" class="text-xs text-slate-500">Daily breakdown of Present (<span class="text-brand-navy font-semibold">Navy</span>) and Absent (<span class="text-rose-600 font-semibold">Red</span>) staff</p>
+            </div>
+            <!-- Mode Toggle: Attendance vs Overtime -->
+            <div class="inline-flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200 text-xs">
+              <button id="chart-mode-att" onclick="switchChartMode('attendance')" class="px-2.5 py-1 rounded-md font-medium text-xs bg-white text-brand-navy shadow-sm transition">Attendance</button>
+              <button id="chart-mode-ot" onclick="switchChartMode('overtime')" class="px-2.5 py-1 rounded-md font-medium text-xs text-slate-600 hover:text-slate-900 transition">Overtime (OT)</button>
+            </div>
+          </div>
+          <div class="h-64 relative">
+            <canvas id="weeklyAttendanceChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Right: Today's Overtime (OT) Tracking Box (5 cols) [User's Marked Red Box] -->
+        <div id="overtime-panel" class="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 class="text-sm font-bold text-slate-800">Weekly Attendance Trend</h3>
-            <p class="text-xs text-slate-500">Daily breakdown of Present (<span class="text-brand-navy font-semibold">Navy</span>) and Absent (<span class="text-rose-600 font-semibold">Red</span>) staff</p>
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shadow-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <span>Overtime (OT) Summary</span>
+                    <span id="ot-badge-count" class="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded-full">0 Staff</span>
+                    <span id="ot-grand-total" class="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold px-2 py-0.5 rounded-md shadow-xs">Total: 0h 00m</span>
+                  </h3>
+                </div>
+              </div>
+              <!-- Date indicator / Date picker / Refresh -->
+              <div class="flex items-center space-x-1.5">
+                <input type="date" id="ot-date-input" onchange="changeOvertimeDate(this.value)" title="Choose date to inspect Overtime" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1 text-slate-700 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-brand-navy outline-none">
+                <button onclick="refreshOvertimeData()" title="Refresh Overtime Data" class="p-1 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search filter input inside OT panel -->
+            <div class="mb-2 relative">
+              <input type="text" id="ot-search-input" oninput="filterOvertimeTable()" placeholder="Filter OT employees..." class="w-full text-xs pl-7 pr-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-brand-navy outline-none">
+              <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+
+            <!-- Overtime Scrollable Mini Table (Without In / Out column) -->
+            <div class="overflow-y-auto max-h-[200px] border border-slate-200 rounded-lg text-xs">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 text-[10px] text-slate-500 uppercase sticky top-0 border-b border-slate-200">
+                  <tr>
+                    <th class="px-3 py-2 font-bold text-slate-600">Employee</th>
+                    <th class="px-3 py-2 text-right font-bold text-amber-700">Morning</th>
+                    <th class="px-3 py-2 text-right font-bold text-indigo-700">Evening</th>
+                    <th class="px-3 py-2 text-right font-bold text-emerald-700">Total OT</th>
+                  </tr>
+                </thead>
+                <tbody id="ot-table-body" class="divide-y divide-slate-100">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
-          <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-medium">Last 7 Days</span>
-        </div>
-        <div class="h-64 relative">
-          <canvas id="weeklyAttendanceChart"></canvas>
+
+          <!-- Footer -->
+          <div class="pt-2 mt-2 border-t border-slate-100 flex items-center justify-end text-[10px] text-slate-400">
+            <span id="ot-footer-date" class="font-medium text-slate-500">Today</span>
+          </div>
         </div>
       </div>
+
+
 
       <!-- Today's Attendance Quick Summary Table -->
+
       <div id="today-attendance-section" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden scroll-mt-20">
+
         <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
           <div>
+
             <div class="flex items-center space-x-2">
+
               <h3 class="text-sm font-bold text-slate-900">Today's Employee Attendance</h3>
+
               <span id="today-filter-badge" class="hidden text-[11px] font-bold px-2 py-0.5 rounded-full"></span>
-            </div>
-            <p id="today-table-sub" class="text-xs text-slate-500">First IN, Last OUT, and punches summary</p>
-          </div>
-          
-          <div class="flex flex-wrap items-center gap-2">
-            <!-- Filter Pills: All | Present | Absent -->
-            <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 text-xs">
-              <button type="button" id="pill-filter-all" onclick="setTodayFilter('ALL')" class="px-3 py-1 rounded-md font-semibold bg-white text-brand-navy shadow-xs transition">
-                All (<span id="pill-count-all">--</span>)
-              </button>
-              <button type="button" id="pill-filter-present" onclick="setTodayFilter('PRESENT')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-emerald-700 transition">
-                Present (<span id="pill-count-present">--</span>)
-              </button>
-              <button type="button" id="pill-filter-absent" onclick="setTodayFilter('ABSENT')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-rose-700 transition">
-                Absent (<span id="pill-count-absent">--</span>)
-              </button>
-              <button type="button" id="pill-filter-wfh" onclick="setTodayFilter('WFH')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-emerald-700 transition">
-                WFH (<span id="pill-count-wfh">--</span>)
-              </button>
+
             </div>
 
+            <p id="today-table-sub" class="text-xs text-slate-500">First IN, Last OUT, and punches summary</p>
+
+          </div>
+
+          
+
+          <div class="flex flex-wrap items-center gap-2">
+
+            <!-- Filter Pills: All | Present | Absent -->
+
+            <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 text-xs">
+
+              <button type="button" id="pill-filter-all" onclick="setTodayFilter('ALL')" class="px-3 py-1 rounded-md font-semibold bg-white text-brand-navy shadow-xs transition">
+
+                All (<span id="pill-count-all">--</span>)
+
+              </button>
+
+              <button type="button" id="pill-filter-present" onclick="setTodayFilter('PRESENT')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-emerald-700 transition">
+
+                Present (<span id="pill-count-present">--</span>)
+
+              </button>
+
+              <button type="button" id="pill-filter-late" onclick="setTodayFilter('LATE')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-amber-700 transition">
+
+                Late (<span id="pill-count-late">--</span>)
+
+              </button>
+
+              <button type="button" id="pill-filter-absent" onclick="setTodayFilter('ABSENT')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-rose-700 transition">
+
+                Absent (<span id="pill-count-absent">--</span>)
+
+              </button>
+
+              <button type="button" id="pill-filter-wfh" onclick="setTodayFilter('WFH')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-emerald-700 transition">
+
+                WFH (<span id="pill-count-wfh">--</span>)
+
+              </button>
+
+            </div>
+
+
+
             <input type="text" id="dashboard-search-input" onkeyup="filterTodayTable()" placeholder="Search employee..." class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
             
+
             <button onclick="switchTab('reports')" class="text-xs text-brand-navy font-semibold hover:underline flex items-center space-x-1 whitespace-nowrap pl-1">
+
               <span>Full Report</span>
+
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+
             </button>
+
+          </div>
+
+        </div>
+
+
+
+        <div class="table-scroll-body max-h-[480px] border-t border-slate-100">
+
+          <table class="min-w-full divide-y divide-slate-200 text-xs">
+
+            <thead class="bg-slate-50 text-slate-600 font-semibold sticky-table-header">
+
+              <tr>
+
+                <th class="px-4 py-3 text-left bg-slate-50">Emp Code</th>
+
+                <th class="px-4 py-3 text-left bg-slate-50 cursor-pointer select-none hover:text-brand-navy" onclick="toggleTodaySort('name')" title="Click to sort A to Z / Z to A">
+
+                  <div class="inline-flex items-center space-x-1.5">
+
+                    <span>Employee Name</span>
+
+                    <span id="today-sort-name-icon" class="text-[10px] text-brand-navy font-bold">▲ A-Z</span>
+
+                  </div>
+
+                </th>
+
+                <th class="px-4 py-3 text-left bg-slate-50">Department</th>
+
+                <th class="px-4 py-3 text-center bg-slate-50">Assigned Shift</th>
+
+                <th class="px-4 py-3 text-center bg-slate-50">First IN</th>
+
+                <th class="px-4 py-3 text-center bg-slate-50">Last OUT</th>
+
+                <th class="px-4 py-3 text-center bg-slate-50">Punches</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="today-attendance-tbody" class="divide-y divide-slate-100 bg-white">
+
+              <tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Loading attendance data...</td></tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+
+    </div>
+
+
+
+    <!-- TAB 2: DAILY IN/OUT & REPORTS -->
+
+    <div id="view-reports" class="tab-view hidden space-y-5">
+
+      
+
+      <!-- Filter and Controls Card (Single Date & Date Range 1 to 10 Support) -->
+
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+
+        
+
+
+
+
+
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+          
+
+          <!-- Filters row (From Date, To Date, Attendance, Department, Shift, Search) -->
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 flex-1">
+
+            
+
+            <!-- From Date Picker -->
+
+            <div>
+
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">From Date</label>
+
+              <input type="date" id="report-start-date" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+            </div>
+
+
+
+            <!-- To Date Picker -->
+
+            <div>
+
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">To Date</label>
+
+              <input type="date" id="report-end-date" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+            </div>
+
+
+
+            <!-- Attendance Filter (All / Present / Absent) -->
+
+            <div>
+
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Attendance</label>
+
+              <select id="report-status-filter" onchange="filterReportTable()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+                <option value="ALL">All Staff</option>
+
+                <option value="PRESENT">Present Only</option>
+
+                <option value="ABSENT">Absent Only</option>
+
+                <option value="WFH">WFH Only</option>
+
+              </select>
+
+            </div>
+
+
+
+            <!-- Department Filter -->
+
+            <div>
+
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+
+              <select id="report-dept-select" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+                <option value="ALL">All Departments</option>
+
+              </select>
+
+            </div>
+
+
+
+            <!-- Shift Filter -->
+
+            <div>
+
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Shift Timing</label>
+
+              <select id="report-shift-select" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+                <option value="ALL">All Shifts</option>
+
+                <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
+
+                <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
+
+                <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
+
+                <option value="SHIFT_WFH">Work From Home (WFH)</option>
+
+              </select>
+
+            </div>
+
+
+
+            <!-- Search Filter -->
+
+            <div>
+
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Search Employee</label>
+
+              <input type="text" id="report-search-input" onkeyup="filterReportTable()" placeholder="Name or Emp Code..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+            </div>
+
+
+
+          </div>
+
+
+
+          <!-- Export Actions -->
+
+          <div class="flex items-end space-x-2 pt-2 lg:pt-0">
+
+            <button type="button" onclick="refreshReportsView()" id="btn-refresh-reports-view" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh daily attendance records and punch calculations">
+              <svg id="reports-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span id="reports-refresh-text">Refresh</span>
+            </button>
+
+            <button onclick="exportExcel()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition" title="Download Excel for selected date range">
+
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+
+              <span>Export Excel</span>
+
+            </button>
+
+
+
+            <button onclick="exportCSV()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition" title="Download CSV for selected date range">
+
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+
+              <span>CSV</span>
+
+            </button>
+
+
+
+            <button onclick="window.print()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-300 hover:bg-slate-100 text-slate-700 transition">
+
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+
+              <span>Print</span>
+
+            </button>
+
+          </div>
+
+
+
+        </div>
+
+
+
+        <!-- Date Range Quick Info Banner -->
+
+        <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+
+          <div class="flex items-center space-x-4">
+
+            <span>Report Date: <strong id="report-banner-date" class="text-slate-800">--</strong></span>
+
+            <span>Total Staff: <strong id="report-banner-total" class="text-slate-800">--</strong></span>
+
+            <span>Present: <strong id="report-banner-in" class="text-emerald-700">--</strong></span>
+
+            <span>Absent: <strong id="report-banner-absent" class="text-rose-600">--</strong></span>
+
+            <span>WFH: <strong id="report-banner-wfh" class="text-teal-700">--</strong></span>
+
+            <span>Punched OUT: <strong id="report-banner-out" class="text-blue-700">--</strong></span>
+
+          </div>
+
+          <div class="text-[11px] text-slate-400">
+
+            * First IN & Last OUT calculated automatically across all 4 devices
+
+          </div>
+
+        </div>
+
+
+
+      </div>
+
+
+
+      <!-- Report Table Card (Fixed Header & Scrollable Employee Records) -->
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+
+        <div class="table-scroll-body max-h-[calc(100vh-275px)] min-h-[440px] border-t border-slate-100">
+
+          <table class="min-w-full divide-y divide-slate-200 text-xs">
+
+            <thead class="bg-slate-50 text-slate-700 font-semibold sticky-table-header">
+
+              <tr>
+
+                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Date</th>
+
+                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Emp Code</th>
+
+                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap cursor-pointer select-none hover:text-brand-navy" onclick="toggleReportSort('name')" title="Click to sort A to Z / Z to A">
+
+                  <div class="inline-flex items-center space-x-1.5">
+
+                    <span>Employee Name</span>
+
+                    <span id="report-sort-name-icon" class="text-[10px] text-brand-navy font-bold">▲ A-Z</span>
+
+                  </div>
+
+                </th>
+
+                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Department</th>
+
+                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Shift Timing</th>
+
+                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">First IN (Time & Device)</th>
+
+                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Last OUT (Time & Device)</th>
+
+                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Intermediate</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="report-tbody" class="divide-y divide-slate-100 bg-white">
+
+              <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Loading daily attendance records...</td></tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+
+    </div>
+
+
+
+    
+
+    <!-- TAB 2B: MONTHLY ATTENDANCE REPORT & MUSTER ROLL -->
+    <div id="view-monthly" class="tab-view hidden space-y-5">
+      <!-- View Switcher Tabs: Muster Roll Grid vs Late Punch Count vs Exceeding 2 Hours -->
+      <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+        <button type="button" onclick="switchMonthlySubTab('muster')" id="subtab-btn-muster" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-navy text-white shadow-xs transition">
+          📅 Monthly Muster Roll (1–31 Grid)
+        </button>
+        <button type="button" onclick="switchMonthlySubTab('late')" id="subtab-btn-late" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+          ⏰ Monthly Late Punch Count
+        </button>
+        <button type="button" onclick="switchMonthlySubTab('exceeded')" id="subtab-btn-exceeded" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+          ⏱️ Employees Exceeding 2 Hours List Monthly
+        </button>
+      </div>
+
+      <!-- CONTAINER 1: MUSTER ROLL -->
+      <div id="monthly-subview-muster" class="space-y-5">
+      
+      <!-- Top Action Bar & Month Navigator -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <h2 class="text-base font-bold text-slate-800">Monthly Attendance Report &amp; Muster Roll</h2>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-brand-navy border border-blue-200">
+              Days 1–31 Matrix
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Comprehensive 1–31 days attendance matrix, muster roll, and monthly payroll summary</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Month / Year Selector with Prev & Next -->
+          <div class="inline-flex items-center rounded-lg border border-slate-200 p-0.5 bg-slate-50 shadow-xs">
+            <button type="button" onclick="navigateMonth(-1)" class="px-2.5 py-1 rounded-md hover:bg-white text-slate-700 hover:text-slate-900 transition font-bold text-xs" title="Previous Month">
+              &larr; Prev
+            </button>
+            <select id="monthly-month-select" onchange="loadMonthlyAttendanceData()" class="px-2 py-1 text-xs font-semibold text-slate-800 bg-transparent border-0 focus:ring-0 cursor-pointer">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11" selected>November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="monthly-year-select" onchange="loadMonthlyAttendanceData()" class="px-2 py-1 text-xs font-semibold text-slate-800 bg-transparent border-0 focus:ring-0 cursor-pointer">
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+            <button type="button" onclick="navigateMonth(1)" class="px-2.5 py-1 rounded-md hover:bg-white text-slate-700 hover:text-slate-900 transition font-bold text-xs" title="Next Month">
+              Next &rarr;
+            </button>
+          </div>
+
+          <!-- Refresh Button -->
+          <button type="button" onclick="refreshMonthlyView()" id="btn-refresh-monthly-view" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh monthly attendance calculation">
+            <svg id="monthly-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span id="monthly-refresh-text">Refresh</span>
+          </button>
+
+          <!-- Export Excel -->
+          <button type="button" onclick="exportMonthlyExcel()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition" title="Download Excel Muster Roll spreadsheet">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>Export Excel</span>
+          </button>
+
+          <!-- Export CSV -->
+          <button type="button" onclick="exportMonthlyCSV()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition" title="Download Monthly Summary CSV">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Stats Card Grid for Selected Month -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Employees</p>
+          <p id="monthly-kpi-employees" class="text-xl font-extrabold text-slate-800 mt-1">--</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">In Directory</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Working Days</p>
+          <p id="monthly-kpi-days" class="text-xl font-extrabold text-brand-navy mt-1">--</p>
+          <p id="monthly-kpi-monthname" class="text-[10px] text-slate-400 mt-0.5">In Month</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Total Present</p>
+          <p id="monthly-kpi-present" class="text-xl font-extrabold text-emerald-600 mt-1">--</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Punched In</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Total Absent</p>
+          <p id="monthly-kpi-absent" class="text-xl font-extrabold text-rose-600 mt-1">--</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Missed Days</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Total WFH</p>
+          <p id="monthly-kpi-wfh" class="text-xl font-extrabold text-indigo-600 mt-1">--</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Remote Shifts</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Attendance %</p>
+          <p id="monthly-kpi-rate" class="text-xl font-extrabold text-blue-700 mt-1">--%</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Overall Avg</p>
+        </div>
+      </div>
+
+      <!-- Filters & Legend Row -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Department -->
+          <div class="w-44">
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+            <select id="monthly-dept-select" onchange="loadMonthlyAttendanceData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+              <option value="ALL">All Departments</option>
+            </select>
+          </div>
+          <!-- Shift -->
+          <div class="w-48">
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Shift</label>
+            <select id="monthly-shift-select" onchange="loadMonthlyAttendanceData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+              <option value="ALL">All Shifts</option>
+              <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
+              <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
+              <option value="SHIFT_NIGHT">Night Shift (09:00 PM - 06:00 AM)</option>
+              <option value="SHIFT_WFH">Work From Home (WFH)</option>
+            </select>
+          </div>
+          <!-- Search -->
+          <div class="w-56">
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Search Employee</label>
+            <input type="text" id="monthly-search-input" onkeyup="filterMonthlyTableLocal()" placeholder="Name or Emp Code..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
           </div>
         </div>
 
-        <div class="table-scroll-body max-h-[480px] border-t border-slate-100">
-          <table class="min-w-full divide-y divide-slate-200 text-xs">
-            <thead class="bg-slate-50 text-slate-600 font-semibold sticky-table-header">
-              <tr>
-                <th class="px-4 py-3 text-left bg-slate-50">Emp Code</th>
-                <th class="px-4 py-3 text-left bg-slate-50">Employee Name</th>
-                <th class="px-4 py-3 text-left bg-slate-50">Department</th>
-                <th class="px-4 py-3 text-center bg-slate-50">Assigned Shift</th>
-                <th class="px-4 py-3 text-center bg-slate-50">First IN</th>
-                <th class="px-4 py-3 text-center bg-slate-50">Last OUT</th>
-                <th class="px-4 py-3 text-center bg-slate-50">Punches</th>
-              </tr>
+        <!-- Legend -->
+        <div class="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Legend:</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">P = Present</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">A = Absent</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-300">WFH = Remote</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">WO = Week Off</span>
+        </div>
+      </div>
+
+      <!-- Scrollable Monthly Muster Roll Table -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto max-h-[650px] overflow-y-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead id="monthly-table-thead" class="sticky top-0 bg-slate-100 z-20 border-b border-slate-200 text-slate-700">
+              <!-- Dynamically populated 2-row header: day numbers & weekdays -->
             </thead>
-            <tbody id="today-attendance-tbody" class="divide-y divide-slate-100 bg-white">
-              <tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Loading attendance data...</td></tr>
+            <tbody id="monthly-table-tbody" class="divide-y divide-slate-100 bg-white">
+              <tr>
+                <td colspan="40" class="text-center py-12 text-slate-400">Loading monthly attendance matrix...</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-    </div>
+          </div> <!-- End of monthly-subview-muster -->
 
-    <!-- TAB 2: DAILY IN/OUT & REPORTS -->
-    <div id="view-reports" class="tab-view hidden space-y-5">
-      
-      <!-- Filter and Controls Card (Single Date & Date Range 1 to 10 Support) -->
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        
-        <!-- Date Presets Shortcut Bar -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Quick Presets:</span>
-            <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs">
-              <button type="button" onclick="setDateRangePreset('1_to_10')" id="preset-btn-1-10" class="px-3 py-1 rounded-md font-bold text-brand-navy bg-white border border-blue-200 shadow-xs hover:bg-blue-50 transition" title="Set date range from 1st to 10th">
-                📅 1 to 10 Date
+      <!-- CONTAINER 3: MONTHLY LATE PUNCH COUNT -->
+      <div id="monthly-subview-late" class="hidden space-y-5">
+        <!-- Top Action Bar & Month Navigator -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="text-base font-bold text-slate-800">Monthly Late Punch Count</h2>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                Cutoff > 09:05 AM
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Punctuality tracking, late punch counts, and day-by-day arrival incident logs</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Month / Year Selector with Prev & Next -->
+            <div class="inline-flex items-center rounded-lg border border-slate-200 p-0.5 bg-slate-50 shadow-xs">
+              <button type="button" onclick="navigateLateMonth(-1)" class="px-2.5 py-1 rounded-md hover:bg-white text-slate-700 hover:text-slate-900 transition font-bold text-xs" title="Previous Month">
+                &larr; Prev
               </button>
-              <button type="button" onclick="setDateRangePreset('today')" id="preset-btn-today" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition">
-                Today
-              </button>
-              <button type="button" onclick="setDateRangePreset('last7')" id="preset-btn-last7" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition">
-                Last 7 Days
-              </button>
-              <button type="button" onclick="setDateRangePreset('month')" id="preset-btn-month" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition">
-                Full Month
+              <select id="late-month-select" onchange="loadMonthlyLateData()" class="px-2 py-1 text-xs font-semibold text-slate-800 bg-transparent border-0 focus:ring-0 cursor-pointer">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11" selected>November</option>
+                <option value="12">December</option>
+              </select>
+              <select id="late-year-select" onchange="loadMonthlyLateData()" class="px-2 py-1 text-xs font-semibold text-slate-800 bg-transparent border-0 focus:ring-0 cursor-pointer">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+              <button type="button" onclick="navigateLateMonth(1)" class="px-2.5 py-1 rounded-md hover:bg-white text-slate-700 hover:text-slate-900 transition font-bold text-xs" title="Next Month">
+                Next &rarr;
               </button>
             </div>
-          </div>
-          <div id="active-range-label" class="inline-flex items-center space-x-1.5 text-xs font-semibold text-brand-navy bg-blue-50/80 px-3 py-1 rounded-lg border border-blue-100">
-            <span>Range:</span>
-            <strong id="label-range-text">Loading...</strong>
+
+            <!-- Refresh Button -->
+            <button type="button" onclick="loadMonthlyLateData()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh late punch data">
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span>Refresh</span>
+            </button>
+
+            <!-- Export Excel -->
+            <button type="button" onclick="exportMonthlyLateExcel()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition" title="Download Monthly Late Punch Excel spreadsheet">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Export Excel</span>
+            </button>
+
+            <!-- Export CSV -->
+            <button type="button" onclick="exportMonthlyLateCSV()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition" title="Download Monthly Late Punch CSV">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Export CSV</span>
+            </button>
           </div>
         </div>
 
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          
-          <!-- Filters row (From Date, To Date, Attendance, Department, Shift, Search) -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 flex-1">
-            
-            <!-- From Date Picker -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">From Date</label>
-              <input type="date" id="report-start-date" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+        <!-- KPI Stats Cards Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Staff</p>
+            <p id="late-kpi-total-staff" class="text-xl font-extrabold text-slate-800 mt-1">--</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Employees with punches</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/20 shadow-sm">
+            <p class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Late Staff</p>
+            <p id="late-kpi-late-staff" class="text-xl font-extrabold text-amber-700 mt-1">--</p>
+            <p class="text-[10px] text-amber-600 mt-0.5">&gt;= 1 late punch</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/20 shadow-sm">
+            <p class="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Late Punches</p>
+            <p id="late-kpi-total-punches" class="text-xl font-extrabold text-rose-600 mt-1">--</p>
+            <p class="text-[10px] text-rose-500 mt-0.5">Total late instances</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Late Time</p>
+            <p id="late-kpi-total-time" class="text-xl font-extrabold text-slate-800 mt-1">--</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Cumulative delay</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-emerald-200 bg-emerald-50/20 shadow-sm">
+            <p class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Punctuality %</p>
+            <p id="late-kpi-punctuality" class="text-xl font-extrabold text-emerald-700 mt-1">--%</p>
+            <p class="text-[10px] text-emerald-600 mt-0.5">On-Time rate</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-blue-200 bg-blue-50/20 shadow-sm">
+            <p class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Grace Cutoff</p>
+            <p id="late-kpi-cutoff" class="text-xl font-extrabold text-blue-700 mt-1">09:05 AM</p>
+            <p class="text-[10px] text-blue-600 mt-0.5">09:00 AM + 5m grace</p>
+          </div>
+        </div>
+
+        <!-- Filters & View Switcher -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Mode Switcher: Summary Ledger vs Incident Log -->
+            <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 text-xs">
+              <button type="button" id="btn-late-mode-summary" onclick="setLateTableMode('summary')" class="px-3 py-1 rounded-md font-bold text-brand-navy bg-white border border-blue-200 shadow-xs transition">
+                📋 Employee Summary
+              </button>
+              <button type="button" id="btn-late-mode-incidents" onclick="setLateTableMode('incidents')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition">
+                📅 Daily Incidents Log
+              </button>
             </div>
 
-            <!-- To Date Picker -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">To Date</label>
-              <input type="date" id="report-end-date" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-            </div>
-
-            <!-- Attendance Filter (All / Present / Absent) -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Attendance</label>
-              <select id="report-status-filter" onchange="filterReportTable()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-                <option value="ALL">All Staff</option>
-                <option value="PRESENT">Present Only</option>
-                <option value="ABSENT">Absent Only</option>
-                <option value="WFH">WFH Only</option>
-              </select>
-            </div>
+            <!-- Only Staff with Late checkbox -->
+            <label class="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-700 cursor-pointer select-none bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
+              <input type="checkbox" id="late-only-checkbox" onchange="loadMonthlyLateData()" checked class="rounded text-brand-navy focus:ring-0">
+              <span>Only staff with late punches</span>
+            </label>
 
             <!-- Department Filter -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Department</label>
-              <select id="report-dept-select" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+            <div class="w-40">
+              <select id="late-dept-select" onchange="loadMonthlyLateData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
                 <option value="ALL">All Departments</option>
               </select>
             </div>
 
             <!-- Shift Filter -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Shift Timing</label>
-              <select id="report-shift-select" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+            <div class="w-44">
+              <select id="late-shift-select" onchange="loadMonthlyLateData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
                 <option value="ALL">All Shifts</option>
                 <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
                 <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
-                <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
-                <option value="SHIFT_WFH">Work From Home (WFH)</option>
               </select>
             </div>
 
             <!-- Search Filter -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Search Employee</label>
-              <input type="text" id="report-search-input" onkeyup="filterReportTable()" placeholder="Name or Emp Code..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+            <div class="w-48">
+              <input type="text" id="late-search-input" onkeyup="filterLateTableLocal()" placeholder="Search name or ID..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
             </div>
+          </div>
+        </div>
 
+        <!-- Late Punch Table -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto max-h-[650px] overflow-y-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead id="monthly-late-table-thead" class="sticky top-0 bg-slate-100 z-20 border-b border-slate-200 text-slate-700">
+                <!-- Dynamic Header based on summary vs incidents -->
+              </thead>
+              <tbody id="monthly-late-table-tbody" class="divide-y divide-slate-100 bg-white">
+                <tr>
+                  <td colspan="10" class="text-center py-12 text-slate-400 font-medium">Loading late punch records...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div> <!-- End of monthly-subview-late -->
+
+      <!-- CONTAINER 2: EMPLOYEES EXCEEDING 2 HOURS LIST MONTHLY -->
+      <div id="monthly-subview-exceeded" class="hidden space-y-5">
+        
+        <!-- Controls & Filters Bar -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="text-base font-bold text-slate-800">Employees Exceeding 2 Hours List Monthly</h2>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                Monthly Quota: 2h (120 Mins)
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Morning late arrival (&gt; 09:05 AM) &amp; evening early exit (&lt; 07:00 PM) automatically deducted from 120m monthly quota. Exceeded staff highlighted in red.</p>
           </div>
 
-          <!-- Export Actions -->
-          <div class="flex items-end space-x-2 pt-2 lg:pt-0">
-            <button onclick="exportExcel()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition" title="Download Excel for selected date range">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Month & Year Selector -->
+            <div class="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+              <select id="exceeded-month-select" onchange="loadExceededData()" class="px-2 py-1 text-xs font-semibold text-slate-800 bg-transparent border-0 focus:ring-0 cursor-pointer">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11" selected>November</option>
+                <option value="12">December</option>
+              </select>
+              <select id="exceeded-year-select" onchange="loadExceededData()" class="px-2 py-1 text-xs font-semibold text-slate-800 bg-transparent border-0 focus:ring-0 cursor-pointer">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+
+            <!-- View Filter: Exceeded Only vs All Employees -->
+            <div class="inline-flex items-center rounded-lg border border-slate-200 px-2 py-1 bg-slate-50 text-xs">
+              <span class="text-slate-500 font-semibold mr-1.5">View:</span>
+              <select id="exceeded-category-select" onchange="loadExceededData()" class="bg-transparent border-0 font-bold text-brand-navy focus:ring-0 cursor-pointer text-xs">
+                <option value="EXCEEDED" selected>⚠️ Exceeded Quota Only (&gt; 2h)</option>
+                <option value="ALL">📋 All Staff (Full 120m Ledger)</option>
+              </select>
+            </div>
+
+            <!-- Quota Threshold Selector -->
+            <div class="inline-flex items-center rounded-lg border border-slate-200 px-2 py-1 bg-slate-50 text-xs">
+              <span class="text-slate-500 font-semibold mr-1.5">Quota:</span>
+              <select id="exceeded-threshold-select" onchange="loadExceededData()" class="bg-transparent border-0 font-bold text-brand-navy focus:ring-0 cursor-pointer text-xs">
+                <option value="2.0" selected>2 Hours (120 mins)</option>
+                <option value="1.0">1 Hour (60 mins)</option>
+                <option value="1.5">1.5 Hours (90 mins)</option>
+                <option value="3.0">3 Hours (180 mins)</option>
+              </select>
+            </div>
+
+            <!-- Refresh Button -->
+            <button type="button" onclick="refreshExceededView()" id="btn-refresh-exceeded-view" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh exceeded hours calculation">
+              <svg id="exceeded-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span id="exceeded-refresh-text">Refresh</span>
+            </button>
+
+            <!-- Export Excel -->
+            <button type="button" onclick="exportExceededExcel()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition" title="Download Excel report">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
               <span>Export Excel</span>
             </button>
 
-            <button onclick="exportCSV()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition" title="Download CSV for selected date range">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              <span>CSV</span>
-            </button>
-
-            <button onclick="window.print()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-300 hover:bg-slate-100 text-slate-700 transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-              <span>Print</span>
-            </button>
-          </div>
-
-        </div>
-
-        <!-- Date Range Quick Info Banner -->
-        <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
-          <div class="flex items-center space-x-4">
-            <span>Report Date: <strong id="report-banner-date" class="text-slate-800">--</strong></span>
-            <span>Total Staff: <strong id="report-banner-total" class="text-slate-800">--</strong></span>
-            <span>Present: <strong id="report-banner-in" class="text-emerald-700">--</strong></span>
-            <span>Absent: <strong id="report-banner-absent" class="text-rose-600">--</strong></span>
-            <span>WFH: <strong id="report-banner-wfh" class="text-teal-700">--</strong></span>
-            <span>Punched OUT: <strong id="report-banner-out" class="text-blue-700">--</strong></span>
-          </div>
-          <div class="text-[11px] text-slate-400">
-            * First IN & Last OUT calculated automatically across all 4 devices
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Report Table Card (Fixed Header & Scrollable Employee Records) -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-        <div class="table-scroll-body max-h-[calc(100vh-275px)] min-h-[440px] border-t border-slate-100">
-          <table class="min-w-full divide-y divide-slate-200 text-xs">
-            <thead class="bg-slate-50 text-slate-700 font-semibold sticky-table-header">
-              <tr>
-                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Date</th>
-                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Emp Code</th>
-                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Employee Name</th>
-                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Department</th>
-                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Shift Timing</th>
-                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">First IN (Time & Device)</th>
-                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Last OUT (Time & Device)</th>
-                <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Intermediate</th>
-              </tr>
-            </thead>
-            <tbody id="report-tbody" class="divide-y divide-slate-100 bg-white">
-              <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Loading daily attendance records...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- TAB: SHIFT MANAGEMENT -->
-    <div id="view-shifts" class="tab-view hidden space-y-6">
-      
-      <!-- Top Shift Header -->
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 class="text-base font-bold text-slate-800">Office Shift Management</h2>
-          <p class="text-xs text-slate-500">Configure daytime and overnight cross-midnight shifts for attendance calculation</p>
-        </div>
-        
-        <div class="flex items-center space-x-3">
-          <button onclick="openAddShiftModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span>Create New Shift</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Shifts Cards Grid -->
-      <div id="shifts-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <!-- Dynamically rendered shifts -->
-      </div>
-
-      <!-- Quick Shift Assignment Table Card -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h3 class="text-sm font-bold text-slate-900">Employee Shift Assignment</h3>
-            <p class="text-xs text-slate-500">Assign employees to General Shift (9-7), Standard Shift (9-6), Night Shift, or Work From Home (WFH)</p>
-          </div>
-
-          <div class="flex items-center space-x-2">
-            <select id="quick-assign-shift-code" class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-              <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
-              <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
-              <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
-              <option value="SHIFT_WFH">Work From Home (WFH) - Remote</option>
-            </select>
-            <button onclick="applyQuickShiftAssignment()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
-              Assign to Selected
+            <!-- Export CSV -->
+            <button type="button" onclick="exportExceededCSV()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition" title="Download CSV">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Export CSV</span>
             </button>
           </div>
         </div>
 
-        <div class="table-scroll-body max-h-[480px] border-t border-slate-100">
-          <table class="min-w-full divide-y divide-slate-200 text-xs">
-            <thead class="bg-slate-50 text-slate-700 font-semibold sticky-table-header">
-              <tr>
-                <th class="px-4 py-3 text-left w-10 bg-slate-50">
-                  <input type="checkbox" id="shift-select-all" onchange="toggleSelectAllEmployeesForShift(this)" class="rounded text-brand-navy">
-                </th>
-                <th class="px-4 py-3 text-left bg-slate-50">Emp Code</th>
-                <th class="px-4 py-3 text-left bg-slate-50">Employee Name</th>
-                <th class="px-4 py-3 text-left bg-slate-50">Department</th>
-                <th class="px-4 py-3 text-center bg-slate-50">Currently Assigned Shift</th>
-                <th class="px-4 py-3 text-right bg-slate-50">Quick Change</th>
-              </tr>
-            </thead>
-            <tbody id="shift-assignment-tbody" class="divide-y divide-slate-100 bg-white">
-              <tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Loading employees for shift assignment...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-    <div id="view-employees" class="tab-view hidden space-y-5">
-      
-      <!-- Top Action Bar -->
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 class="text-base font-bold text-slate-800">Employee Management</h2>
-          <p class="text-xs text-slate-500">Manage employee directory and biometric enrollments</p>
-        </div>
-        
-        <div class="flex items-center space-x-3">
-          <button onclick="openAddEmployeeModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            <span>Add Employee</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Employee List Table Card -->
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div class="flex items-center space-x-3 w-full sm:w-auto">
-            <input type="text" id="employee-search-input" onkeyup="filterEmployeeList()" placeholder="Search employee code or name..." class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy w-full sm:w-64">
-            <select id="employee-dept-filter" onchange="filterEmployeeList()" class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-              <option value="ALL">All Departments</option>
-            </select>
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Monthly Allowance</p>
+            <p id="exceeded-kpi-threshold" class="text-2xl font-extrabold text-brand-navy mt-1">2h 00m</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">120 Minutes Per Employee</p>
           </div>
-          <span id="employee-count-badge" class="text-xs text-slate-500">Total: 0</span>
-        </div>
-
-        <div class="table-scroll-body max-h-[calc(100vh-275px)] min-h-[440px] border-t border-slate-100">
-          <table class="min-w-full divide-y divide-slate-200 text-xs">
-            <thead class="bg-slate-50 text-slate-700 font-semibold sticky-table-header">
-              <tr>
-                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Emp Code</th>
-                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Full Name</th>
-                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Department</th>
-                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Designation</th>
-                <th class="px-4 py-3 text-center bg-slate-50 whitespace-nowrap">Shift Timing</th>
-                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Contact</th>
-                <th class="px-4 py-3 text-center bg-slate-50 whitespace-nowrap">Status</th>
-                <th class="px-4 py-3 text-right bg-slate-50 whitespace-nowrap">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="employees-tbody" class="divide-y divide-slate-100 bg-white">
-              <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Loading employees...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- TAB 4: BIOMETRIC DEVICES (4 DEVICES) -->
-    <div id="view-devices" class="tab-view hidden space-y-6">
-      
-      <!-- Top Action Bar -->
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 class="text-base font-bold text-slate-800">Connected eSSL Biometric Devices</h2>
-          <p class="text-xs text-slate-500">Live integration with 4 eSSL F18 + F12 fingerprint/card devices via Port 4370</p>
-        </div>
-        
-        <div class="flex items-center flex-wrap gap-2">
-          <button onclick="syncAllDevices()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            <span>Sync All 4 Devices</span>
-          </button>
-
-
-        </div>
-      </div>
-
-      <!-- 4 Devices Grid -->
-      <div id="devices-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <!-- Rendered dynamically -->
-      </div>
-
-      <!-- Device Configuration Note -->
-      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-xs text-blue-900 flex items-start space-x-3">
-        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <div class="space-y-1">
-          <p class="font-bold">Network Integration Details:</p>
-          <p>The system connects to all 4 eSSL F18+F12 devices using the standalone ZKTeco protocol over <strong>Port 4370</strong> (TCP & UDP fallback). Make sure the PC running this dashboard is on the same office local network (<code class="bg-blue-100 px-1 py-0.5 rounded">172.16.0.0/24</code>) or connected via office VPN.</p>
-          <p>Duplication is prevented at the database level by unique constraint on <code class="bg-blue-100 px-1 py-0.5 rounded">(employee_id, timestamp)</code>. You can sync repeatedly without creating redundant punch records.</p>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- TAB 5: LOGO & SETTINGS -->
-    <div id="view-settings" class="tab-view hidden space-y-6">
-      
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Left: Logo & Branding Customization (1 Col) -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
-          <div>
-            <h3 class="text-sm font-bold text-slate-900">Company Logo & Branding</h3>
-            <p class="text-xs text-slate-500">Upload your company logo and customize dashboard theme</p>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Staff Exceeded Quota</p>
+            <p id="exceeded-kpi-employees" class="text-2xl font-extrabold text-rose-600 mt-1">--</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Used &gt; 120 Minutes</p>
           </div>
-
-          <!-- Current Logo Display -->
-          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 text-center space-y-3">
-            <div class="h-24 flex items-center justify-center bg-white rounded-lg border border-slate-200 p-2">
-              <img id="settings-logo-preview" src="/static/uploads/company_logo.jpg" alt="Logo Preview" class="max-h-20 w-auto object-contain">
-            </div>
-            <div>
-              <label for="logo-file-input" class="cursor-pointer inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                <span>Upload New Logo</span>
-              </label>
-              <input type="file" id="logo-file-input" accept="image/*" class="hidden" onchange="uploadLogo(this)">
-              <p class="text-[11px] text-slate-400 mt-1">PNG, JPG, SVG up to 5MB</p>
-            </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Exceeded Time</p>
+            <p id="exceeded-kpi-incidents" class="text-2xl font-extrabold text-amber-600 mt-1">--</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Total Over 2-Hour Quota</p>
           </div>
-
-          <!-- Theme Colors Customization -->
-          <div class="space-y-3 pt-2 border-t border-slate-100">
-            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Brand Palette</h4>
-            
-            <div>
-              <label class="block text-xs text-slate-600 mb-1">Primary Color (Nav & Headers)</label>
-              <div class="flex items-center space-x-2">
-                <input type="color" id="setting-primary-color" value="#0a5482" class="w-8 h-8 rounded border border-slate-300 cursor-pointer">
-                <input type="text" id="setting-primary-color-text" value="#0a5482" class="text-xs px-2 py-1 rounded border border-slate-300 w-24 uppercase">
-                <span class="text-[11px] text-slate-400">Centizen Navy</span>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs text-slate-600 mb-1">Accent Color (Highlights & Badges)</label>
-              <div class="flex items-center space-x-2">
-                <input type="color" id="setting-accent-color" value="#f27e20" class="w-8 h-8 rounded border border-slate-300 cursor-pointer">
-                <input type="text" id="setting-accent-color-text" value="#f27e20" class="text-xs px-2 py-1 rounded border border-slate-300 w-24 uppercase">
-                <span class="text-[11px] text-slate-400">Centizen Orange</span>
-              </div>
-            </div>
-
-            <div class="pt-2">
-              <button onclick="resetCentizenTheme()" class="text-xs text-brand-orange hover:underline font-medium">Reset to Centizen Brand Defaults</button>
-            </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Selected Month</p>
+            <p id="exceeded-kpi-month" class="text-xl font-extrabold text-slate-800 mt-1">--</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Reporting Period</p>
           </div>
         </div>
 
-        <!-- Right: Shift Timings & Calculation Rules (2 Cols) -->
-        <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
-          <div>
-            <h3 class="text-sm font-bold text-slate-900">Attendance Calculation Settings</h3>
-            <p class="text-xs text-slate-500">Configure office shifts, late arrival grace period, and auto-sync</p>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            <!-- Company Name -->
-            <div class="sm:col-span-2">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Company Display Name</label>
-              <input type="text" id="setting-company-name" value="Centizen IT Services & Solutions" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+        <!-- Filters & View Toggle (Employee Summary vs Detailed Incidents) -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Search -->
+            <div class="w-56">
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Search Employee</label>
+              <input type="text" id="exceeded-search-input" onkeyup="filterExceededTableLocal()" placeholder="Name or Emp Code..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
             </div>
-
-            <!-- Shift Start Time -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Standard Shift Start Time</label>
-              <input type="time" id="setting-shift-start" value="09:30" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-              <p class="text-[11px] text-slate-400 mt-0.5">e.g. 09:30 AM</p>
-            </div>
-
-            <!-- Shift End Time -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Standard Shift End Time</label>
-              <input type="time" id="setting-shift-end" value="18:30" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-              <p class="text-[11px] text-slate-400 mt-0.5">e.g. 06:30 PM</p>
-            </div>
-
-            <!-- Late Grace Period (Minutes) -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Late Grace Period (Minutes)</label>
-              <input type="number" id="setting-late-grace" value="15" min="0" max="60" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-              <p class="text-[11px] text-slate-400 mt-0.5">Punch after (09:30 + 15m) = 09:45 is marked Late</p>
-            </div>
-
-            <!-- Full Day Threshold Hours -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Day Minimum Working Hours</label>
-              <input type="number" step="0.5" id="setting-full-day-hours" value="8.0" min="4" max="12" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-              <p class="text-[11px] text-slate-400 mt-0.5">Standard 8.0 hours</p>
-            </div>
-
-            <!-- Half Day Threshold Hours -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Half Day Minimum Working Hours</label>
-              <input type="number" step="0.5" id="setting-half-day-hours" value="4.0" min="2" max="6" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-              <p class="text-[11px] text-slate-400 mt-0.5">Under 4 hours is marked Short / Half Day</p>
-            </div>
-
-            <!-- Auto-sync Interval -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Background Sync Interval</label>
-              <select id="setting-sync-interval" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-                <option value="5">Every 5 Minutes</option>
-                <option value="15" selected>Every 15 Minutes (Recommended)</option>
-                <option value="30">Every 30 Minutes</option>
-                <option value="60">Every 60 Minutes</option>
+            <!-- Department -->
+            <div class="w-44">
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+              <select id="exceeded-dept-select" onchange="loadExceededData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+                <option value="ALL">All Departments</option>
               </select>
             </div>
-
+            <!-- Shift -->
+            <div class="w-48">
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Shift</label>
+              <select id="exceeded-shift-select" onchange="loadExceededData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+                <option value="ALL">All Shifts</option>
+                <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
+                <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
+                <option value="SHIFT_NIGHT">Night Shift (09:00 PM - 06:00 AM)</option>
+              </select>
+            </div>
           </div>
 
-          <div class="pt-4 border-t border-slate-100 flex justify-end">
-            <button onclick="saveSettings()" class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-              <span>Save Configuration</span>
+          <!-- Table Mode Toggle: Employee Summary vs Detailed Log -->
+          <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs">
+            <button type="button" onclick="setExceededTableMode('summary')" id="btn-exceeded-mode-summary" class="px-3 py-1 rounded-md font-bold text-brand-navy bg-white border border-blue-200 shadow-xs transition">
+              Employee Permission Ledger
+            </button>
+            <button type="button" onclick="setExceededTableMode('incidents')" id="btn-exceeded-mode-incidents" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition">
+              Daily Deduction Incidents
             </button>
           </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead id="exceeded-table-thead" class="sticky top-0 bg-slate-100 z-10 border-b border-slate-200 text-slate-700">
+                <!-- Dynamically populated based on mode -->
+              </thead>
+              <tbody id="exceeded-table-tbody" class="divide-y divide-slate-100 bg-white">
+                <tr>
+                  <td colspan="12" class="text-center py-12 text-slate-400">Loading list of employees exceeding 2 hours...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div> <!-- End of monthly-subview-exceeded -->
+
+    </div>
+
+<!-- TAB: SHIFT MANAGEMENT -->
+
+    <div id="view-shifts" class="tab-view hidden space-y-6">
+
+      
+
+      <!-- Top Shift Header -->
+
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+        <div>
+
+          <h2 class="text-base font-bold text-slate-800">Office Shift Management</h2>
+
+          <p class="text-xs text-slate-500">Configure daytime and overnight cross-midnight shifts for attendance calculation</p>
+
+        </div>
+
+        
+
+        <div class="flex items-center space-x-3">
+
+          <button type="button" onclick="refreshShiftsView()" id="btn-refresh-shifts-view" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh shifts and staff assignments">
+              <svg id="shifts-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span id="shifts-refresh-text">Refresh</span>
+            </button>
+
+            <button onclick="openAddShiftModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
+
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+
+            <span>Create New Shift</span>
+
+          </button>
 
         </div>
 
       </div>
 
+
+
+      <!-- Shifts Cards Grid -->
+
+      <div id="shifts-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+        <!-- Dynamically rendered shifts -->
+
+      </div>
+
+
+
+      <!-- Quick Shift Assignment Table Card -->
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+
+        <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+          <div>
+
+            <h3 class="text-sm font-bold text-slate-900">Employee Shift Assignment</h3>
+
+            <p class="text-xs text-slate-500">Assign employees to General Shift (9-7), Standard Shift (9-6), Night Shift, or Work From Home (WFH)</p>
+
+          </div>
+
+
+
+          <div class="flex items-center space-x-2">
+
+            <select id="quick-assign-shift-code" class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+              <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
+
+              <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
+
+              <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
+
+              <option value="SHIFT_WFH">Work From Home (WFH) - Remote</option>
+
+            </select>
+
+            <button onclick="applyQuickShiftAssignment()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+
+              Assign to Selected
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+
+        <div class="table-scroll-body max-h-[480px] border-t border-slate-100">
+
+          <table class="min-w-full divide-y divide-slate-200 text-xs">
+
+            <thead class="bg-slate-50 text-slate-700 font-semibold sticky-table-header">
+
+              <tr>
+
+                <th class="px-4 py-3 text-left w-10 bg-slate-50">
+
+                  <input type="checkbox" id="shift-select-all" onchange="toggleSelectAllEmployeesForShift(this)" class="rounded text-brand-navy">
+
+                </th>
+
+                <th class="px-4 py-3 text-left bg-slate-50">Emp Code</th>
+
+                <th class="px-4 py-3 text-left bg-slate-50 cursor-pointer select-none hover:text-brand-navy" onclick="toggleShiftAssignSort('name')" title="Click to sort A to Z / Z to A">
+
+                  <div class="inline-flex items-center space-x-1.5">
+
+                    <span>Employee Name</span>
+
+                    <span id="shift-sort-name-icon" class="text-[10px] text-brand-navy font-bold">▲ A-Z</span>
+
+                  </div>
+
+                </th>
+
+                <th class="px-4 py-3 text-left bg-slate-50">Department</th>
+
+                <th class="px-4 py-3 text-center bg-slate-50">Currently Assigned Shift</th>
+
+                <th class="px-4 py-3 text-right bg-slate-50">Quick Change</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="shift-assignment-tbody" class="divide-y divide-slate-100 bg-white">
+
+              <tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Loading employees for shift assignment...</td></tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+
     </div>
+
+    <div id="view-employees" class="tab-view hidden space-y-5">
+
+      
+
+      <!-- Top Action Bar -->
+
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+        <div>
+
+          <h2 class="text-base font-bold text-slate-800">Employee Management</h2>
+
+          <p class="text-xs text-slate-500">Manage employee directory and biometric enrollments</p>
+
+        </div>
+
+        
+
+        <div class="flex items-center space-x-3">
+
+          <button type="button" onclick="refreshEmployeesView()" id="btn-refresh-employees-view" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh employee directory">
+              <svg id="emp-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span id="emp-refresh-text">Refresh</span>
+            </button>
+
+            <button onclick="openAddEmployeeModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
+
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+
+            <span>Add Employee</span>
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Employee List Table Card -->
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+
+        <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+          <div class="flex items-center space-x-3 w-full sm:w-auto">
+
+            <input type="text" id="employee-search-input" onkeyup="filterEmployeeList()" placeholder="Search employee code or name..." class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy w-full sm:w-64">
+
+            <select id="employee-dept-filter" onchange="filterEmployeeList()" class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+              <option value="ALL">All Departments</option>
+
+            </select>
+
+          </div>
+
+          <span id="employee-count-badge" class="text-xs text-slate-500">Total: 0</span>
+
+        </div>
+
+
+
+        <div class="table-scroll-body max-h-[calc(100vh-275px)] min-h-[440px] border-t border-slate-100">
+
+          <table class="min-w-full divide-y divide-slate-200 text-xs">
+
+            <thead class="bg-slate-50 text-slate-700 font-semibold sticky-table-header">
+
+              <tr>
+
+                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Emp Code</th>
+
+                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap cursor-pointer select-none hover:text-brand-navy" onclick="toggleEmployeeSort('name')" title="Click to sort A to Z / Z to A">
+
+                  <div class="inline-flex items-center space-x-1.5">
+
+                    <span>Full Name</span>
+
+                    <span id="emp-sort-name-icon" class="text-[10px] text-brand-navy font-bold">▲ A-Z</span>
+
+                  </div>
+
+                </th>
+
+                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Department</th>
+
+                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Designation</th>
+
+                <th class="px-4 py-3 text-center bg-slate-50 whitespace-nowrap">Shift Timing</th>
+
+                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Contact</th>
+
+                <th class="px-4 py-3 text-center bg-slate-50 whitespace-nowrap">Status</th>
+
+                <th class="px-4 py-3 text-right bg-slate-50 whitespace-nowrap">Actions</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="employees-tbody" class="divide-y divide-slate-100 bg-white">
+
+              <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Loading employees...</td></tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+
+    </div>
+
+
+
+    <!-- TAB 4: BIOMETRIC DEVICES (4 DEVICES) -->
+
+    <div id="view-devices" class="tab-view hidden space-y-6">
+
+      
+
+      <!-- Top Action Bar -->
+
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+        <div>
+
+          <h2 class="text-base font-bold text-slate-800">Connected eSSL Biometric Devices</h2>
+
+          <p class="text-xs text-slate-500">Live integration with 4 eSSL F18 + F12 fingerprint/card devices via Port 4370</p>
+
+        </div>
+
+        
+
+        <div class="flex items-center flex-wrap gap-2">
+
+          <button type="button" onclick="refreshDevicesView()" id="btn-refresh-devices-view" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh biometric devices status">
+            <svg id="devices-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span id="devices-refresh-text">Refresh</span>
+          </button>
+
+          <button onclick="syncAllDevices()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
+
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+
+            <span>Sync All 4 Devices</span>
+
+          </button>
+
+
+
+
+
+        </div>
+
+      </div>
+
+
+
+      <!-- 4 Devices Grid -->
+
+      <div id="devices-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        <!-- Rendered dynamically -->
+
+      </div>
+
+
+
+      <!-- Device Configuration Note -->
+
+      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-xs text-blue-900 flex items-start space-x-3">
+
+        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
+        <div class="space-y-1">
+
+          <p class="font-bold">Network Integration Details:</p>
+
+          <p>The system connects to all 4 eSSL F18+F12 devices using the standalone ZKTeco protocol over <strong>Port 4370</strong> (TCP & UDP fallback). Make sure the PC running this dashboard is on the same office local network (<code class="bg-blue-100 px-1 py-0.5 rounded">172.16.0.0/24</code>) or connected via office VPN.</p>
+
+          <p>Duplication is prevented at the database level by unique constraint on <code class="bg-blue-100 px-1 py-0.5 rounded">(employee_id, timestamp)</code>. You can sync repeatedly without creating redundant punch records.</p>
+
+        </div>
+
+      </div>
+
+
+
+    </div>
+
+
+
+    <!-- TAB 5: LOGO & SETTINGS -->
+
+    <div id="view-settings" class="tab-view hidden space-y-6">
+
+      <!-- Top Action Bar for Settings -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-800">Logo & System Settings</h2>
+          <p class="text-xs text-slate-500">Upload company logo, customize theme colors, and configure attendance rules</p>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <button type="button" onclick="refreshSettingsView()" id="btn-refresh-settings-view" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Reload settings from server">
+            <svg id="settings-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span id="settings-refresh-text">Refresh</span>
+          </button>
+
+          <button onclick="saveSettings()" class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span>Save Settings</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        
+
+        <!-- Left: Logo & Branding Customization (1 Col) -->
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
+
+          <div>
+
+            <h3 class="text-sm font-bold text-slate-900">Company Logo & Branding</h3>
+
+            <p class="text-xs text-slate-500">Upload your company logo and customize dashboard theme</p>
+
+          </div>
+
+
+
+          <!-- Current Logo Display -->
+
+          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 text-center space-y-3">
+
+            <div class="h-24 flex items-center justify-center bg-white rounded-lg border border-slate-200 p-2">
+
+              <img id="settings-logo-preview" src="/static/uploads/company_logo.jpg" alt="Logo Preview" class="max-h-20 w-auto object-contain">
+
+            </div>
+
+            <div>
+
+              <label for="logo-file-input" class="cursor-pointer inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
+
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+
+                <span>Upload New Logo</span>
+
+              </label>
+
+              <input type="file" id="logo-file-input" accept="image/*" class="hidden" onchange="uploadLogo(this)">
+
+              <p class="text-[11px] text-slate-400 mt-1">PNG, JPG, SVG up to 5MB</p>
+
+            </div>
+
+          </div>
+
+
+
+          <!-- Theme Colors Customization -->
+
+          <div class="space-y-3 pt-2 border-t border-slate-100">
+
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Brand Palette</h4>
+
+            
+
+            <div>
+
+              <label class="block text-xs text-slate-600 mb-1">Primary Color (Nav & Headers)</label>
+
+              <div class="flex items-center space-x-2">
+
+                <input type="color" id="setting-primary-color" value="#0a5482" class="w-8 h-8 rounded border border-slate-300 cursor-pointer">
+
+                <input type="text" id="setting-primary-color-text" value="#0a5482" class="text-xs px-2 py-1 rounded border border-slate-300 w-24 uppercase">
+
+                <span class="text-[11px] text-slate-400">Centizen Navy</span>
+
+              </div>
+
+            </div>
+
+
+
+            <div>
+
+              <label class="block text-xs text-slate-600 mb-1">Accent Color (Highlights & Badges)</label>
+
+              <div class="flex items-center space-x-2">
+
+                <input type="color" id="setting-accent-color" value="#f27e20" class="w-8 h-8 rounded border border-slate-300 cursor-pointer">
+
+                <input type="text" id="setting-accent-color-text" value="#f27e20" class="text-xs px-2 py-1 rounded border border-slate-300 w-24 uppercase">
+
+                <span class="text-[11px] text-slate-400">Centizen Orange</span>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="pt-2">
+
+              <button onclick="resetCentizenTheme()" class="text-xs text-brand-orange hover:underline font-medium">Reset to Centizen Brand Defaults</button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- Right: Shift Timings & Calculation Rules (2 Cols) -->
+
+        <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
+
+          <div>
+
+            <h3 class="text-sm font-bold text-slate-900">Attendance Calculation Settings</h3>
+
+            <p class="text-xs text-slate-500">Configure office shifts, late arrival grace period, and auto-sync</p>
+
+          </div>
+
+
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            
+
+            <!-- Company Name -->
+
+            <div class="sm:col-span-2">
+
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Company Display Name</label>
+
+              <input type="text" id="setting-company-name" value="Centizen IT Services & Solutions" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+            </div>
+
+
+
+            <!-- Shift Start Time -->
+
+            <div>
+
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Standard Shift Start Time</label>
+
+              <input type="time" id="setting-shift-start" value="09:30" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+              <p class="text-[11px] text-slate-400 mt-0.5">e.g. 09:30 AM</p>
+
+            </div>
+
+
+
+            <!-- Shift End Time -->
+
+            <div>
+
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Standard Shift End Time</label>
+
+              <input type="time" id="setting-shift-end" value="18:30" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+              <p class="text-[11px] text-slate-400 mt-0.5">e.g. 06:30 PM</p>
+
+            </div>
+
+
+
+            <!-- Late Grace Period (Minutes) -->
+
+            <div>
+
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Late Grace Period (Minutes)</label>
+
+              <input type="number" id="setting-late-grace" value="15" min="0" max="60" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+              <p class="text-[11px] text-slate-400 mt-0.5">Punch after (09:30 + 15m) = 09:45 is marked Late</p>
+
+            </div>
+
+
+
+            <!-- Full Day Threshold Hours -->
+
+            <div>
+
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Day Minimum Working Hours</label>
+
+              <input type="number" step="0.5" id="setting-full-day-hours" value="8.0" min="4" max="12" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+              <p class="text-[11px] text-slate-400 mt-0.5">Standard 8.0 hours</p>
+
+            </div>
+
+
+
+            <!-- Half Day Threshold Hours -->
+
+            <div>
+
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Half Day Minimum Working Hours</label>
+
+              <input type="number" step="0.5" id="setting-half-day-hours" value="4.0" min="2" max="6" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+              <p class="text-[11px] text-slate-400 mt-0.5">Under 4 hours is marked Short / Half Day</p>
+
+            </div>
+
+
+
+            <!-- Auto-sync Interval -->
+
+            <div>
+
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Background Sync Interval</label>
+
+              <select id="setting-sync-interval" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+                <option value="5">Every 5 Minutes</option>
+
+                <option value="15" selected>Every 15 Minutes (Recommended)</option>
+
+                <option value="30">Every 30 Minutes</option>
+
+                <option value="60">Every 60 Minutes</option>
+
+              </select>
+
+            </div>
+
+
+
+          </div>
+
+
+
+          <div class="pt-4 border-t border-slate-100 flex justify-end">
+
+            <button onclick="saveSettings()" class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition">
+
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+
+              <span>Save Configuration</span>
+
+            </button>
+
+          </div>
+
+
+
+        </div>
+
+
+
+      </div>
+
+
+
+    </div>
+
+
 
     <!-- TAB 6: DATABASE & SCHEMA -->
+
     <div id="view-database" class="tab-view hidden space-y-6">
+
       
+
       <!-- Top Action & Connection Overview Card -->
+
       <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
         <div>
+
           <div class="flex items-center space-x-2.5">
+
             <h2 class="text-base font-bold text-slate-800">Database Connection & Default Schema</h2>
+
             <span id="db-status-pill" class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+
               CONNECTED
+
             </span>
+
           </div>
+
           <p id="db-server-subtitle" class="text-xs text-slate-500 mt-0.5">PostgreSQL Server: local essl &bull; Database: essl_att &bull; Schema: public</p>
+
         </div>
+
+
 
         <div class="flex flex-wrap items-center gap-2">
+
           <!-- Refresh Database Info -->
+
           <button type="button" onclick="refreshDatabaseView()" id="btn-refresh-db-view" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition" title="Refresh database schema tables, row counts, and connection health">
+
             <svg id="db-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+
             <span id="db-refresh-text">Refresh Data</span>
+
           </button>
+
+
 
           <!-- Check Active DB Connection -->
+
           <button type="button" onclick="checkActiveDbConnection()" id="btn-check-active-db" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-sm transition" title="Test active database connection and query latency">
+
             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+
             <span>Check Active DB</span>
+
           </button>
+
+
 
           <!-- Download Backup -->
+
           <a href="/api/database/download-backup" download class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+
             <span>Download Backup (.db)</span>
+
           </a>
 
+
+
           <!-- Reset Default Schema -->
+
           <button onclick="resetDefaultSchema()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Re-creates default tables and seed data">
+
             <svg class="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+
             <span>Verify / Seed Schema</span>
+
           </button>
+
         </div>
+
       </div>
+
+
 
       <!-- Quick Connect Box for local essl PostgreSQL -->
+
       <div class="bg-gradient-to-r from-blue-50/70 to-slate-50 p-5 rounded-xl border border-blue-200 shadow-sm space-y-4">
+
         <div class="flex items-center justify-between">
+
           <div class="flex items-center space-x-2.5">
+
             <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+
               🐘
+
             </div>
+
             <div>
+
               <h3 class="text-sm font-bold text-slate-900">PostgreSQL Connection: <span class="text-blue-700">"local essl"</span></h3>
+
               <p class="text-[11px] text-slate-500">Connect to pgAdmin server <strong>local essl</strong> &bull; Database: <strong>attendance</strong> or <strong>essl_att</strong> &bull; Default Schema: <strong>public</strong></p>
+
             </div>
+
           </div>
+
           <button type="button" onclick="refreshPortStatus()" id="pg-port-badge-btn" class="text-xs font-mono px-2.5 py-1 rounded-md font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition flex items-center gap-1.5 cursor-pointer" title="Click to test port status">
+
             <span id="pg-port-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+
             <span id="pg-port-text">Port 5432: Checking...</span>
+
           </button>
+
         </div>
+
+
 
         <!-- Live Active Status Banner for PostgreSQL -->
+
         <div id="pg-active-status-bar" class="p-3 rounded-lg border text-xs flex items-center justify-between transition-all bg-slate-100/70 border-slate-200">
+
           <div class="flex items-center space-x-2">
+
             <span id="pg-active-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+
             <span id="pg-active-msg" class="font-medium text-slate-700">Database Engine Status: Checking...</span>
+
           </div>
+
           <span id="pg-active-pill" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600">Checking</span>
+
         </div>
+
+
 
         <form id="form-pg-connect" onsubmit="connectPostgres(event)" class="space-y-4 text-xs">
+
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+
             <div>
+
               <label class="block font-semibold text-slate-700 mb-1">Host & Port</label>
+
               <input type="text" id="pg-host-port" value="127.0.0.1:5432" onchange="refreshPortStatus()" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="127.0.0.1:5432">
+
             </div>
 
+
+
             <div>
+
               <label class="block font-semibold text-slate-700 mb-1">Database Name</label>
+
               <div class="relative">
+
                 <input list="pg-dbname-options" id="pg-dbname-select" value="attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="attendance">
+
                 <datalist id="pg-dbname-options">
+
                   <option value="attendance">attendance</option>
+
                   <option value="essl_att">essl_att (Recommended)</option>
+
                   <option value="postgres">postgres (Default Maintenance)</option>
+
                 </datalist>
+
               </div>
+
             </div>
 
+
+
             <div>
+
               <label class="block font-semibold text-slate-700 mb-1">Schema</label>
+
               <div class="relative">
+
                 <input list="pg-schema-options" id="pg-schema-input" value="public" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="public">
+
                 <datalist id="pg-schema-options">
+
                   <option value="public">public (Default)</option>
+
                   <option value="attendance">attendance</option>
+
                   <option value="essl">essl</option>
+
                 </datalist>
+
               </div>
+
             </div>
 
+
+
             <div>
+
               <label class="block font-semibold text-slate-700 mb-1">Username</label>
+
               <input type="text" id="pg-user-input" value="postgres" required class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
             </div>
 
+
+
             <div>
+
               <label class="block font-semibold text-slate-700 mb-1">PostgreSQL Password</label>
+
               <div class="relative">
+
                 <input type="password" id="pg-pass-input" placeholder="Enter password..." class="w-full px-3 py-2 pr-9 rounded-lg border border-slate-300 font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
                 <button type="button" onclick="togglePgPasswordVisibility()" class="absolute inset-y-0 right-0 px-2.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none" title="Show/Hide Password">
+
                   <svg id="pg-pass-icon-eye" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+
                 </button>
+
               </div>
+
             </div>
+
           </div>
+
+
 
           <!-- Action Buttons Row with Check DB Option -->
+
           <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-blue-100">
+
             <div class="flex flex-wrap items-center gap-2.5">
+
               <!-- Check DB Connection Option (Primary requested feature) -->
+
               <button type="button" id="btn-pg-check" onclick="checkPostgresConnection()" class="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">
+
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
                 <span>Check DB Connection</span>
+
               </button>
+
+
 
               <!-- Connect to local essl -->
+
               <button type="submit" id="btn-pg-connect" class="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition">
+
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+
                 <span>Connect to local essl</span>
+
               </button>
+
+
 
               <!-- SQLite -->
+
               <button type="button" onclick="switchToDefaultSqlite()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-white text-slate-700 font-semibold text-xs transition whitespace-nowrap" title="Switch back to default local SQLite">
+
                 <span>SQLite</span>
+
               </button>
+
             </div>
+
+
 
             <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+
               <span class="inline-block w-2 h-2 rounded-full bg-blue-400"></span>
+
               <span>Test connection & credentials safely before switching</span>
+
             </div>
+
           </div>
+
         </form>
 
+
+
         <div id="pg-connect-feedback" class="hidden text-xs rounded-xl"></div>
+
       </div>
+
+
 
       <!-- Connection Details KPI Strip -->
+
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
         
+
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+
           <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Engine Dialect</span>
+
           <p id="db-stat-dialect" class="text-lg font-bold text-slate-900 mt-1">SQLITE (Default)</p>
+
           <span id="db-stat-dialect-sub" class="text-[11px] text-emerald-600 font-medium">Embedded Local Database</span>
+
         </div>
 
+
+
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+
           <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Database Size</span>
+
           <p id="db-stat-size" class="text-lg font-bold text-slate-900 mt-1">--</p>
+
           <span class="text-[11px] text-slate-500">File storage footprint</span>
+
         </div>
 
+
+
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+
           <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Schema Tables</span>
+
           <p id="db-stat-tables" class="text-lg font-bold text-slate-900 mt-1">4 Tables</p>
+
           <span class="text-[11px] text-slate-500">Core architecture entities</span>
+
         </div>
 
+
+
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+
           <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Records Synced</span>
+
           <p id="db-stat-records" class="text-lg font-bold text-brand-navy mt-1">--</p>
+
           <span class="text-[11px] text-slate-500">Across all 4 default tables</span>
+
         </div>
+
+
 
       </div>
+
+
 
       <!-- Active Database Connection Path Card -->
+
       <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
         <div>
+
           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Connection String / File Path</span>
+
           <p id="db-connection-path" class="font-mono text-slate-800 font-semibold break-all mt-0.5">sqlite:///attendance.db</p>
+
         </div>
+
         <div class="text-right">
+
           <span class="text-[11px] text-slate-400">Response Latency:</span>
+
           <span id="db-stat-latency" class="font-mono font-bold text-emerald-600 ml-1">0.3ms</span>
+
         </div>
+
       </div>
+
+
 
       <!-- Schema Tables Explorer -->
+
       <div class="space-y-4">
+
         <div class="flex items-center justify-between">
+
           <h3 class="text-sm font-bold text-slate-900">Default Schema Tables & Attributes</h3>
+
           <span class="text-xs text-slate-500">Click "Preview Records" to inspect live table data</span>
+
         </div>
+
+
 
         <div id="db-tables-container" class="space-y-4">
+
           <!-- Dynamically populated schema tables -->
+
         </div>
+
       </div>
 
+
+
     </div>
+
+
 
   </main>
 
+
+
   <!-- FOOTER -->
+
   <footer class="bg-white border-t border-slate-200 py-3 mt-auto">
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
+
       <p>&copy; Centizen IT Services & Solutions &bull; Biometric Attendance Portal</p>
+
       <div class="flex items-center space-x-4">
+
         <span>Integrated Devices: <strong>4 eSSL Units</strong></span>
+
         <span>Office Portal: <strong class="text-brand-navy font-semibold">Office LAN Portal</strong></span>
+
       </div>
+
     </div>
+
   </footer>
+
+
 
   </div> <!-- /RIGHT MAIN CONTENT WRAPPER -->
 
+
+
   <!-- MODAL 1: IN/OUT DRILLDOWN & INTERMEDIATE PUNCHES TIMELINE -->
+
   <div id="modal-punches" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-fadeIn">
+
       
+
       <!-- Modal Header -->
+
       <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
+
         <div>
+
           <h3 id="modal-punches-emp-name" class="font-bold text-sm">Employee Name</h3>
+
           <p id="modal-punches-subtitle" class="text-xs text-blue-100 mt-0.5">Emp ID: -- &bull; Date: --</p>
+
         </div>
+
         <button onclick="closeModal('modal-punches')" class="text-white/80 hover:text-white p-1 rounded-lg">
+
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+
         </button>
+
       </div>
+
+
 
       <!-- Summary metrics badge -->
+
       <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex items-center justify-between text-xs">
+
         <div>
+
           <span class="text-slate-500">Total Punches:</span>
+
           <strong id="modal-punches-total-count" class="text-slate-800 ml-1">0</strong>
+
         </div>
+
         <div class="text-[11px] text-slate-400">
+
           eSSL Port 4370 Biometric Record
+
         </div>
+
       </div>
+
+
 
       <!-- Modal Body: Interactive Timeline of Punches -->
+
       <div class="p-6 overflow-y-auto space-y-4 flex-1">
+
         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Punch Sequence Timeline</h4>
+
         <div id="modal-punches-timeline" class="space-y-4 relative border-l-2 border-slate-200 ml-4 pl-5">
+
           <!-- Dynamically populated punches -->
+
         </div>
+
       </div>
+
+
 
       <!-- Modal Footer -->
+
       <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
+
         <button onclick="closeModal('modal-punches')" class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition">
+
           Close
+
         </button>
+
       </div>
+
+
 
     </div>
+
   </div>
 
+
+
   <!-- MODAL 2: ADD / EDIT EMPLOYEE -->
+
   <div id="modal-employee" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+
       
+
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+
         <h3 id="modal-employee-title" class="font-bold text-sm">Add New Employee</h3>
+
         <button onclick="closeModal('modal-employee')" class="text-white/80 hover:text-white p-1">
+
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+
         </button>
+
       </div>
 
+
+
       <form id="employee-form" onsubmit="submitEmployeeForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+
         <input type="hidden" id="emp-form-mode" value="ADD">
 
+
+
         <div class="grid grid-cols-2 gap-3">
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Employee ID / Code *</label>
+
             <input type="text" id="emp-form-code" required placeholder="e.g. 1001" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Full Name *</label>
+
             <input type="text" id="emp-form-name" required placeholder="e.g. Rajesh Kumar" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
         </div>
 
+
+
         <div class="grid grid-cols-2 gap-3">
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Department</label>
+
             <input type="text" id="emp-form-dept" placeholder="e.g. Engineering" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Designation</label>
+
             <input type="text" id="emp-form-desig" placeholder="e.g. Senior Software Dev" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
         </div>
 
+
+
         <div class="grid grid-cols-2 gap-3">
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Email</label>
+
             <input type="email" id="emp-form-email" placeholder="name@centizen.com" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Phone</label>
+
             <input type="text" id="emp-form-phone" placeholder="9876543210" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
         </div>
 
+
+
         <div>
+
           <label class="block font-semibold text-slate-700 mb-1">Assigned Shift *</label>
+
           <select id="emp-form-shift-select" onchange="onEmpShiftSelectChange(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
             <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
+
             <option value="SHIFT_9_6" selected>Standard Shift (09:00 AM - 06:00 PM)</option>
+
             <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
+
             <option value="SHIFT_WFH">Work From Home (WFH) - Remote (09:30 AM - 06:30 PM)</option>
+
           </select>
+
         </div>
+
+
 
         <div class="grid grid-cols-2 gap-3">
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Shift Start Time</label>
+
             <input type="time" id="emp-form-shift-start" value="09:00" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
           <div>
+
             <label class="block font-semibold text-slate-700 mb-1">Shift End Time</label>
+
             <input type="time" id="emp-form-shift-end" value="18:00" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
           </div>
+
         </div>
 
+
+
         <div>
+
           <label class="block font-semibold text-slate-700 mb-1">RFID / Card Number (Optional)</label>
+
           <input type="text" id="emp-form-card" placeholder="e.g. 00054321" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
         </div>
+
+
 
         <div class="pt-4 border-t border-slate-200 flex justify-end space-x-2">
+
           <button type="button" onclick="closeModal('modal-employee')" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
+
           <button type="submit" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Save Employee</button>
+
         </div>
+
+      </form>
+
+
+
+    </div>
+
+  </div>
+
+
+
+  <!-- MODAL 3: TABLE DATA PREVIEW -->
+
+  <div id="modal-table-data" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-4xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-fadeIn">
+
+      
+
+      <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
+
+        <div>
+
+          <h3 id="modal-table-title" class="font-bold text-sm">Table Data Preview</h3>
+
+          <p id="modal-table-subtitle" class="text-xs text-blue-100 mt-0.5">Showing latest records from schema</p>
+
+        </div>
+
+        <button onclick="closeModal('modal-table-data')" class="text-white/80 hover:text-white p-1 rounded-lg">
+
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+
+        </button>
+
+      </div>
+
+
+
+      <div class="p-4 overflow-auto flex-1">
+
+        <table id="modal-preview-table" class="min-w-full divide-y divide-slate-200 text-xs">
+
+          <thead id="modal-preview-thead" class="bg-slate-50 text-slate-700 font-semibold sticky top-0"></thead>
+
+          <tbody id="modal-preview-tbody" class="divide-y divide-slate-100 bg-white"></tbody>
+
+        </table>
+
+      </div>
+
+
+
+      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+
+        <span id="modal-table-row-count" class="text-slate-500">Rows loaded: 0</span>
+
+        <button onclick="closeModal('modal-table-data')" class="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold">
+
+          Close Preview
+
+        </button>
+
+      </div>
+
+
+
+    </div>
+
+  </div>
+
+
+
+  <!-- MODAL 4: ADD / EDIT SHIFT -->
+
+  <div id="modal-shift" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
+
+      
+
+      <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
+
+        <h3 id="modal-shift-title" class="font-bold text-sm">Add New Shift</h3>
+
+        <button onclick="closeModal('modal-shift')" class="text-white/80 hover:text-white p-1">
+
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+
+        </button>
+
+      </div>
+
+
+
+      <form id="shift-form" onsubmit="submitShiftForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+
+        <input type="hidden" id="shift-form-id" value="">
+
+
+
+        <div>
+
+          <label class="block font-semibold text-slate-700 mb-1">Shift Name *</label>
+
+          <input type="text" id="shift-form-name" required placeholder="e.g. General Shift (09:00 AM - 07:00 PM)" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+        </div>
+
+
+
+        <div>
+
+          <label class="block font-semibold text-slate-700 mb-1">Shift Code *</label>
+
+          <input type="text" id="shift-form-code" required placeholder="e.g. SHIFT_9_7" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy uppercase">
+
+        </div>
+
+
+
+        <div class="grid grid-cols-2 gap-3">
+
+          <div>
+
+            <label class="block font-semibold text-slate-700 mb-1">Start Time (HH:MM) *</label>
+
+            <input type="time" id="shift-form-start" value="09:00" required class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+          </div>
+
+          <div>
+
+            <label class="block font-semibold text-slate-700 mb-1">End Time (HH:MM) *</label>
+
+            <input type="time" id="shift-form-end" value="19:00" required class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+          </div>
+
+        </div>
+
+
+
+        <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
+
+          <label class="inline-flex items-center space-x-2 cursor-pointer">
+
+            <input type="checkbox" id="shift-form-is-night" class="rounded text-brand-navy w-4 h-4">
+
+            <span class="font-semibold text-slate-800">Night Shift (Crosses Midnight into Next Day)</span>
+
+          </label>
+
+          <p class="text-[11px] text-slate-500">Enable this for overnight shifts such as <strong>09:00 PM to Next Day 06:00 AM</strong> so punches are accurately calculated across both dates.</p>
+
+        </div>
+
+
+
+        <div>
+
+          <label class="block font-semibold text-slate-700 mb-1">Description (Optional)</label>
+
+          <input type="text" id="shift-form-desc" placeholder="e.g. 10-hour standard daytime shift" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+        </div>
+
+
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
+
+          <button type="button" onclick="closeModal('modal-shift')" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
+
+          <button type="submit" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Save Shift</button>
+
+        </div>
+
+      </form>
+
+
+
+    </div>
+
+  </div>
+
+
+
+  <!-- MODAL 5: CONFIGURE / SWITCH DATABASE CONNECTION -->
+
+  <div id="modal-db-config" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+
+      
+
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+
+        <h3 class="font-bold text-sm">Configure Database Connection</h3>
+
+        <button onclick="closeModal('modal-db-config')" class="text-white/80 hover:text-white p-1">
+
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+
+        </button>
+
+      </div>
+
+
+
+      <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+
+        <div>
+
+          <label class="block font-semibold text-slate-700 mb-1">Preset Engine / Dialect</label>
+
+          <select id="db-preset-select" onchange="applyDbPreset(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+            <option value="sqlite_default">SQLite (Default Embedded Schema: sqlite:///attendance.db)</option>
+
+            <option value="postgresql">PostgreSQL (Server Connection)</option>
+
+            <option value="mysql">MySQL (Server Connection)</option>
+
+            <option value="custom">Custom SQLAlchemy URI</option>
+
+          </select>
+
+        </div>
+
+
+
+        <div>
+
+          <label class="block font-semibold text-slate-700 mb-1">SQLAlchemy Connection URI *</label>
+
+          <textarea id="db-connection-input" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="sqlite:///attendance.db"></textarea>
+
+          <p class="text-[11px] text-slate-400 mt-1">Default local embedded database is <code class="bg-slate-100 px-1 py-0.5 rounded">sqlite:///attendance.db</code></p>
+
+        </div>
+
+
+
+        <!-- Connection Test Result Banner -->
+
+        <div id="db-test-result" class="hidden p-3 rounded-lg text-xs"></div>
+
+
+
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
+
+          <button type="button" onclick="testCustomDbConnection()" class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center space-x-1.5 transition">
+
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+
+            <span>Test Connection</span>
+
+          </button>
+
+
+
+          <div class="flex items-center space-x-2">
+
+            <button type="button" onclick="closeModal('modal-db-config')" class="px-3.5 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
+
+            <button type="button" onclick="saveDbPreset()" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Apply & Close</button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+    </div>
+
+  </div>
+
+
+
+  <!-- MODAL 6: EDIT BIOMETRIC DEVICE -->
+
+  <div id="modal-device-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
+
+      <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
+
+        <h3 class="font-bold text-sm">Edit Biometric Device</h3>
+
+        <button onclick="closeModal('modal-device-edit')" class="text-white/80 hover:text-white p-1">
+
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+
+        </button>
+
+      </div>
+
+
+
+      <form id="device-edit-form" onsubmit="submitDeviceEditForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+
+        <input type="hidden" id="device-edit-id" value="">
+
+
+
+        <div>
+
+          <label class="block font-semibold text-slate-700 mb-1">Device Name *</label>
+
+          <input type="text" id="device-edit-name" required placeholder="e.g. Device 4 - Door 1 (eSSL F18 + F12)" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+        </div>
+
+
+
+        <div class="grid grid-cols-2 gap-3">
+
+          <div>
+
+            <label class="block font-semibold text-slate-700 mb-1">IP Address *</label>
+
+            <input type="text" id="device-edit-ip" required class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+          </div>
+
+          <div>
+
+            <label class="block font-semibold text-slate-700 mb-1">Port</label>
+
+            <input type="number" id="device-edit-port" value="4370" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+          </div>
+
+        </div>
+
+
+
+        <div class="grid grid-cols-2 gap-3">
+
+          <div>
+
+            <label class="block font-semibold text-slate-700 mb-1">Device Model</label>
+
+            <input type="text" id="device-edit-model" value="eSSL F18 + F12" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+
+          </div>
+
+          <div>
+
+            <label class="block font-semibold text-slate-700 mb-1">Punch Type</label>
+
+            <select id="device-edit-type" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+
+              <option value="BOTH">BOTH (IN + OUT)</option>
+
+              <option value="IN">IN Only</option>
+
+              <option value="OUT">OUT Only</option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
+
+          <button type="button" onclick="closeModal('modal-device-edit')" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
+
+          <button type="submit" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Save Changes</button>
+
+        </div>
+
       </form>
 
     </div>
+
   </div>
 
-  <!-- MODAL 3: TABLE DATA PREVIEW -->
-  <div id="modal-table-data" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-4xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-fadeIn">
-      
-      <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
+
+
+    <!-- MODAL: EMPLOYEE PERMISSION DRILLDOWN -->
+  <div id="modal-permission-drilldown" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
         <div>
-          <h3 id="modal-table-title" class="font-bold text-sm">Table Data Preview</h3>
-          <p id="modal-table-subtitle" class="text-xs text-blue-100 mt-0.5">Showing latest records from schema</p>
+          <h3 id="drilldown-modal-title" class="text-base font-bold text-slate-800">Employee Permission Drilldown</h3>
+          <p id="drilldown-modal-sub" class="text-xs text-slate-500 mt-0.5">Day-by-day punch timings and permission quota deductions</p>
         </div>
-        <button onclick="closeModal('modal-table-data')" class="text-white/80 hover:text-white p-1 rounded-lg">
+        <button type="button" onclick="closeModal('modal-permission-drilldown')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-      <div class="p-4 overflow-auto flex-1">
-        <table id="modal-preview-table" class="min-w-full divide-y divide-slate-200 text-xs">
-          <thead id="modal-preview-thead" class="bg-slate-50 text-slate-700 font-semibold sticky top-0"></thead>
-          <tbody id="modal-preview-tbody" class="divide-y divide-slate-100 bg-white"></tbody>
+      <!-- Quick Metrics Bar inside Modal -->
+      <div id="drilldown-modal-metrics" class="p-4 bg-slate-50/50 border-b border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <!-- Dynamically rendered -->
+      </div>
+
+      <div class="p-4 overflow-y-auto max-h-[55vh]">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700">
+            <tr>
+              <th class="px-3 py-2 text-center font-bold">Date</th>
+              <th class="px-3 py-2 text-center font-bold">First IN</th>
+              <th class="px-3 py-2 text-center font-bold">Last OUT</th>
+              <th class="px-3 py-2 text-center font-bold">Morning Late (> 09:05)</th>
+              <th class="px-3 py-2 text-center font-bold">Evening Early (< 07:00)</th>
+              <th class="px-3 py-2 text-center font-bold">Midday Out</th>
+              <th class="px-3 py-2 text-center font-bold">Deducted</th>
+              <th class="px-3 py-2 text-left font-bold">Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="drilldown-modal-tbody" class="divide-y divide-slate-100 bg-white">
+            <!-- Dynamically populated -->
+          </tbody>
         </table>
       </div>
 
-      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
-        <span id="modal-table-row-count" class="text-slate-500">Rows loaded: 0</span>
-        <button onclick="closeModal('modal-table-data')" class="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold">
-          Close Preview
-        </button>
+      <div class="p-3 border-t border-slate-200 flex justify-end bg-slate-50">
+        <button type="button" onclick="closeModal('modal-permission-drilldown')" class="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">Close</button>
       </div>
-
-    </div>
-  </div>
-
-  <!-- MODAL 4: ADD / EDIT SHIFT -->
-  <div id="modal-shift" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
-      
-      <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
-        <h3 id="modal-shift-title" class="font-bold text-sm">Add New Shift</h3>
-        <button onclick="closeModal('modal-shift')" class="text-white/80 hover:text-white p-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
-
-      <form id="shift-form" onsubmit="submitShiftForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-        <input type="hidden" id="shift-form-id" value="">
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Shift Name *</label>
-          <input type="text" id="shift-form-name" required placeholder="e.g. General Shift (09:00 AM - 07:00 PM)" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-        </div>
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Shift Code *</label>
-          <input type="text" id="shift-form-code" required placeholder="e.g. SHIFT_9_7" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy uppercase">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Start Time (HH:MM) *</label>
-            <input type="time" id="shift-form-start" value="09:00" required class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">End Time (HH:MM) *</label>
-            <input type="time" id="shift-form-end" value="19:00" required class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-          </div>
-        </div>
-
-        <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
-          <label class="inline-flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" id="shift-form-is-night" class="rounded text-brand-navy w-4 h-4">
-            <span class="font-semibold text-slate-800">Night Shift (Crosses Midnight into Next Day)</span>
-          </label>
-          <p class="text-[11px] text-slate-500">Enable this for overnight shifts such as <strong>09:00 PM to Next Day 06:00 AM</strong> so punches are accurately calculated across both dates.</p>
-        </div>
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Description (Optional)</label>
-          <input type="text" id="shift-form-desc" placeholder="e.g. 10-hour standard daytime shift" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-        </div>
-
-        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
-          <button type="button" onclick="closeModal('modal-shift')" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Save Shift</button>
-        </div>
-      </form>
-
-    </div>
-  </div>
-
-  <!-- MODAL 5: CONFIGURE / SWITCH DATABASE CONNECTION -->
-  <div id="modal-db-config" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
-      
-      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
-        <h3 class="font-bold text-sm">Configure Database Connection</h3>
-        <button onclick="closeModal('modal-db-config')" class="text-white/80 hover:text-white p-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
-
-      <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Preset Engine / Dialect</label>
-          <select id="db-preset-select" onchange="applyDbPreset(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-            <option value="sqlite_default">SQLite (Default Embedded Schema: sqlite:///attendance.db)</option>
-            <option value="postgresql">PostgreSQL (Server Connection)</option>
-            <option value="mysql">MySQL (Server Connection)</option>
-            <option value="custom">Custom SQLAlchemy URI</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">SQLAlchemy Connection URI *</label>
-          <textarea id="db-connection-input" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="sqlite:///attendance.db"></textarea>
-          <p class="text-[11px] text-slate-400 mt-1">Default local embedded database is <code class="bg-slate-100 px-1 py-0.5 rounded">sqlite:///attendance.db</code></p>
-        </div>
-
-        <!-- Connection Test Result Banner -->
-        <div id="db-test-result" class="hidden p-3 rounded-lg text-xs"></div>
-
-        <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
-          <button type="button" onclick="testCustomDbConnection()" class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center space-x-1.5 transition">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span>Test Connection</span>
-          </button>
-
-          <div class="flex items-center space-x-2">
-            <button type="button" onclick="closeModal('modal-db-config')" class="px-3.5 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
-            <button type="button" onclick="saveDbPreset()" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Apply & Close</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MODAL 6: EDIT BIOMETRIC DEVICE -->
-  <div id="modal-device-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="px-6 py-4 bg-brand-navy text-white flex items-center justify-between">
-        <h3 class="font-bold text-sm">Edit Biometric Device</h3>
-        <button onclick="closeModal('modal-device-edit')" class="text-white/80 hover:text-white p-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
-
-      <form id="device-edit-form" onsubmit="submitDeviceEditForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-        <input type="hidden" id="device-edit-id" value="">
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Device Name *</label>
-          <input type="text" id="device-edit-name" required placeholder="e.g. Device 4 - Door 1 (eSSL F18 + F12)" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-brand-navy">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">IP Address *</label>
-            <input type="text" id="device-edit-ip" required class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Port</label>
-            <input type="number" id="device-edit-port" value="4370" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-brand-navy">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Device Model</label>
-            <input type="text" id="device-edit-model" value="eSSL F18 + F12" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Punch Type</label>
-            <select id="device-edit-type" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-              <option value="BOTH">BOTH (IN + OUT)</option>
-              <option value="IN">IN Only</option>
-              <option value="OUT">OUT Only</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="pt-3 border-t border-slate-200 flex justify-end space-x-2">
-          <button type="button" onclick="closeModal('modal-device-edit')" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navyHover text-white font-semibold">Save Changes</button>
-        </div>
-      </form>
     </div>
   </div>
 
   <!-- TOAST NOTIFICATIONS CONTAINER -->
+
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
+
+
   <!-- JavaScript -->
-  <script src="/static/js/app.js?v=2.4"></script>
+
+  <script src="/static/js/app.js?v=3.8"></script>
+
 </body>
+
 </html>
+

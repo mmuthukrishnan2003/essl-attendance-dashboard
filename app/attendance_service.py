@@ -1,4 +1,5 @@
 import io
+from collections import defaultdict
 from datetime import datetime, date, timedelta, time
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
@@ -44,6 +45,18 @@ def format_duration(seconds: float) -> Dict[str, Any]:
         "hours": decimal_hours,
         "total_seconds": total_seconds
     }
+
+
+def format_ot_duration(seconds: int) -> str:
+    """Formats overtime seconds into human readable text (e.g. 1h 30m, 45m, or --). Threshold: >= 60s."""
+    if not seconds or seconds < 60:
+        return "--"
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    if h > 0:
+        return f"{h}h {m:02d}m" if m > 0 else f"{h}h 00m"
+    return f"{m}m"
+
 
 
 def process_punches_sequence(
@@ -222,7 +235,7 @@ def calculate_daily_attendance_for_date(
             (Employee.emp_code.ilike(search_pattern)) |
             (Employee.name.ilike(search_pattern))
         )
-    employees = emp_query.order_by(Employee.emp_code.asc()).all()
+    employees = emp_query.order_by(func.lower(Employee.name).asc(), Employee.emp_code.asc()).all()
 
     # Map device IPs to friendly names
     devices = {d.ip_address: d.device_name for d in db.query(Device).all()}
@@ -313,6 +326,74 @@ def calculate_daily_attendance_for_date(
             last_out_device = processed["last_out_device"]
             duration = processed["duration"]
 
+        # Overtime Calculation (Office Hours: 09:00 AM to 07:00 PM / 19:00)
+        # Morning OT & Evening OT Calculation (Office Hours: 09:00 AM to 07:00 PM)
+        office_start_t = time(9, 0, 0)
+        office_late_grace_t = time(9, 5, 0) # Late punch cutoff: after 09:05 AM based on shift
+        office_end_t = time(19, 0, 0)
+        morning_ot_sec = 0
+        evening_ot_sec = 0
+
+        # Late punch detection: First IN after 09:05 AM
+        is_late_punch = False
+        late_punch_mins = 0
+        late_punch_text = "On Time"
+
+        if first_in_time and first_in_time not in ("--", "🏠 WFH"):
+            try:
+                fit_t = datetime.strptime(first_in_time, "%H:%M:%S").time()
+                if fit_t > office_late_grace_t:
+                    is_late_punch = True
+                    sec_late = int((datetime.combine(target_date, fit_t) - datetime.combine(target_date, office_late_grace_t)).total_seconds())
+                    late_punch_mins = sec_late // 60
+                    late_punch_text = f"Late by {late_punch_mins}m" if late_punch_mins > 0 else "Late"
+            except Exception:
+                pass
+
+        # Early exit detection: Last OUT before 07:00 PM
+        is_early_out = False
+        early_out_mins = 0
+        if last_out_time and last_out_time not in ("--", "🏠 WFH", "In Office"):
+            try:
+                lot_t = datetime.strptime(last_out_time, "%H:%M:%S").time()
+                if lot_t < office_end_t:
+                    is_early_out = True
+                    sec_early = int((datetime.combine(target_date, office_end_t) - datetime.combine(target_date, lot_t)).total_seconds())
+                    early_out_mins = sec_early // 60
+            except Exception:
+                pass
+
+        if first_in_time and first_in_time not in ("--", "🏠 WFH"):
+            try:
+                fit_t = datetime.strptime(first_in_time, "%H:%M:%S").time()
+                if fit_t < office_start_t:
+                    sec = int((datetime.combine(target_date, office_start_t) - datetime.combine(target_date, fit_t)).total_seconds())
+                    if sec >= 60:
+                        morning_ot_sec = sec
+            except Exception:
+                pass
+
+        if last_out_time and last_out_time not in ("--", "🏠 WFH"):
+            try:
+                lot_t = datetime.strptime(last_out_time, "%H:%M:%S").time()
+                if lot_t > office_end_t:
+                    sec = int((datetime.combine(target_date, lot_t) - datetime.combine(target_date, office_end_t)).total_seconds())
+                    if sec >= 60:
+                        evening_ot_sec = sec
+            except Exception:
+                pass
+        elif processed.get("items") and len(processed["items"]) > 0:
+            try:
+                latest_p_t = datetime.strptime(processed["items"][-1]["time"], "%H:%M:%S").time()
+                if latest_p_t > office_end_t:
+                    sec = int((datetime.combine(target_date, latest_p_t) - datetime.combine(target_date, office_end_t)).total_seconds())
+                    if sec >= 60:
+                        evening_ot_sec = sec
+            except Exception:
+                pass
+
+        total_ot_sec = morning_ot_sec + evening_ot_sec
+
         record = {
             "date": target_date.strftime("%Y-%m-%d"),
             "emp_id": emp.id,
@@ -337,6 +418,18 @@ def calculate_daily_attendance_for_date(
             "intermediate_punches": processed["intermediate_punches"],
             "intermediate_count": processed["intermediate_count"],
             "duration": duration,
+            "is_late": is_late_punch,
+            "late_mins": late_punch_mins,
+            "late_text": late_punch_text,
+            "is_early_out": is_early_out,
+            "early_out_mins": early_out_mins,
+            "morning_ot": format_ot_duration(morning_ot_sec),
+            "morning_ot_seconds": morning_ot_sec,
+            "evening_ot": format_ot_duration(evening_ot_sec),
+            "evening_ot_seconds": evening_ot_sec,
+            "total_ot": format_ot_duration(total_ot_sec),
+            "total_ot_seconds": total_ot_sec,
+            "has_overtime": total_ot_sec > 0,
         }
 
         records.append(record)
@@ -348,6 +441,10 @@ def calculate_daily_attendance_for_date(
     effective_out_count = max(1, total_punched_out + wfh_remote_count)
     avg_hours = round((total_seconds_worked / 3600.0) / effective_out_count, 1)
 
+    tot_m_ot_sec = sum(r["morning_ot_seconds"] for r in records)
+    tot_e_ot_sec = sum(r["evening_ot_seconds"] for r in records)
+    tot_ot_sec = tot_m_ot_sec + tot_e_ot_sec
+
     return {
         "date": target_date.strftime("%Y-%m-%d"),
         "total_employees": total_employees,
@@ -356,8 +453,15 @@ def calculate_daily_attendance_for_date(
         "wfh_count": total_wfh_count,
         "present_count": total_present,
         "absent_count": absent_count,
-        "late_count": 0,
+        "late_count": sum(1 for r in records if r.get("is_late")),
         "avg_working_hours": f"{int(avg_hours)}h {int((avg_hours % 1) * 60):02d}m",
+        "overtime_employees_count": sum(1 for r in records if r["has_overtime"]),
+        "total_morning_ot_seconds": tot_m_ot_sec,
+        "total_morning_ot_text": format_ot_duration(tot_m_ot_sec) if tot_m_ot_sec > 0 else "0h 00m",
+        "total_evening_ot_seconds": tot_e_ot_sec,
+        "total_evening_ot_text": format_ot_duration(tot_e_ot_sec) if tot_e_ot_sec > 0 else "0h 00m",
+        "total_ot_seconds": tot_ot_sec,
+        "total_ot_text": format_ot_duration(tot_ot_sec) if tot_ot_sec > 0 else "0h 00m",
         "records": records
     }
 
@@ -523,3 +627,148 @@ def generate_excel_report(start_date: date, end_date: date, db: Session, departm
     wb.save(output)
     output.seek(0)
     return output
+
+
+def calculate_daily_overtime_summary(
+    target_date: date,
+    db: Session,
+    office_start: time = time(9, 0, 0),
+    office_end: time = time(19, 0, 0)
+) -> Dict[str, Any]:
+    """
+    Computes daily Overtime summary according to the user's business rule:
+    - Office standard time starts at 09:00 AM and ends at 07:00 PM (19:00).
+    - Morning OT (🌅 Before 9:00 AM): 09:00 AM - First IN.
+    - Evening OT (🌙 After 7:00 PM): Last OUT - 07:00 PM (19:00).
+    - Total OT: Morning OT + Evening OT.
+    Returns aggregated metrics and employee breakdown sorted descending by Total OT.
+    """
+    start_dt = datetime.combine(target_date, time(0, 0, 0))
+    end_dt = datetime.combine(target_date, time(23, 59, 59))
+
+    employees = {e.emp_code: e for e in db.query(Employee).filter(Employee.is_active == True).all()}
+    devices_map = {d.ip_address: d.device_name for d in db.query(Device).all()}
+
+    punches = db.query(AttendancePunch).filter(
+        AttendancePunch.timestamp >= start_dt,
+        AttendancePunch.timestamp <= end_dt
+    ).order_by(AttendancePunch.timestamp.asc()).all()
+
+    emp_punches = defaultdict(list)
+    for p in punches:
+        emp_punches[p.emp_code].append(p)
+
+    ot_records = []
+    total_morning_ot_sec = 0
+    total_evening_ot_sec = 0
+
+    for emp_code, p_list in emp_punches.items():
+        # Deduplicate scans within 45 seconds
+        valid = []
+        for p in p_list:
+            if not valid or (p.timestamp - valid[-1].timestamp).total_seconds() >= 45:
+                valid.append(p)
+        if not valid:
+            continue
+
+        first_in = valid[0].timestamp
+
+        # Determine last out
+        if len(valid) >= 2:
+            last_out = valid[-1].timestamp
+        elif len(valid) == 1 and valid[0].timestamp.time() > office_end:
+            last_out = valid[0].timestamp
+        else:
+            last_out = None
+
+        morning_ot_sec = 0
+        if first_in.time() < office_start:
+            sec = int((datetime.combine(target_date, office_start) - first_in).total_seconds())
+            if sec >= 60:
+                morning_ot_sec = sec
+
+        evening_ot_sec = 0
+        if last_out and last_out.time() > office_end:
+            sec = int((last_out - datetime.combine(target_date, office_end)).total_seconds())
+            if sec >= 60:
+                evening_ot_sec = sec
+
+        total_ot_sec = morning_ot_sec + evening_ot_sec
+
+        if total_ot_sec >= 60:
+            total_morning_ot_sec += morning_ot_sec
+            total_evening_ot_sec += evening_ot_sec
+            emp = employees.get(emp_code)
+            emp_name = emp.name if emp else f"Emp {emp_code}"
+            dept = emp.department if emp else "General"
+
+            ot_records.append({
+                "emp_code": emp_code,
+                "name": emp_name,
+                "department": dept,
+                "first_in": first_in.strftime("%H:%M:%S"),
+                "first_in_device": devices_map.get(valid[0].device_ip, valid[0].device_ip),
+                "last_out": last_out.strftime("%H:%M:%S") if last_out else "--",
+                "last_out_device": devices_map.get(valid[-1].device_ip, valid[-1].device_ip) if last_out else "--",
+                "morning_ot_seconds": morning_ot_sec,
+                "morning_ot_text": f"+{format_ot_duration(morning_ot_sec)}" if morning_ot_sec > 0 else "--",
+                "morning_ot_hours": round(morning_ot_sec / 3600.0, 2),
+                "evening_ot_seconds": evening_ot_sec,
+                "evening_ot_text": f"+{format_ot_duration(evening_ot_sec)}" if evening_ot_sec > 0 else "--",
+                "evening_ot_hours": round(evening_ot_sec / 3600.0, 2),
+                "total_ot_seconds": total_ot_sec,
+                "total_ot_text": format_ot_duration(total_ot_sec),
+                "total_ot_hours": round(total_ot_sec / 3600.0, 2),
+            })
+
+    # Sort descending by total overtime seconds, then emp name
+    ot_records.sort(key=lambda x: (-x["total_ot_seconds"], x["name"].lower()))
+    total_ot_sec = total_morning_ot_sec + total_evening_ot_sec
+
+    return {
+        "date": target_date.strftime("%Y-%m-%d"),
+        "date_formatted": target_date.strftime("%A, %d %B %Y"),
+        "office_start": "09:00 AM",
+        "office_end": "07:00 PM",
+        "total_employees_with_ot": len(ot_records),
+        "total_morning_ot_seconds": total_morning_ot_sec,
+        "total_morning_ot_text": format_ot_duration(total_morning_ot_sec) if total_morning_ot_sec > 0 else "0h 00m",
+        "total_morning_ot_hours": round(total_morning_ot_sec / 3600.0, 2),
+        "total_evening_ot_seconds": total_evening_ot_sec,
+        "total_evening_ot_text": format_ot_duration(total_evening_ot_sec) if total_evening_ot_sec > 0 else "0h 00m",
+        "total_evening_ot_hours": round(total_evening_ot_sec / 3600.0, 2),
+        "total_ot_seconds": total_ot_sec,
+        "total_ot_text": format_ot_duration(total_ot_sec) if total_ot_sec > 0 else "0h 00m",
+        "total_ot_hours": round(total_ot_sec / 3600.0, 2),
+        "employees": ot_records
+    }
+
+
+def calculate_weekly_overtime_trend(
+    end_date: date,
+    db: Session,
+    days: int = 7
+) -> List[Dict[str, Any]]:
+    """
+    Computes overtime metrics for the last N days (excluding Sundays) for the weekly overtime chart.
+    """
+    trend = []
+    for day_offset in range(days - 1, -1, -1):
+        cur_date = end_date - timedelta(days=day_offset)
+        if cur_date.weekday() == 6:  # Skip Sunday
+            continue
+        ot_summary = calculate_daily_overtime_summary(cur_date, db)
+        trend.append({
+            "date": cur_date.strftime("%d %b"),
+            "full_date": cur_date.strftime("%Y-%m-%d"),
+            "day": cur_date.strftime("%a"),
+            "morning_ot_hours": ot_summary["total_morning_ot_hours"],
+            "evening_ot_hours": ot_summary["total_evening_ot_hours"],
+            "total_ot_hours": ot_summary["total_ot_hours"],
+            "employees_count": ot_summary["total_employees_with_ot"],
+            "morning_ot_text": ot_summary["total_morning_ot_text"],
+            "evening_ot_text": ot_summary["total_evening_ot_text"],
+            "total_ot_text": ot_summary["total_ot_text"]
+        })
+    return trend
+

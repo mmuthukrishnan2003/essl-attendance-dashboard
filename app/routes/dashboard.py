@@ -5,7 +5,10 @@ from sqlalchemy import desc
 
 from app.database import get_db
 from app.models import Employee, Device, AttendancePunch
-from app.attendance_service import calculate_daily_attendance_for_date
+from app.attendance_service import (
+    calculate_daily_attendance_for_date,
+    calculate_daily_overtime_summary
+)
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -46,7 +49,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
             "punch_type": "OUT" if p.punch_type == 1 else "IN",
         })
 
-    # Attendance trend for past 7 days (for chart)
+    # Attendance & Overtime trend for past 7 days (for chart)
     trend = []
     for day_offset in range(6, -1, -1):
         day_date = today - timedelta(days=day_offset)
@@ -59,11 +62,22 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         absent_cnt = day_data.get("absent_count", max(0, total_cnt - present_cnt))
         trend.append({
             "date": day_date.strftime("%d %b"),
+            "full_date": day_date.strftime("%Y-%m-%d"),
             "day": day_date.strftime("%a"),
             "present": present_cnt,
             "absent": absent_cnt,
-            "late": day_data.get("late_count", 0)
+            "late": day_data.get("late_count", 0),
+            "morning_ot_hours": round(day_data.get("total_morning_ot_seconds", 0) / 3600.0, 2),
+            "evening_ot_hours": round(day_data.get("total_evening_ot_seconds", 0) / 3600.0, 2),
+            "total_ot_hours": round(day_data.get("total_ot_seconds", 0) / 3600.0, 2),
+            "morning_ot_text": day_data.get("total_morning_ot_text", "0h 00m"),
+            "evening_ot_text": day_data.get("total_evening_ot_text", "0h 00m"),
+            "total_ot_text": day_data.get("total_ot_text", "0h 00m"),
+            "overtime_count": day_data.get("overtime_employees_count", 0)
         })
+
+    # Today's Overtime Summary (Standard Office Hours: 09:00 AM - 07:00 PM)
+    today_overtime = calculate_daily_overtime_summary(target_date=today, db=db)
 
     total_emp = daily_stats.get("total_employees", 0)
     present = daily_stats.get("present_count", daily_stats.get("punched_in_count", 0))
@@ -83,6 +97,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         "total_devices": total_devices,
         "recent_feed": recent_feed,
         "weekly_trend": trend,
+        "today_overtime": today_overtime,
         "today_attendance": daily_stats.get("records", [])
     }
 
