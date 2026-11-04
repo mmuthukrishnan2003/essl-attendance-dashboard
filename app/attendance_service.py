@@ -563,7 +563,7 @@ def generate_excel_report(start_date: date, end_date: date, db: Session, departm
 
     # Headers (Status and Work Duration removed)
     headers = [
-        "Date", "Emp ID", "Employee Name", "Department", "Shift Timing",
+        "Date", "Emp ID", "Employee Name", "Shift Timing",
         "First IN", "Last OUT", "Intermediate Punches"
     ]
 

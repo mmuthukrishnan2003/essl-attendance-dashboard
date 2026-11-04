@@ -801,8 +801,7 @@
 
                 </th>
 
-                <th class="px-4 py-3 text-left bg-slate-50">Department</th>
-
+                
                 <th class="px-4 py-3 text-center bg-slate-50">Assigned Shift</th>
 
                 <th class="px-4 py-3 text-center bg-slate-50">First IN</th>
@@ -905,19 +904,7 @@
 
 
 
-            <!-- Department Filter -->
-
-            <div>
-
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Department</label>
-
-              <select id="report-dept-select" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-
-                <option value="ALL">All Departments</option>
-
-              </select>
-
-            </div>
+            
 
 
 
@@ -1068,8 +1055,7 @@
 
                 </th>
 
-                <th class="px-4 py-3.5 text-left bg-slate-50 whitespace-nowrap">Department</th>
-
+                
                 <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">Shift Timing</th>
 
                 <th class="px-4 py-3.5 text-center bg-slate-50 whitespace-nowrap">First IN (Time & Device)</th>
@@ -1219,13 +1205,7 @@
       <!-- Filters & Legend Row -->
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="flex flex-wrap items-center gap-3">
-          <!-- Department -->
-          <div class="w-44">
-            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
-            <select id="monthly-dept-select" onchange="loadMonthlyAttendanceData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-              <option value="ALL">All Departments</option>
-            </select>
-          </div>
+          
           <!-- Shift -->
           <div class="w-48">
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Shift</label>
@@ -1238,19 +1218,43 @@
             </select>
           </div>
           <!-- Search -->
-          <div class="w-56">
+          <div class="w-52">
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Search Employee</label>
             <input type="text" id="monthly-search-input" onkeyup="filterMonthlyTableLocal()" placeholder="Name or Emp Code..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
+          </div>
+
+          <!-- View Mode: First IN / Last OUT vs Status (P/A) -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Display Mode</label>
+            <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 text-xs shadow-xs">
+              <button type="button" id="btn-monthly-mode-inout" onclick="setMonthlyGridMode('inout')" class="px-3 py-1 rounded-md font-bold text-brand-navy bg-white border border-blue-200 shadow-xs transition flex items-center space-x-1">
+                <span>⏱️ Per-Day First IN &amp; Last OUT</span>
+              </button>
+              <button type="button" id="btn-monthly-mode-status" onclick="setMonthlyGridMode('status')" class="px-3 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition flex items-center space-x-1">
+                <span>🔤 Status Only (P / A)</span>
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Legend -->
-        <div class="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
+        <div id="monthly-legend-container" class="flex flex-wrap items-center gap-2 pt-2 md:pt-0">
           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Legend:</span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">P = Present</span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">A = Absent</span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-300">WFH = Remote</span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">WO = Week Off</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1"></span>Top: First IN
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1"></span>Bottom: Last OUT
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-600 mr-1"></span>Late (&gt; 09:05)
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            A = Absent
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+            WO = Week Off
+          </span>
         </div>
       </div>
 
@@ -1389,12 +1393,7 @@
               <span>Only staff with late punches</span>
             </label>
 
-            <!-- Department Filter -->
-            <div class="w-40">
-              <select id="late-dept-select" onchange="loadMonthlyLateData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-                <option value="ALL">All Departments</option>
-              </select>
-            </div>
+            
 
             <!-- Shift Filter -->
             <div class="w-44">
@@ -1540,13 +1539,7 @@
               <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Search Employee</label>
               <input type="text" id="exceeded-search-input" onkeyup="filterExceededTableLocal()" placeholder="Name or Emp Code..." class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy">
             </div>
-            <!-- Department -->
-            <div class="w-44">
-              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
-              <select id="exceeded-dept-select" onchange="loadExceededData()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-                <option value="ALL">All Departments</option>
-              </select>
-            </div>
+            
             <!-- Shift -->
             <div class="w-48">
               <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Shift</label>
@@ -1711,8 +1704,7 @@
 
                 </th>
 
-                <th class="px-4 py-3 text-left bg-slate-50">Department</th>
-
+                
                 <th class="px-4 py-3 text-center bg-slate-50">Currently Assigned Shift</th>
 
                 <th class="px-4 py-3 text-right bg-slate-50">Quick Change</th>
@@ -1786,11 +1778,7 @@
 
             <input type="text" id="employee-search-input" onkeyup="filterEmployeeList()" placeholder="Search employee code or name..." class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy w-full sm:w-64">
 
-            <select id="employee-dept-filter" onchange="filterEmployeeList()" class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-
-              <option value="ALL">All Departments</option>
-
-            </select>
+            
 
           </div>
 
@@ -1822,8 +1810,7 @@
 
                 </th>
 
-                <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Department</th>
-
+                
                 <th class="px-4 py-3 text-left bg-slate-50 whitespace-nowrap">Designation</th>
 
                 <th class="px-4 py-3 text-center bg-slate-50 whitespace-nowrap">Shift Timing</th>
@@ -3329,7 +3316,57 @@
 
   <!-- JavaScript -->
 
-  <script src="/static/js/app.js?v=3.8"></script>
+  
+    <!-- MODAL: Employee Monthly Punch History Drilldown -->
+    <div id="modal-monthly-emp-drilldown" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs hidden p-4">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-brand-navy to-blue-900 text-white flex items-center justify-between">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">📅</span>
+              <h3 id="monthly-drilldown-emp-name" class="font-bold text-base">Employee Monthly Timesheet</h3>
+            </div>
+            <p id="monthly-drilldown-sub" class="text-xs text-blue-100 mt-0.5">Assigned Shift • Month of ...</p>
+          </div>
+          <button type="button" onclick="closeModal('modal-monthly-emp-drilldown')" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition text-xl leading-none">&times;</button>
+        </div>
+
+        <!-- Monthly KPI Snapshot -->
+        <div id="monthly-drilldown-metrics" class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 border-b border-slate-200 text-xs">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Modal Table Body: Days 1 to 31 -->
+        <div class="overflow-y-auto max-h-[500px] p-4">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="px-3 py-2">Day</th>
+                <th class="px-3 py-2">Date</th>
+                <th class="px-3 py-2">Weekday</th>
+                <th class="px-3 py-2 text-center">Status</th>
+                <th class="px-3 py-2 text-center">First IN</th>
+                <th class="px-3 py-2 text-center">Last OUT</th>
+                <th class="px-3 py-2 text-center">Punches</th>
+                <th class="px-3 py-2 text-center">Late / Punctuality Note</th>
+              </tr>
+            </thead>
+            <tbody id="monthly-drilldown-tbody" class="divide-y divide-slate-100 font-mono">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+          <button type="button" onclick="closeModal('modal-monthly-emp-drilldown')" class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 transition">Close</button>
+        </div>
+      </div>
+    </div>
+
+
+    <script src="/static/js/app.js?v=4.0"></script>
 
 </body>
 

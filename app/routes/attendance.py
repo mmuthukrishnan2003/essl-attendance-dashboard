@@ -230,7 +230,7 @@ def export_attendance_csv(
     writer = csv.writer(output)
 
     writer.writerow([
-        "Date", "Employee ID", "Employee Name", "Department", "Shift",
+        "Date", "Employee ID", "Employee Name", "Shift",
         "First IN", "Last OUT", "Intermediate Punches Count"
     ])
 
@@ -253,7 +253,6 @@ def export_attendance_csv(
                 r["date"],
                 r["emp_code"],
                 r["name"],
-                r["department"],
                 r["shift"],
                 first_in_val,
                 last_out_val,
@@ -397,17 +396,30 @@ def export_monthly_csv(
 
     # Header: Emp Code, Name, Dept, Shift, Days 1..N, Present, Absent, WFH, WO, Rate %
     days_headers = [f"Day_{d['day']:02d}_{d['weekday']}" for d in matrix["days_meta"]]
-    header_row = ["Emp Code", "Employee Name", "Department", "Shift"] + days_headers + [
+    header_row = ["Emp Code", "Employee Name", "Shift"] + days_headers + [
         "Present Count", "Late Count", "Absent Count", "WFH Count", "Week Off Count", "Attendance Rate %"
     ]
     writer.writerow(header_row)
 
     for rec in matrix["records"]:
-        day_vals = [rec["days"].get(str(d["day"]), {}).get("status", "--") for d in matrix["days_meta"]]
+        day_vals = []
+        for d in matrix["days_meta"]:
+            d_info = rec["days"].get(str(d["day"]), {})
+            st = d_info.get("status", "--")
+            if st == "P":
+                f_in = d_info.get("first_in")
+                l_out = d_info.get("last_out")
+                if f_in and l_out:
+                    day_vals.append(f"{f_in[:5]} - {l_out[:5]}")
+                elif f_in:
+                    day_vals.append(f"{f_in[:5]} (IN)")
+                else:
+                    day_vals.append("P")
+            else:
+                day_vals.append(st)
         row = [
             rec["emp_code"],
             rec["name"],
-            rec["department"],
             rec["shift"]
         ] + day_vals + [
             rec["present_count"],
@@ -530,7 +542,7 @@ def export_monthly_exceeded_csv(
     writer = csv.writer(output)
 
     writer.writerow([
-        "Emp ID", "Employee Name", "Department", "Shift Timing",
+        "Emp ID", "Employee Name", "Shift Timing",
         "Monthly Quota", "Morning Late", "Evening Early", "Midday Out",
         "Total Permission Used", "Balance Left", "Exceeded Duration (> 2h)", "Status"
     ])
@@ -539,7 +551,6 @@ def export_monthly_exceeded_csv(
         writer.writerow([
             emp_s["emp_code"],
             emp_s["name"],
-            emp_s["department"],
             emp_s["shift"],
             emp_s["monthly_quota_text"],
             emp_s["morning_late_text"],
@@ -654,7 +665,7 @@ def export_monthly_late_csv(
     writer = csv.writer(output)
 
     writer.writerow([
-        "Emp ID", "Employee Name", "Department", "Shift Timing",
+        "Emp ID", "Employee Name", "Shift Timing",
         "Present Days", "Late Punch Count", "On-Time Days", "Punctuality Rate %",
         "Total Late Time", "Late Dates & Times"
     ])
@@ -663,7 +674,6 @@ def export_monthly_late_csv(
         writer.writerow([
             emp_s["emp_code"],
             emp_s["name"],
-            emp_s["department"],
             emp_s["shift"],
             emp_s["present_days"],
             emp_s["late_punch_count"],

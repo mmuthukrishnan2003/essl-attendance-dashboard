@@ -1344,7 +1344,6 @@ function renderTodayAttendanceTable(records) {
 
         <td class="px-4 py-3 font-medium text-slate-900">${r.name}</td>
 
-        <td class="px-4 py-3 text-slate-600">${r.department}</td>
 
         <td class="px-4 py-3 text-center">
 
@@ -1637,7 +1636,6 @@ function renderReportTable(records) {
 
         <td class="px-4 py-3 font-medium text-slate-900">${r.name}</td>
 
-        <td class="px-4 py-3 text-slate-600">${r.department}</td>
 
         <td class="px-4 py-3 text-center">
 
@@ -1843,7 +1841,7 @@ async function viewEmployeePunches(empCode, targetDate) {
 
     document.getElementById('modal-punches-emp-name').textContent = `${data.name} (${data.emp_code})`;
 
-    document.getElementById('modal-punches-subtitle').textContent = `Department: ${data.department} • Date: ${data.date}`;
+    document.getElementById('modal-punches-subtitle').textContent = `Date: ${data.date} • Shift: ${data.shift || 'Standard'}`;
 
     document.getElementById('modal-punches-total-count').textContent = data.total_punches;
 
@@ -2057,7 +2055,6 @@ function renderEmployeesTable(employees) {
 
       <td class="px-4 py-3 font-medium text-slate-900">${e.name}</td>
 
-      <td class="px-4 py-3 text-slate-600">${e.department}</td>
 
       <td class="px-4 py-3 text-slate-600">${e.designation}</td>
 
@@ -4815,7 +4812,6 @@ function renderShiftAssignmentTable(employees, shifts) {
 
       <td class="px-4 py-3 font-medium text-slate-900">${e.name}</td>
 
-      <td class="px-4 py-3 text-slate-600">${e.department}</td>
 
       <td class="px-4 py-3 text-center">
 
@@ -5444,8 +5440,7 @@ function renderExceededTable(data) {
             <span id="exceeded-sort-icon" class="text-[10px] text-brand-navy font-bold">${exceededSortOrder === 'ASC' ? '▲ A-Z' : '▼ Z-A'}</span>
           </div>
         </th>
-        <th class="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[110px]">Department</th>
-        <th class="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[150px]">Shift Timing</th>
+          <th class="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[150px]">Shift Timing</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[95px]">Monthly Quota</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50/50 min-w-[130px]">Morning Late (&gt; 09:05)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50/50 min-w-[130px]">Evening Early (&lt; 07:00)</th>
@@ -5479,8 +5474,7 @@ function renderExceededTable(data) {
               ${emp_s.name}
             </button>
           </td>
-          <td class="px-3 py-2.5 text-slate-600 text-xs whitespace-nowrap">${emp_s.department}</td>
-          <td class="px-3 py-2.5 text-slate-500 text-xs whitespace-nowrap">${emp_s.shift}</td>
+            <td class="px-3 py-2.5 text-slate-500 text-xs whitespace-nowrap">${emp_s.shift}</td>
           <td class="px-3 py-2.5 text-center font-mono font-bold text-slate-600">${emp_s.monthly_quota_text}</td>
           <td class="px-3 py-2.5 text-center font-mono text-xs text-amber-800 bg-amber-50/30 whitespace-nowrap font-semibold">
             ${emp_s.morning_late_text}
@@ -5523,8 +5517,7 @@ function renderExceededTable(data) {
             <span id="exceeded-sort-icon" class="text-[10px] text-brand-navy font-bold">${exceededSortOrder === 'ASC' ? '▲ A-Z' : '▼ Z-A'}</span>
           </div>
         </th>
-        <th class="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[110px]">Department</th>
-        <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50/50 min-w-[130px]">First IN (Device)</th>
+          <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50/50 min-w-[130px]">First IN (Device)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50/50 min-w-[130px]">Last OUT (Device)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[95px]">Late (&gt; 09:05)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[95px]">Early (&lt; 07:00)</th>
@@ -5548,8 +5541,7 @@ function renderExceededTable(data) {
           <td class="px-3.5 py-2 text-center font-medium text-slate-800 whitespace-nowrap">${inc.date_str}</td>
           <td class="px-3 py-2 text-center font-mono font-bold text-slate-700">${inc.emp_code}</td>
           <td class="px-3.5 py-2 font-semibold text-slate-900 whitespace-nowrap">${inc.name}</td>
-          <td class="px-3 py-2 text-slate-600 text-xs whitespace-nowrap">${inc.department}</td>
-          <td class="px-3 py-2 text-center font-mono text-xs text-amber-800 bg-amber-50/20 whitespace-nowrap">
+            <td class="px-3 py-2 text-center font-mono text-xs text-amber-800 bg-amber-50/20 whitespace-nowrap">
             ${inc.first_in} <span class="text-[10px] text-slate-400">(${inc.first_in_device})</span>
           </td>
           <td class="px-3 py-2 text-center font-mono text-xs text-indigo-800 bg-indigo-50/20 whitespace-nowrap">
@@ -5587,7 +5579,7 @@ function openEmployeePermissionDrilldown(empCode) {
   const titleEl = document.getElementById('drilldown-modal-title');
   const subEl = document.getElementById('drilldown-modal-sub');
   if (titleEl) titleEl.textContent = `${emp.name} (#${emp.emp_code}) - Permission Ledger Drilldown`;
-  if (subEl) subEl.textContent = `${emp.department} • ${emp.shift} • ${exceededDataCache.month_name}`;
+  if (subEl) subEl.textContent = `${emp.shift} • ${exceededDataCache.month_name}`;
 
   // Metrics
   const metricsEl = document.getElementById('drilldown-modal-metrics');
@@ -5713,17 +5705,69 @@ function exportExceededCSV() {
 // ================= MONTHLY ATTENDANCE MUSTER ROLL (1-31 GRID) =================
 
 let monthlyMusterCache = null;
+let monthlyGridMode = 'inout'; // 'inout' (Per-Day First IN / Last OUT) or 'status' (P / A / WO)
+
+function setMonthlyGridMode(mode) {
+  monthlyGridMode = mode;
+  const btnInout = document.getElementById('btn-monthly-mode-inout');
+  const btnStatus = document.getElementById('btn-monthly-mode-status');
+
+  if (mode === 'inout') {
+    if (btnInout) btnInout.className = 'px-3 py-1 rounded-md font-bold text-brand-navy bg-white border border-blue-200 shadow-xs transition flex items-center space-x-1';
+    if (btnStatus) btnStatus.className = 'px-3 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition flex items-center space-x-1';
+  } else {
+    if (btnInout) btnInout.className = 'px-3 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900 transition flex items-center space-x-1';
+    if (btnStatus) btnStatus.className = 'px-3 py-1 rounded-md font-bold text-brand-navy bg-white border border-blue-200 shadow-xs transition flex items-center space-x-1';
+  }
+
+  updateMonthlyLegend();
+  if (monthlyMusterCache) {
+    renderMonthlyMusterTable(monthlyMusterCache);
+  }
+}
+
+function updateMonthlyLegend() {
+  const legendEl = document.getElementById('monthly-legend-container');
+  if (!legendEl) return;
+  if (monthlyGridMode === 'inout') {
+    legendEl.innerHTML = `
+      <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Legend:</span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1"></span>Top: First IN
+      </span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-300">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1"></span>Bottom: Last OUT
+      </span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-600 mr-1"></span>Late (> 09:05)
+      </span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+        A = Absent
+      </span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+        WO = Week Off
+      </span>
+    `;
+  } else {
+    legendEl.innerHTML = `
+      <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Legend:</span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">P = Present</span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Late (> 09:05)</span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">A = Absent</span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-300">WFH = Remote</span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">WO = Week Off</span>
+    `;
+  }
+}
 
 async function loadMonthlyAttendanceData() {
   const mSelect = document.getElementById('monthly-month-select');
   const ySelect = document.getElementById('monthly-year-select');
-  const dSelect = document.getElementById('monthly-dept-select');
   const sSelect = document.getElementById('monthly-shift-select');
 
   const now = new Date();
   const month = mSelect ? mSelect.value : (now.getMonth() + 1);
   const year = ySelect ? ySelect.value : now.getFullYear();
-  const dept = dSelect ? dSelect.value : 'ALL';
   const shift = sSelect ? sSelect.value : 'ALL';
 
   const tbody = document.getElementById('monthly-table-tbody');
@@ -5731,29 +5775,16 @@ async function loadMonthlyAttendanceData() {
     tbody.innerHTML = `<tr><td colspan="45" class="text-center py-12 text-slate-400 font-medium">
       <div class="inline-flex items-center space-x-2">
         <svg class="w-5 h-5 animate-spin text-brand-navy" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-        <span>Loading monthly muster roll matrix for ${month}/${year}...</span>
+        <span>Loading monthly attendance report for ${month}/${year}...</span>
       </div>
     </td></tr>`;
   }
 
   try {
-    const res = await fetch(`/api/attendance/monthly?year=${year}&month=${month}&department=${encodeURIComponent(dept)}&shift=${encodeURIComponent(shift)}`);
-    if (!res.ok) throw new Error('Failed to load monthly muster roll');
+    const res = await fetch(`/api/attendance/monthly?year=${year}&month=${month}&shift=${encodeURIComponent(shift)}`);
+    if (!res.ok) throw new Error('Failed to load monthly attendance');
     const data = await res.json();
     monthlyMusterCache = data;
-
-    // Populate department options if needed
-    if (dSelect && dSelect.options.length <= 1) {
-      const depts = new Set();
-      (data.records || []).forEach(r => { if (r.department) depts.add(r.department); });
-      depts.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d;
-        opt.textContent = d;
-        dSelect.appendChild(opt);
-      });
-      dSelect.value = dept;
-    }
 
     // Populate KPIs
     const kpiStaff = document.getElementById('monthly-kpi-employees');
@@ -5772,6 +5803,7 @@ async function loadMonthlyAttendanceData() {
     if (kpiRate) kpiRate.textContent = `${data.summary?.avg_attendance_rate || data.summary?.overall_rate || 0}%`;
     if (kpiMonthName) kpiMonthName.textContent = `Month of ${data.month_name || ''} ${data.year || year}`;
 
+    updateMonthlyLegend();
     renderMonthlyMusterTable(data);
   } catch (err) {
     console.error('Error loading monthly muster roll:', err);
@@ -5789,13 +5821,16 @@ function renderMonthlyMusterTable(data) {
   const daysMeta = data.days_meta || [];
   const records = data.records || [];
 
+  const topHeaderTitle = monthlyGridMode === 'inout'
+    ? `Days of Month (1 – ${daysMeta.length}) • Per-Day First IN &amp; Last OUT Timestamps`
+    : `Days of Month (1 – ${daysMeta.length}) • Attendance Status (P / A / WO)`;
+
   // Build thead: 2 rows
   let row1 = `<tr>
     <th rowspan="2" class="px-3 py-2 border-r border-slate-200 bg-slate-100 font-bold sticky left-0 z-30 min-w-[75px]">Emp ID</th>
     <th rowspan="2" class="px-3 py-2 border-r border-slate-200 bg-slate-100 font-bold sticky left-[75px] z-30 min-w-[150px]">Employee Name</th>
-    <th rowspan="2" class="px-3 py-2 border-r border-slate-200 bg-slate-100 font-bold min-w-[110px]">Department</th>
     <th rowspan="2" class="px-3 py-2 border-r border-slate-200 bg-slate-100 font-bold min-w-[130px]">Shift</th>
-    <th colspan="${daysMeta.length}" class="px-2 py-1.5 border-r border-slate-200 text-center font-bold bg-slate-200 text-slate-800">Days of Month (1 – ${daysMeta.length})</th>
+    <th colspan="${daysMeta.length}" class="px-2 py-1.5 border-r border-slate-200 text-center font-bold bg-slate-200 text-slate-800 text-xs">${topHeaderTitle}</th>
     <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-emerald-50 text-emerald-900 min-w-[45px]">P</th>
     <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-amber-50 text-amber-900 min-w-[50px]" title="Monthly Late Punch Count (> 09:05 AM)">Late</th>
     <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-rose-50 text-rose-900 min-w-[45px]">A</th>
@@ -5807,9 +5842,11 @@ function renderMonthlyMusterTable(data) {
   let row2 = `<tr>`;
   daysMeta.forEach(d => {
     const weekendClass = d.is_weekend ? 'bg-amber-100/70 text-amber-900 font-bold' : 'bg-slate-50 text-slate-700';
-    row2 += `<th class="px-1.5 py-1 border-r border-slate-200 text-center text-[10px] ${weekendClass}" title="${d.weekday}">
-      <div>${d.day}</div>
+    const minW = monthlyGridMode === 'inout' ? 'min-w-[54px]' : 'min-w-[36px]';
+    row2 += `<th class="px-1 py-1 border-r border-slate-200 text-center text-[10px] ${minW} ${weekendClass}" title="${d.weekday}">
+      <div class="font-bold">${d.day}</div>
       <div class="text-[8px] font-normal opacity-80 uppercase">${d.weekday.slice(0, 2)}</div>
+      ${monthlyGridMode === 'inout' ? `<div class="text-[8px] font-mono flex justify-between px-1 border-t border-slate-200/50 mt-0.5 pt-0.5"><span class="text-emerald-700 font-bold">IN</span><span class="text-blue-700 font-bold">OUT</span></div>` : ''}
     </th>`;
   });
   row2 += `</tr>`;
@@ -5822,8 +5859,7 @@ function renderMonthlyMusterTable(data) {
   if (query) {
     filtered = records.filter(r =>
       (r.name && r.name.toLowerCase().includes(query)) ||
-      (r.emp_code && r.emp_code.toLowerCase().includes(query)) ||
-      (r.department && r.department.toLowerCase().includes(query))
+      (r.emp_code && r.emp_code.toLowerCase().includes(query))
     );
   }
 
@@ -5848,26 +5884,57 @@ function renderMonthlyMusterTable(data) {
 
       if (status === 'P') {
         if (isLate) {
-          cellBg = 'bg-amber-100 text-amber-900 font-extrabold border border-amber-300';
-          title = `Day ${d.day}: Present - Late Punch (+${lateMins}m)\nFirst IN: ${firstIn}\nLast OUT: ${lastOut}`;
+          cellBg = 'bg-amber-50/70 border-amber-200';
+          title = `Day ${d.day}: Present - Late Punch (+${lateMins}m)\nFirst IN: ${firstIn}\nLast OUT: ${lastOut || '--'}`;
         } else {
-          cellBg = 'bg-emerald-100 text-emerald-800 font-bold';
-          title = `Day ${d.day}: Present (On Time)\nFirst IN: ${firstIn}\nLast OUT: ${lastOut}`;
+          cellBg = 'bg-emerald-50/60 border-emerald-100';
+          title = `Day ${d.day}: Present (On Time)\nFirst IN: ${firstIn}\nLast OUT: ${lastOut || '--'}`;
         }
       } else if (status === 'A') {
-        cellBg = 'bg-rose-50 text-rose-600 font-semibold';
+        cellBg = 'bg-rose-50/40 text-rose-600';
         title = `Day ${d.day}: Absent`;
       } else if (status === 'WFH') {
-        cellBg = 'bg-indigo-100 text-indigo-800 font-bold';
+        cellBg = 'bg-indigo-50/50 text-indigo-800';
         title = `Day ${d.day}: WFH (Remote)`;
       } else if (status === 'WO') {
-        cellBg = 'bg-slate-100 text-slate-500 font-semibold';
+        cellBg = 'bg-slate-100 text-slate-500';
         title = `Day ${d.day}: Week Off (${d.weekday})`;
       }
 
-      dayCells += `<td class="px-1 py-1.5 border-r border-slate-200 text-center text-[10px] ${cellBg}" title="${title}">
-        ${status === 'P' && isLate ? `<span class="relative inline-block"><span class="w-1.5 h-1.5 bg-amber-600 rounded-full inline-block mr-0.5"></span>P</span>` : status}
-      </td>`;
+      if (monthlyGridMode === 'inout') {
+        let cellBody = '';
+        if (status === 'P') {
+          const inTime = firstIn ? firstIn.slice(0, 5) : '--:--';
+          const outTime = lastOut ? lastOut.slice(0, 5) : '--:--';
+          cellBody = `
+            <div class="leading-tight py-0.5 flex flex-col justify-center items-center">
+              <span class="font-mono text-[10px] font-bold ${isLate ? 'text-amber-900 bg-amber-200/90 px-1 rounded' : 'text-emerald-700'}" title="First IN: ${firstIn || '--'}${isLate ? ' (Late +' + lateMins + 'm)' : ''}">
+                ${inTime}
+              </span>
+              <span class="font-mono text-[10px] font-medium text-blue-700 mt-0.5 pt-0.5 border-t border-slate-200/70 w-full text-center" title="Last OUT: ${lastOut || '--'}">
+                ${outTime}
+              </span>
+            </div>
+          `;
+        } else if (status === 'A') {
+          cellBody = `<div class="py-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">A</span></div>`;
+        } else if (status === 'WO') {
+          cellBody = `<div class="py-2 text-center text-slate-400 font-bold text-[10px]">WO</div>`;
+        } else if (status === 'WFH') {
+          cellBody = `<div class="py-2 text-center text-indigo-700 font-bold text-[10px]">WFH</div>`;
+        } else {
+          cellBody = `<div class="py-2 text-center text-slate-300 font-mono">--</div>`;
+        }
+
+        dayCells += `<td class="px-0.5 py-1 border-r border-slate-200 text-center ${cellBg}" title="${title}">
+          ${cellBody}
+        </td>`;
+      } else {
+        // Status Only Mode
+        dayCells += `<td class="px-1 py-1.5 border-r border-slate-200 text-center text-[10px] ${cellBg}" title="${title}">
+          ${status === 'P' && isLate ? `<span class="relative inline-block"><span class="w-1.5 h-1.5 bg-amber-600 rounded-full inline-block mr-0.5"></span>P</span>` : status}
+        </td>`;
+      }
     });
 
     const lateCount = r.late_count || 0;
@@ -5877,8 +5944,7 @@ function renderMonthlyMusterTable(data) {
 
     return `<tr class="hover:bg-slate-50 transition border-b border-slate-100">
       <td class="px-3 py-2 font-mono font-semibold text-slate-800 border-r border-slate-200 bg-white sticky left-0 z-10">${r.emp_code}</td>
-      <td class="px-3 py-2 font-medium text-slate-900 border-r border-slate-200 bg-white sticky left-[75px] z-10 truncate max-w-[180px]">${r.name}</td>
-      <td class="px-3 py-2 text-slate-600 border-r border-slate-200 text-xs truncate max-w-[120px]">${r.department || 'General'}</td>
+      <td onclick="openMonthlyEmpDrilldown('${r.emp_code}')" class="px-3 py-2 font-medium text-slate-900 border-r border-slate-200 bg-white sticky left-[75px] z-10 truncate max-w-[180px] cursor-pointer hover:text-brand-navy hover:underline select-none" title="Click to view detailed monthly punch timesheet">${r.name}</td>
       <td class="px-3 py-2 text-slate-600 border-r border-slate-200 text-[10px] truncate max-w-[140px]">${r.shift || 'Standard Shift'}</td>
       ${dayCells}
       <td class="px-2 py-2 text-center font-bold text-emerald-700 border-r border-slate-200 font-mono">${r.present_count}</td>
@@ -5889,6 +5955,95 @@ function renderMonthlyMusterTable(data) {
       <td class="px-2 py-2 text-center font-extrabold text-blue-700 font-mono">${r.attendance_rate}%</td>
     </tr>`;
   }).join('');
+}
+
+function openMonthlyEmpDrilldown(empCode) {
+  if (!monthlyMusterCache || !monthlyMusterCache.records) return;
+  const emp = monthlyMusterCache.records.find(r => String(r.emp_code) === String(empCode));
+  if (!emp) return;
+
+  const titleEl = document.getElementById('monthly-drilldown-emp-name');
+  const subEl = document.getElementById('monthly-drilldown-sub');
+  const metricsEl = document.getElementById('monthly-drilldown-metrics');
+  const tbodyEl = document.getElementById('monthly-drilldown-tbody');
+
+  if (titleEl) titleEl.textContent = `${emp.name} (#${emp.emp_code}) - Monthly Timesheet`;
+  if (subEl) subEl.textContent = `${emp.shift || 'Standard Shift'} • ${monthlyMusterCache.month_name || ''} ${monthlyMusterCache.year || ''}`;
+
+  if (metricsEl) {
+    metricsEl.innerHTML = `
+      <div class="bg-white p-2.5 rounded-lg border border-slate-200">
+        <p class="text-[10px] font-bold text-emerald-700 uppercase">Present Days</p>
+        <p class="text-base font-extrabold text-emerald-700 font-mono mt-0.5">${emp.present_count}</p>
+      </div>
+      <div class="bg-white p-2.5 rounded-lg border border-amber-200 bg-amber-50/20">
+        <p class="text-[10px] font-bold text-amber-800 uppercase">Late Count</p>
+        <p class="text-base font-extrabold text-amber-800 font-mono mt-0.5">${emp.late_count || 0}</p>
+      </div>
+      <div class="bg-white p-2.5 rounded-lg border border-rose-200 bg-rose-50/20">
+        <p class="text-[10px] font-bold text-rose-700 uppercase">Absent Days</p>
+        <p class="text-base font-extrabold text-rose-700 font-mono mt-0.5">${emp.absent_count || 0}</p>
+      </div>
+      <div class="bg-white p-2.5 rounded-lg border border-indigo-200 bg-indigo-50/20">
+        <p class="text-[10px] font-bold text-indigo-700 uppercase">WFH Days</p>
+        <p class="text-base font-extrabold text-indigo-700 font-mono mt-0.5">${emp.wfh_count || 0}</p>
+      </div>
+      <div class="bg-white p-2.5 rounded-lg border border-blue-200 bg-blue-50/20">
+        <p class="text-[10px] font-bold text-blue-700 uppercase">Attendance %</p>
+        <p class="text-base font-extrabold text-blue-700 font-mono mt-0.5">${emp.attendance_rate}%</p>
+      </div>
+    `;
+  }
+
+  if (tbodyEl) {
+    const daysMeta = monthlyMusterCache.days_meta || [];
+    tbodyEl.innerHTML = daysMeta.map(d => {
+      const dKey = String(d.day);
+      const dayData = (emp.days && emp.days[dKey]) ? emp.days[dKey] : null;
+      const status = dayData ? dayData.status : '--';
+      const fIn = dayData?.first_in || '--';
+      const lOut = dayData?.last_out || '--';
+      const punches = dayData?.punches_count || 0;
+      const isLate = Boolean(dayData?.is_late);
+      const lateMins = dayData?.late_mins || 0;
+
+      let statusBadge = '<span class="text-slate-400 font-bold">--</span>';
+      let note = '<span class="text-slate-400">--</span>';
+
+      if (status === 'P') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Present</span>';
+        if (isLate) {
+          note = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Late by +${lateMins}m (Cutoff 09:05)</span>`;
+        } else {
+          note = '<span class="text-emerald-700 font-semibold text-[11px]">✓ On Time</span>';
+        }
+      } else if (status === 'A') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300">Absent</span>';
+        note = '<span class="text-rose-600 text-[11px]">No punches logged</span>';
+      } else if (status === 'WO') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Week Off</span>';
+        note = `<span class="text-slate-500 text-[11px]">${d.weekday} Weekend</span>`;
+      } else if (status === 'WFH') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">WFH</span>';
+        note = '<span class="text-indigo-700 text-[11px]">Work From Home</span>';
+      }
+
+      return `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100 ${status === 'P' && isLate ? 'bg-amber-50/20' : ''}">
+          <td class="px-3 py-2 font-bold text-slate-800">${d.day}</td>
+          <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${monthlyMusterCache.year}-${String(monthlyMusterCache.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}</td>
+          <td class="px-3 py-2 ${d.is_weekend ? 'font-bold text-amber-800' : 'text-slate-700'}">${d.weekday}</td>
+          <td class="px-3 py-2 text-center">${statusBadge}</td>
+          <td class="px-3 py-2 text-center font-bold ${isLate ? 'text-amber-800' : 'text-emerald-700'}">${fIn}</td>
+          <td class="px-3 py-2 text-center font-semibold text-blue-700">${lOut}</td>
+          <td class="px-3 py-2 text-center text-slate-700">${punches}</td>
+          <td class="px-3 py-2 text-center">${note}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  openModal('modal-monthly-emp-drilldown');
 }
 
 function filterMonthlyTableLocal() {
@@ -6035,7 +6190,6 @@ function renderMonthlyLateTable(data) {
       <th class="px-4 py-3 font-bold">Date</th>
       <th class="px-4 py-3 font-bold">Emp ID</th>
       <th class="px-4 py-3 font-bold">Employee Name</th>
-      <th class="px-4 py-3 font-bold">Department</th>
       <th class="px-4 py-3 font-bold">Shift Timing</th>
       <th class="px-4 py-3 text-center font-bold">First IN (Time & Device)</th>
       <th class="px-4 py-3 text-center font-bold text-amber-900 bg-amber-50">Late Minutes</th>
@@ -6063,7 +6217,6 @@ function renderMonthlyLateTable(data) {
         <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">${inc.date_str || inc.date}</td>
         <td class="px-4 py-3 font-mono font-semibold text-slate-800">${inc.emp_code}</td>
         <td class="px-4 py-3 font-medium text-slate-900">${inc.name}</td>
-        <td class="px-4 py-3 text-slate-600">${inc.department}</td>
         <td class="px-4 py-3 text-slate-600 text-[11px]">${inc.shift}</td>
         <td class="px-4 py-3 text-center">
           <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 font-mono">
@@ -6091,7 +6244,6 @@ function renderMonthlyLateTable(data) {
     thead.innerHTML = `<tr>
       <th class="px-4 py-3 font-bold">Emp ID</th>
       <th class="px-4 py-3 font-bold">Employee Name</th>
-      <th class="px-4 py-3 font-bold">Department</th>
       <th class="px-4 py-3 font-bold">Shift Timing</th>
       <th class="px-3 py-3 text-center font-bold">Present Days</th>
       <th class="px-3 py-3 text-center font-bold text-amber-900 bg-amber-50">Late Count</th>
@@ -6125,7 +6277,6 @@ function renderMonthlyLateTable(data) {
         <tr class="hover:bg-slate-50 transition border-b border-slate-100 ${isLateStaff ? 'bg-amber-50/10' : ''}">
           <td class="px-4 py-3 font-mono font-semibold text-slate-800">${emp.emp_code}</td>
           <td class="px-4 py-3 font-medium text-slate-900">${emp.name}</td>
-          <td class="px-4 py-3 text-slate-600">${emp.department}</td>
           <td class="px-4 py-3 text-slate-600 text-[11px]">${emp.shift}</td>
           <td class="px-3 py-3 text-center font-mono font-bold text-slate-800">${emp.present_days}</td>
           <td class="px-3 py-3 text-center bg-amber-50/40">${countBadge}</td>

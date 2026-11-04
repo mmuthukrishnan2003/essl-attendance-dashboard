@@ -61,7 +61,7 @@ def get_monthly_attendance_matrix(
             emp_query = emp_query.filter(
                 (Employee.shift_code == shift_filter) | (Employee.shift_name == shift_filter)
             )
-    if search_query:
+    if search_query and isinstance(search_query, str) and search_query.strip():
         sq = f"%{search_query.strip().lower()}%"
         emp_query = emp_query.filter(
             (func.lower(Employee.name).like(sq)) | (func.lower(Employee.emp_code).like(sq))
@@ -207,8 +207,9 @@ def generate_monthly_excel_report(
     shift: str = "ALL"
 ) -> io.BytesIO:
     """
-    Generates a corporate Muster Roll Excel (.xlsx) sheet for Centizen.
-    Columns: Emp ID, Employee Name, Department, Shift, Days 1..31, Present Days, Absent Days, WFH Days, Total, %
+    Generates a corporate Muster Roll Excel (.xlsx) workbook for Centizen with 2 sheets:
+    Sheet 1: Daily First IN & Last OUT Timestamps per day (Days 1..31)
+    Sheet 2: Attendance Status Matrix (P / A / WO / WFH)
     """
     matrix = get_monthly_attendance_matrix(
         year=year,
@@ -219,24 +220,23 @@ def generate_monthly_excel_report(
     )
 
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = f"Muster Roll {matrix['month_name'][:7]}"
-
     settings = get_setting_dict(db)
     company_name = settings.get("company_name", "Centizen IT Services & Solutions")
 
     navy_fill = PatternFill(start_color="0A5482", end_color="0A5482", fill_type="solid")
     p_fill = PatternFill(start_color="D1FAE5", end_color="D1FAE5", fill_type="solid")     # Emerald light
+    late_fill = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")  # Amber light
     a_fill = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")     # Rose light
     wfh_fill = PatternFill(start_color="E0E7FF", end_color="E0E7FF", fill_type="solid")   # Indigo light
-    wo_fill = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")    # Amber light
-    gray_fill = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
+    wo_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")    # Slate light
+    gray_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
 
     title_font = Font(name="Calibri", size=15, bold=True, color="0A5482")
     sub_font = Font(name="Calibri", size=10, italic=True, color="555555")
     header_font = Font(name="Calibri", size=9, bold=True, color="FFFFFF")
     data_font = Font(name="Calibri", size=9)
     bold_font = Font(name="Calibri", size=9, bold=True)
+    late_font = Font(name="Calibri", size=9, bold=True, color="92400E")
 
     thin_border = Border(
         left=Side(style="thin", color="D1D5DB"),
@@ -246,145 +246,233 @@ def generate_monthly_excel_report(
     )
 
     num_days = matrix["num_days"]
-    total_cols = 4 + num_days + 5  # EmpID, Name, Dept, Shift + Days + P, A, WFH, WO, Rate%
-
-    # Title block
+    total_cols = 3 + num_days + 6  # EmpID, Name, Shift + Days + P, Late, A, WFH, WO, Rate%
     end_letter = get_column_letter(total_cols)
-    ws.merge_cells(f"A1:{end_letter}1")
-    ws["A1"] = f"{company_name} - Monthly Attendance Muster Roll"
-    ws["A1"].font = title_font
-    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
-
-    ws.merge_cells(f"A2:{end_letter}2")
-    ws["A2"] = (
-        f"Month: {matrix['month_name']}  |  Working Days: {matrix['working_days']}  |  "
-        f"Total Employees: {matrix['total_employees']}  |  Department: {department}  |  Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-    )
-    ws["A2"].font = sub_font
-    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
-
-    # Header Row 4: Day numbers
-    # Header Row 5: Day weekdays
-    headers_left = ["Emp ID", "Employee Name", "Department", "Shift Timing"]
     headers_right = ["Present (P)", "Late Count", "Absent (A)", "WFH", "Week Off (WO)", "Attendance %"]
 
-    ws.merge_cells("A4:A5")
-    ws["A4"] = "Emp ID"
-    ws.merge_cells("B4:B5")
-    ws["B4"] = "Employee Name"
-    ws.merge_cells("C4:C5")
-    ws["C4"] = "Department"
-    ws.merge_cells("D4:D5")
-    ws["D4"] = "Shift Timing"
+    # ---------------- SHEET 1: Daily First IN & Last OUT ----------------
+    ws1 = wb.active
+    ws1.title = "Daily IN-OUT Times"
 
-    for c in range(1, 5):
-        cell4 = ws.cell(row=4, column=c)
-        cell5 = ws.cell(row=5, column=c)
-        cell4.fill = navy_fill
-        cell5.fill = navy_fill
-        cell4.font = header_font
-        cell5.font = header_font
-        cell4.alignment = Alignment(horizontal="center", vertical="center")
-        cell5.alignment = Alignment(horizontal="center", vertical="center")
-        cell4.border = thin_border
-        cell5.border = thin_border
+    ws1.merge_cells(f"A1:{end_letter}1")
+    ws1["A1"] = f"{company_name} - Monthly Attendance (Daily First IN & Last OUT)"
+    ws1["A1"].font = title_font
+    ws1["A1"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws1.merge_cells(f"A2:{end_letter}2")
+    ws1["A2"] = (
+        f"Month: {matrix['month_name']}  |  Working Days: {matrix['working_days']}  |  "
+        f"Total Employees: {matrix['total_employees']}  |  Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    )
+    ws1["A2"].font = sub_font
+    ws1["A2"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws1.merge_cells("A4:A5"); ws1["A4"] = "Emp ID"
+    ws1.merge_cells("B4:B5"); ws1["B4"] = "Employee Name"
+    ws1.merge_cells("C4:C5"); ws1["C4"] = "Shift Timing"
+
+    for c in range(1, 4):
+        for r_h in (4, 5):
+            cell = ws1.cell(row=r_h, column=c)
+            cell.fill = navy_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin_border
 
     # Days columns
-    for idx, d_meta in enumerate(matrix["days_meta"], start=5):
-        c4 = ws.cell(row=4, column=idx, value=f"{d_meta['day']:02d}")
-        c5 = ws.cell(row=5, column=idx, value=d_meta["weekday"])
+    for idx, d_meta in enumerate(matrix["days_meta"], start=4):
+        c4 = ws1.cell(row=4, column=idx, value=f"{d_meta['day']:02d}")
+        c5 = ws1.cell(row=5, column=idx, value=d_meta["weekday"])
         for cell in (c4, c5):
             cell.fill = navy_fill
             cell.font = header_font
             cell.alignment = Alignment(horizontal="center", vertical="center")
             cell.border = thin_border
 
-    # Summary headers
-    start_summary = 5 + num_days
+    start_summary = 4 + num_days
     for i, h_text in enumerate(headers_right):
         col_i = start_summary + i
-        ws.merge_cells(start_row=4, start_column=col_i, end_row=5, end_column=col_i)
-        c4 = ws.cell(row=4, column=col_i, value=h_text)
-        c5 = ws.cell(row=5, column=col_i)
-        for cell in (c4, c5):
+        ws1.merge_cells(start_row=4, start_column=col_i, end_row=5, end_column=col_i)
+        for r_h in (4, 5):
+            cell = ws1.cell(row=r_h, column=col_i)
             cell.fill = navy_fill
             cell.font = header_font
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = thin_border
+        ws1.cell(row=4, column=col_i, value=h_text)
 
-    ws.row_dimensions[4].height = 18
-    ws.row_dimensions[5].height = 18
+    ws1.row_dimensions[4].height = 18
+    ws1.row_dimensions[5].height = 18
 
-    # Data Rows
-    current_row = 6
-    for rec in matrix["records"]:
-        ws.cell(row=current_row, column=1, value=rec["emp_code"]).alignment = Alignment(horizontal="center")
-        ws.cell(row=current_row, column=2, value=rec["name"]).alignment = Alignment(horizontal="left")
-        ws.cell(row=current_row, column=3, value=rec["department"]).alignment = Alignment(horizontal="left")
-        ws.cell(row=current_row, column=4, value=rec["shift"]).alignment = Alignment(horizontal="center")
+    # Populate Sheet 1 Data
+    for r_idx, rec in enumerate(matrix["records"], start=6):
+        ws1.cell(row=r_idx, column=1, value=rec["emp_code"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=2, value=rec["name"]).alignment = Alignment(horizontal="left")
+        ws1.cell(row=r_idx, column=3, value=rec["shift"]).alignment = Alignment(horizontal="center")
+        for c in range(1, 4):
+            ws1.cell(row=r_idx, column=c).font = data_font
+            ws1.cell(row=r_idx, column=c).border = thin_border
 
-        for c in range(1, 5):
-            cell = ws.cell(row=current_row, column=c)
-            cell.font = data_font
-            cell.border = thin_border
-
-        # Days cells
-        for idx, d_meta in enumerate(matrix["days_meta"], start=5):
+        for idx, d_meta in enumerate(matrix["days_meta"], start=4):
             d_str = str(d_meta["day"])
             day_info = rec["days"].get(d_str, {"status": "--"})
             st = day_info["status"]
+            is_late = day_info.get("is_late", False)
 
-            c_cell = ws.cell(row=current_row, column=idx, value=st)
-            c_cell.font = bold_font if st in ("P", "WFH") else data_font
+            if st == "P":
+                f_in = day_info.get("first_in")
+                l_out = day_info.get("last_out")
+                if f_in and l_out:
+                    val = f"{f_in[:5]} - {l_out[:5]}"
+                elif f_in:
+                    val = f"{f_in[:5]} (IN)"
+                else:
+                    val = "P"
+                cell_fill = late_fill if is_late else p_fill
+                cell_font = late_font if is_late else bold_font
+            elif st == "A":
+                val = "A"
+                cell_fill = a_fill
+                cell_font = data_font
+            elif st == "WFH":
+                val = "WFH"
+                cell_fill = wfh_fill
+                cell_font = bold_font
+            elif st == "WO":
+                val = "WO"
+                cell_fill = wo_fill
+                cell_font = data_font
+            else:
+                val = "--"
+                cell_fill = gray_fill
+                cell_font = data_font
+
+            c_cell = ws1.cell(row=r_idx, column=idx, value=val)
+            c_cell.font = cell_font
+            c_cell.fill = cell_fill
             c_cell.alignment = Alignment(horizontal="center", vertical="center")
             c_cell.border = thin_border
 
-            if st == "P":
-                c_cell.fill = p_fill
-            elif st == "A":
-                c_cell.fill = a_fill
-            elif st == "WFH":
-                c_cell.fill = wfh_fill
-            elif st == "WO":
-                c_cell.fill = wo_fill
-            else:
-                c_cell.fill = gray_fill
-
         # Summary cells
-        ws.cell(row=current_row, column=start_summary, value=rec["present_count"]).alignment = Alignment(horizontal="center")
-        late_c = ws.cell(row=current_row, column=start_summary + 1, value=rec.get("late_count", 0))
+        ws1.cell(row=r_idx, column=start_summary, value=rec["present_count"]).alignment = Alignment(horizontal="center")
+        late_c = ws1.cell(row=r_idx, column=start_summary + 1, value=rec.get("late_count", 0))
         late_c.alignment = Alignment(horizontal="center")
         if rec.get("late_count", 0) > 0:
-            late_c.font = Font(name="Calibri", size=9, bold=True, color="92400E")
-            late_c.fill = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")
-        ws.cell(row=current_row, column=start_summary + 2, value=rec["absent_count"]).alignment = Alignment(horizontal="center")
-        ws.cell(row=current_row, column=start_summary + 3, value=rec["wfh_count"]).alignment = Alignment(horizontal="center")
-        ws.cell(row=current_row, column=start_summary + 4, value=rec["wo_count"]).alignment = Alignment(horizontal="center")
-        ws.cell(row=current_row, column=start_summary + 5, value=f"{rec['attendance_rate']}%").alignment = Alignment(horizontal="center")
+            late_c.font = late_font
+            late_c.fill = late_fill
+        ws1.cell(row=r_idx, column=start_summary + 2, value=rec["absent_count"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=start_summary + 3, value=rec["wfh_count"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=start_summary + 4, value=rec["wo_count"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=start_summary + 5, value=f"{rec['attendance_rate']}%").alignment = Alignment(horizontal="center")
 
         for s_idx in range(start_summary, start_summary + 6):
-            c_sum = ws.cell(row=current_row, column=s_idx)
-            c_sum.font = bold_font
+            c_sum = ws1.cell(row=r_idx, column=s_idx)
+            if not c_sum.font or c_sum.font == data_font:
+                c_sum.font = bold_font
             c_sum.border = thin_border
+        ws1.row_dimensions[r_idx].height = 20
 
-        ws.row_dimensions[current_row].height = 20
-        current_row += 1
-
-    # Auto set column widths
-    ws.column_dimensions["A"].width = 11
-    ws.column_dimensions["B"].width = 24
-    ws.column_dimensions["C"].width = 18
-    ws.column_dimensions["D"].width = 24
-    for idx in range(5, 5 + num_days):
-        ws.column_dimensions[get_column_letter(idx)].width = 5
+    ws1.column_dimensions["A"].width = 10
+    ws1.column_dimensions["B"].width = 24
+    ws1.column_dimensions["C"].width = 22
+    for idx in range(4, 4 + num_days):
+        ws1.column_dimensions[get_column_letter(idx)].width = 13
     for idx in range(start_summary, start_summary + 6):
-        ws.column_dimensions[get_column_letter(idx)].width = 14
+        ws1.column_dimensions[get_column_letter(idx)].width = 12
 
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return output
+    # ---------------- SHEET 2: Muster Roll (Status P/A/WO) ----------------
+    ws2 = wb.create_sheet(title="Muster Roll (Status)")
+    ws2.merge_cells(f"A1:{end_letter}1")
+    ws2["A1"] = f"{company_name} - Monthly Attendance Muster Roll (Status)"
+    ws2["A1"].font = title_font
+    ws2["A1"].alignment = Alignment(horizontal="center", vertical="center")
 
+    ws2.merge_cells(f"A2:{end_letter}2")
+    ws2["A2"] = ws1["A2"].value
+    ws2["A2"].font = sub_font
+    ws2["A2"].alignment = Alignment(horizontal="center", vertical="center")
+
+    ws2.merge_cells("A4:A5"); ws2["A4"] = "Emp ID"
+    ws2.merge_cells("B4:B5"); ws2["B4"] = "Employee Name"
+    ws2.merge_cells("C4:C5"); ws2["C4"] = "Shift Timing"
+    for c in range(1, 4):
+        for r_h in (4, 5):
+            cell = ws2.cell(row=r_h, column=c)
+            cell.fill = navy_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin_border
+
+    for idx, d_meta in enumerate(matrix["days_meta"], start=4):
+        c4 = ws2.cell(row=4, column=idx, value=f"{d_meta['day']:02d}")
+        c5 = ws2.cell(row=5, column=idx, value=d_meta["weekday"])
+        for cell in (c4, c5):
+            cell.fill = navy_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin_border
+
+    for i, h_text in enumerate(headers_right):
+        col_i = start_summary + i
+        ws2.merge_cells(start_row=4, start_column=col_i, end_row=5, end_column=col_i)
+        for r_h in (4, 5):
+            cell = ws2.cell(row=r_h, column=col_i)
+            cell.fill = navy_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border = thin_border
+        ws2.cell(row=4, column=col_i, value=h_text)
+
+    for r_idx, rec in enumerate(matrix["records"], start=6):
+        ws2.cell(row=r_idx, column=1, value=rec["emp_code"]).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=2, value=rec["name"]).alignment = Alignment(horizontal="left")
+        ws2.cell(row=r_idx, column=3, value=rec["shift"]).alignment = Alignment(horizontal="center")
+        for c in range(1, 4):
+            ws2.cell(row=r_idx, column=c).font = data_font
+            ws2.cell(row=r_idx, column=c).border = thin_border
+
+        for idx, d_meta in enumerate(matrix["days_meta"], start=4):
+            d_str = str(d_meta["day"])
+            day_info = rec["days"].get(d_str, {"status": "--"})
+            st = day_info["status"]
+            c_cell = ws2.cell(row=r_idx, column=idx, value=st)
+            c_cell.font = bold_font if st in ("P", "WFH") else data_font
+            c_cell.alignment = Alignment(horizontal="center", vertical="center")
+            c_cell.border = thin_border
+            if st == "P": c_cell.fill = p_fill
+            elif st == "A": c_cell.fill = a_fill
+            elif st == "WFH": c_cell.fill = wfh_fill
+            elif st == "WO": c_cell.fill = wo_fill
+            else: c_cell.fill = gray_fill
+
+        ws2.cell(row=r_idx, column=start_summary, value=rec["present_count"]).alignment = Alignment(horizontal="center")
+        late_c = ws2.cell(row=r_idx, column=start_summary + 1, value=rec.get("late_count", 0))
+        late_c.alignment = Alignment(horizontal="center")
+        if rec.get("late_count", 0) > 0:
+            late_c.font = late_font
+            late_c.fill = late_fill
+        ws2.cell(row=r_idx, column=start_summary + 2, value=rec["absent_count"]).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=start_summary + 3, value=rec["wfh_count"]).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=start_summary + 4, value=rec["wo_count"]).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=start_summary + 5, value=f"{rec['attendance_rate']}%").alignment = Alignment(horizontal="center")
+        for s_idx in range(start_summary, start_summary + 6):
+            c_sum = ws2.cell(row=r_idx, column=s_idx)
+            if not c_sum.font or c_sum.font == data_font: c_sum.font = bold_font
+            c_sum.border = thin_border
+        ws2.row_dimensions[r_idx].height = 20
+
+    ws2.column_dimensions["A"].width = 10
+    ws2.column_dimensions["B"].width = 24
+    ws2.column_dimensions["C"].width = 22
+    for idx in range(4, 4 + num_days):
+        ws2.column_dimensions[get_column_letter(idx)].width = 7
+    for idx in range(start_summary, start_summary + 6):
+        ws2.column_dimensions[get_column_letter(idx)].width = 12
+
+    stream = io.BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    return stream
 
 
 def get_monthly_exceeded_report(
@@ -447,7 +535,7 @@ def get_monthly_exceeded_report(
             emp_query = emp_query.filter(
                 (Employee.shift_code == shift_filter) | (Employee.shift_name == shift_filter)
             )
-    if search_query:
+    if search_query and isinstance(search_query, str) and search_query.strip():
         sq = f"%{search_query.strip().lower()}%"
         emp_query = emp_query.filter(
             (func.lower(Employee.name).like(sq)) | (func.lower(Employee.emp_code).like(sq))
@@ -697,7 +785,7 @@ def generate_exceeded_excel_report(
     ws1["A2"].alignment = Alignment(horizontal="center", vertical="center")
 
     headers1 = [
-        "Emp ID", "Employee Name", "Department", "Shift Timing",
+        "Emp ID", "Employee Name", "Shift Timing",
         "Monthly Quota", "Morning Late (> 09:05)", "Evening Early (< 07:00)", "Midday Out",
         "Total Permission Used", "Balance Left", "Exceeded Duration (> 2h)", "Status"
     ]
@@ -712,8 +800,7 @@ def generate_exceeded_excel_report(
     for r_idx, emp_s in enumerate(data["summary"], start=5):
         ws1.cell(row=r_idx, column=1, value=emp_s["emp_code"]).alignment = Alignment(horizontal="center")
         ws1.cell(row=r_idx, column=2, value=emp_s["name"]).alignment = Alignment(horizontal="left")
-        ws1.cell(row=r_idx, column=3, value=emp_s["department"]).alignment = Alignment(horizontal="left")
-        ws1.cell(row=r_idx, column=4, value=emp_s["shift"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=3, value=emp_s["shift"]).alignment = Alignment(horizontal="center")
         ws1.cell(row=r_idx, column=5, value=emp_s["monthly_quota_text"]).alignment = Alignment(horizontal="center")
         ws1.cell(row=r_idx, column=6, value=emp_s["morning_late_text"]).alignment = Alignment(horizontal="center")
         ws1.cell(row=r_idx, column=7, value=emp_s["evening_early_text"]).alignment = Alignment(horizontal="center")
@@ -859,7 +946,7 @@ def get_monthly_late_count_report(
             emp_query = emp_query.filter(
                 (Employee.shift_code == shift_filter) | (Employee.shift_name == shift_filter)
             )
-    if search_query:
+    if search_query and isinstance(search_query, str) and search_query.strip():
         sq = f"%{search_query.strip().lower()}%"
         emp_query = emp_query.filter(
             (func.lower(Employee.name).like(sq)) | (func.lower(Employee.emp_code).like(sq))
