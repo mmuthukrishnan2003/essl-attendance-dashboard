@@ -3,10 +3,12 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
-import { PORT } from './config';
+import http from 'http';
+import { PORT, ALT_PORT, DEVICES } from './config';
 import { initDatabase } from './db/connection';
 import { ensureDefaultUsers } from './services/authService';
 import { initLiveWatcher } from './services/liveSyncService';
+import { startBackgroundDeviceSync } from './services/deviceSyncService';
 
 import authRoutes from './routes/authRoutes';
 import attendanceRoutes from './routes/attendanceRoutes';
@@ -36,10 +38,10 @@ app.use('/api/settings', settingRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json({ status: 'ok', stack: 'Node.js + Express + Angular 20', time: new Date().toISOString() });
 });
 
-// Serve frontend Angular production build if built
+// Serve frontend Angular production build
 const candidateDistDirs = [
   path.resolve(__dirname, '../../frontend/dist/frontend/browser'),
   path.resolve(__dirname, '../../frontend/dist/frontend'),
@@ -55,7 +57,7 @@ for (const dir of candidateDistDirs) {
 }
 
 if (staticDir) {
-  console.log(`📂 Serving static frontend assets from: ${staticDir}`);
+  console.log(`📂 Serving static Angular frontend from: ${staticDir}`);
   app.use(express.static(staticDir));
   app.get('*', (req: Request, res: Response) => {
     if (!req.path.startsWith('/api')) {
@@ -66,13 +68,38 @@ if (staticDir) {
 
 async function startServer() {
   try {
+    console.log('='.repeat(75));
+    console.log('  Centizen eSSL Biometric Attendance Management System (Node + Angular)');
+    console.log('  Primary Portal URL : http://0.0.0.0:' + PORT);
+    console.log('  Alternative URL    : http://0.0.0.0:' + ALT_PORT);
+    console.log('  Connecting to 4 eSSL Devices: ' + DEVICES.map(d => d.ip).join(', '));
+    console.log('='.repeat(75));
+
     await initDatabase();
     await ensureDefaultUsers();
     await initLiveWatcher();
+    startBackgroundDeviceSync();
 
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Centizen eSSL Attendance Server (Node + Express) running on http://0.0.0.0:${PORT}`);
+    // Primary Server
+    const server1 = http.createServer(app);
+    server1.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 [Node + Angular] Primary server active on http://0.0.0.0:${PORT}`);
     });
+
+    // Optional Port 80
+    if (ALT_PORT && ALT_PORT !== PORT) {
+      try {
+        const server80 = http.createServer(app);
+        server80.listen(ALT_PORT, '0.0.0.0', () => {
+          console.log(`🚀 [Node + Angular] HTTP alternative active on http://0.0.0.0:${ALT_PORT}`);
+        });
+        server80.on('error', (err: any) => {
+          console.log(`ℹ️ Note on Port ${ALT_PORT}: ${err.message || err} (Requires root/admin permissions)`);
+        });
+      } catch (e: any) {
+        console.log(`ℹ️ Note on Port ${ALT_PORT}: ${e.message || e}`);
+      }
+    }
   } catch (err) {
     console.error('Fatal error starting server:', err);
     process.exit(1);

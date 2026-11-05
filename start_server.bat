@@ -2,7 +2,7 @@
 title Centizen eSSL Attendance Management System
 cd /d "%~dp0"
 echo ======================================================================
-echo   Centizen eSSL Attendance Management System
+echo   Centizen eSSL Attendance Management System (Node + Angular)
 echo   4 Biometric Devices: 172.16.0.4, 172.16.0.20, 172.16.0.5, 172.16.0.44
 echo   Port: 4370 (ZKTeco Protocol)
 echo ======================================================================
@@ -16,6 +16,5 @@ echo   - http://localhost:8881
 echo.
 echo Press Ctrl+C to stop the server.
 echo.
-python run.py
+node backend/dist/server.js
 pause
-

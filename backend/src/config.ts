@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const PORT = parseInt(process.env.PORT || '3000', 10);
-export const ALT_PORT = parseInt(process.env.ALT_PORT || '8881', 10);
+export const PORT = parseInt(process.env.PORT || '8881', 10);
+export const ALT_PORT = parseInt(process.env.ALT_PORT || '80', 10);
 
 export const DATABASE_URL = process.env.DATABASE_URL || 
   'postgresql://essl:essl@172.16.3.100:5432/essl_attendance?options=-csearch_path%3Dattendance';
@@ -24,4 +24,3 @@ export const DEVICES = [
 export const OFFICE_START = '09:00:00';
 export const OFFICE_END = '19:00:00';
 export const LATE_CUTOFF = '09:05:00';
-

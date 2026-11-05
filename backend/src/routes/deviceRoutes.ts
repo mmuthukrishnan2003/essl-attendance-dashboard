@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { query } from '../db/connection';
 import { DEVICES } from '../config';
+import { syncAllDevices } from '../services/deviceSyncService';
 
 const router = Router();
 
@@ -27,11 +28,12 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/sync', async (req: Request, res: Response) => {
   try {
-    // Return sync started confirmation
+    const results = await syncAllDevices();
     return res.json({
       success: true,
-      message: 'Device synchronization triggered across 4 eSSL terminals',
+      message: 'Device synchronization completed across 4 eSSL terminals',
       timestamp: new Date().toISOString(),
+      results,
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
