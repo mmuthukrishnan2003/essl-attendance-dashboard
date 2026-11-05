@@ -20,5 +20,16 @@
       "role": "Administrator"
     },
     "expiresAt": 1796466973851
+  },
+  "de4fdde8e1ca1e80b465a822f21777e3ad85f9f75a24e3eb699c4ccbe8a89b82": {
+    "token": "de4fdde8e1ca1e80b465a822f21777e3ad85f9f75a24e3eb699c4ccbe8a89b82",
+    "user": {
+      "id": 1,
+      "username": "hr",
+      "fullName": "Centizen Administrator",
+      "email": null,
+      "role": "Administrator"
+    },
+    "expiresAt": 1796471141182
   }
 }
