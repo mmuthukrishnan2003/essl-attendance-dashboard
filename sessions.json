@@ -1,86 +1,13 @@
 {
-  "f366a0ff99ff15bb90e51eb459f1aa1746a4da538ba82a1422613414c4cd355a": {
+  "0ac8af658a0d6b1a46d291e541715c7e2cdd004739f15c55d3b28a304c70b207": {
+    "token": "0ac8af658a0d6b1a46d291e541715c7e2cdd004739f15c55d3b28a304c70b207",
     "user": {
       "id": 1,
-      "username": "admin",
-      "name": "Centizen Administrator",
-      "email": "admin@centizen.com",
-      "role": "admin"
-    },
-    "created_at": 1793798896.016417,
-    "expires_at": 1796390896.0054266,
-    "remember": true
-  },
-  "02f3701589b81add209eda6430db2dd0401df92591dc52c3bd1c7104c9f273e7": {
-    "user": {
-      "id": 2,
       "username": "hr",
-      "name": "Centizen Administrator",
-      "email": "hr@centizen.com",
+      "fullName": "Centizen Administrator",
+      "email": null,
       "role": "Administrator"
     },
-    "created_at": 1793810272.591854,
-    "expires_at": 1796402272.591854,
-    "remember": true
-  },
-  "e432ff7440083bbd895b3ffb5699d10286a53ac8bafbc2225097511208f078e6": {
-    "user": {
-      "id": 2,
-      "username": "hr",
-      "name": "Centizen Administrator",
-      "email": "hr@centizen.com",
-      "role": "Administrator"
-    },
-    "created_at": 1793811124.3846672,
-    "expires_at": 1796403124.3816214,
-    "remember": true
-  },
-  "5ecfea6826af2e57677cb0bd92bc7ce3efd7cbf612c32d8422aabe28ef6a2d46": {
-    "user": {
-      "id": 1,
-      "username": "admin",
-      "name": "Centizen Administrator",
-      "email": "admin@centizen.com",
-      "role": "admin"
-    },
-    "created_at": 1793811146.6434329,
-    "expires_at": 1796403146.6404896,
-    "remember": true
-  },
-  "3d8399979465373ca5543a567417bb8bea2a36bdb64fcecb51d291639fdf50fe": {
-    "user": {
-      "id": 2,
-      "username": "hr",
-      "name": "Centizen Administrator",
-      "email": "hr@centizen.com",
-      "role": "Administrator"
-    },
-    "created_at": 1793812709.7818263,
-    "expires_at": 1796404709.7818263,
-    "remember": true
-  },
-  "eaa410ef76e7d583e1534c22cbb52b43d8780e87a21a7481edc72f3dbef3e507": {
-    "user": {
-      "id": 2,
-      "username": "hr",
-      "name": "Centizen Administrator",
-      "email": "hr@centizen.com",
-      "role": "Administrator"
-    },
-    "created_at": 1793813110.145119,
-    "expires_at": 1796405110.145119,
-    "remember": true
-  },
-  "819d75e5da32139893afdbf5513d3ce9efbc211704b6dbcca637eb47be08650e": {
-    "user": {
-      "id": 2,
-      "username": "hr",
-      "name": "Centizen Administrator",
-      "email": "hr@centizen.com",
-      "role": "Administrator"
-    },
-    "created_at": 1793859924.2475688,
-    "expires_at": 1796451924.2453763,
-    "remember": true
+    "expiresAt": 1796454494307
   }
 }
