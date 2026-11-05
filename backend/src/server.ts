@@ -85,6 +85,13 @@ async function startServer() {
 
     // Primary Server
     const server1 = http.createServer(app);
+    server1.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`\n❌ Error: Port ${PORT} is already in use by an existing process!`);
+        console.error(`👉 Run: sudo fuser -k ${PORT}/tcp to kill the old process, then re-run.\n`);
+        process.exit(1);
+      }
+    });
     server1.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 [Node + Angular] Primary server active on http://0.0.0.0:${PORT}`);
     });

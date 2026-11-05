@@ -82,6 +82,13 @@ async function startServer() {
         (0, deviceSyncService_1.startBackgroundDeviceSync)();
         // Primary Server
         const server1 = http_1.default.createServer(app);
+        server1.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                console.error(`\n❌ Error: Port ${config_1.PORT} is already in use by an existing process!`);
+                console.error(`👉 Run: sudo fuser -k ${config_1.PORT}/tcp to kill the old process, then re-run.\n`);
+                process.exit(1);
+            }
+        });
         server1.listen(config_1.PORT, '0.0.0.0', () => {
             console.log(`🚀 [Node + Angular] Primary server active on http://0.0.0.0:${config_1.PORT}`);
         });
