@@ -49,32 +49,54 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
             "punch_type": "OUT" if p.punch_type == 1 else "IN",
         })
 
-    # Attendance & Overtime trend for past 7 days (for chart)
-    trend = []
-    for day_offset in range(6, -1, -1):
-        day_date = today - timedelta(days=day_offset)
-        # Skip Sundays
-        if day_date.weekday() == 6:
-            continue
-        day_data = calculate_daily_attendance_for_date(target_date=day_date, db=db)
-        present_cnt = day_data.get("present_count", day_data.get("punched_in_count", 0))
-        total_cnt = day_data.get("total_employees", 0)
-        absent_cnt = day_data.get("absent_count", max(0, total_cnt - present_cnt))
-        trend.append({
-            "date": day_date.strftime("%d %b"),
-            "full_date": day_date.strftime("%Y-%m-%d"),
-            "day": day_date.strftime("%a"),
-            "present": present_cnt,
-            "absent": absent_cnt,
-            "late": day_data.get("late_count", 0),
-            "morning_ot_hours": round(day_data.get("total_morning_ot_seconds", 0) / 3600.0, 2),
-            "evening_ot_hours": round(day_data.get("total_evening_ot_seconds", 0) / 3600.0, 2),
-            "total_ot_hours": round(day_data.get("total_ot_seconds", 0) / 3600.0, 2),
-            "morning_ot_text": day_data.get("total_morning_ot_text", "0h 00m"),
-            "evening_ot_text": day_data.get("total_evening_ot_text", "0h 00m"),
-            "total_ot_text": day_data.get("total_ot_text", "0h 00m"),
-            "overtime_count": day_data.get("overtime_employees_count", 0)
-        })
+    # Optimized trend: Cache past days, compute today using daily_stats
+    global _past_trend_cache
+    if '_past_trend_cache' not in globals() or _past_trend_cache.get('date') != today:
+        past_trend = []
+        for day_offset in range(6, 0, -1):
+            day_date = today - timedelta(days=day_offset)
+            if day_date.weekday() == 6:
+                continue
+            day_data = calculate_daily_attendance_for_date(target_date=day_date, db=db)
+            present_cnt = day_data.get("present_count", day_data.get("punched_in_count", 0))
+            total_cnt = day_data.get("total_employees", 0)
+            absent_cnt = day_data.get("absent_count", max(0, total_cnt - present_cnt))
+            past_trend.append({
+                "date": day_date.strftime("%d %b"),
+                "full_date": day_date.strftime("%Y-%m-%d"),
+                "day": day_date.strftime("%a"),
+                "present": present_cnt,
+                "absent": absent_cnt,
+                "late": day_data.get("late_count", 0),
+                "morning_ot_hours": round(day_data.get("total_morning_ot_seconds", 0) / 3600.0, 2),
+                "evening_ot_hours": round(day_data.get("total_evening_ot_seconds", 0) / 3600.0, 2),
+                "total_ot_hours": round(day_data.get("total_ot_seconds", 0) / 3600.0, 2),
+                "morning_ot_text": day_data.get("total_morning_ot_text", "0h 00m"),
+                "evening_ot_text": day_data.get("total_evening_ot_text", "0h 00m"),
+                "total_ot_text": day_data.get("total_ot_text", "0h 00m"),
+                "overtime_count": day_data.get("overtime_employees_count", 0)
+            })
+        _past_trend_cache = {'date': today, 'data': past_trend}
+
+    trend = list(_past_trend_cache['data'])
+    # Append today using already calculated daily_stats (sub-second speed!)
+    today_present = daily_stats.get("present_count", daily_stats.get("punched_in_count", 0))
+    today_total = daily_stats.get("total_employees", 0)
+    trend.append({
+        "date": today.strftime("%d %b"),
+        "full_date": today.strftime("%Y-%m-%d"),
+        "day": today.strftime("%a"),
+        "present": today_present,
+        "absent": daily_stats.get("absent_count", max(0, today_total - today_present)),
+        "late": daily_stats.get("late_count", 0),
+        "morning_ot_hours": round(daily_stats.get("total_morning_ot_seconds", 0) / 3600.0, 2),
+        "evening_ot_hours": round(daily_stats.get("total_evening_ot_seconds", 0) / 3600.0, 2),
+        "total_ot_hours": round(daily_stats.get("total_ot_seconds", 0) / 3600.0, 2),
+        "morning_ot_text": daily_stats.get("total_morning_ot_text", "0h 00m"),
+        "evening_ot_text": daily_stats.get("total_evening_ot_text", "0h 00m"),
+        "total_ot_text": daily_stats.get("total_ot_text", "0h 00m"),
+        "overtime_count": daily_stats.get("overtime_employees_count", 0)
+    })
 
     # Today's Overtime Summary (Standard Office Hours: 09:00 AM - 07:00 PM)
     today_overtime = calculate_daily_overtime_summary(target_date=today, db=db)

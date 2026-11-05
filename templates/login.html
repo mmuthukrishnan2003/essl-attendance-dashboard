@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Centizen Biometric Attendance Portal</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0A5482',
+              navyHover: '#084368',
+              navyLight: '#E8F2F8',
+              orange: '#F27E20',
+              orangeHover: '#D96A12',
+              orangeDark: '#C85C0A',
+              orangeLight: '#FFF5ED',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .bg-grid-pattern {
+      background-image: radial-gradient(rgba(10, 84, 130, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    /* Smooth zoom transitions */
+    #login-card-box {
+      transform-origin: center center;
+      will-change: transform, zoom;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 bg-grid-pattern text-slate-800 antialiased overflow-x-hidden relative">
+
+  <!-- Top Decorative Header Bar (Fixed & Static) -->
+  <div class="fixed top-0 left-0 right-0 z-50 h-1.5 bg-gradient-to-r from-brand-navy via-brand-orange to-brand-navy"></div>
+
+<!-- Ambient Brand Radial Glow (Fixed Background) -->
+  <div class="fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[34rem] h-[34rem] bg-brand-orange/15 rounded-full blur-3xl pointer-events-none z-0"></div>
+  <div class="fixed bottom-1/4 right-1/4 w-80 h-80 bg-brand-navy/8 rounded-full blur-3xl pointer-events-none z-0"></div>
+
+  <!-- Main Viewport Stage (Scrollable if zoomed large, perfectly centered) -->
+  <main class="min-h-screen w-full flex items-center justify-center px-4 pt-12 pb-16 relative z-10 overflow-y-auto">
+
+    <!-- The Marked Box Container (Zoomable Target) -->
+    <div id="login-card-box" class="w-full max-w-md my-auto transition-[zoom,transform] duration-150 ease-out origin-center">
+      
+      <!-- Login Card with Orange Top Border -->
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200/80 border-t-4 border-t-brand-orange overflow-hidden transition-all duration-300">
+        
+        <!-- Card Header with Centizen Logo -->
+        <div class="px-8 pt-8 pb-6 text-center border-b border-slate-100 bg-gradient-to-b from-orange-50/30 via-slate-50/50 to-white">
+          <div class="inline-flex items-center justify-center p-3 mb-3 bg-white rounded-2xl shadow-sm border border-orange-200/80 ring-4 ring-orange-50/80">
+            <img src="/static/uploads/company_logo.jpg" alt="Centizen Logo" class="h-14 w-auto object-contain" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'140\' height=\'52\'><rect width=\'100%\' height=\'100%\' fill=\'%23f27e20\' rx=\'8\'/><text x=\'50%\' y=\'55%\' fill=\'white\' font-size=\'16\' font-weight=\'bold\' text-anchor=\'middle\' dominant-baseline=\'middle\'>Centizen</text></svg>'">
+          </div>
+          <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Centizen IT Services</h1>
+          <p class="text-xs font-semibold text-brand-orange mt-0.5">Attendance Management System</p>
+          <div class="inline-flex items-center space-x-1.5 mt-2.5 px-3 py-1 rounded-full text-[11px] font-medium bg-orange-50 text-orange-950 border border-orange-200/80 shadow-2xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Biometric Devices: Port 4370 Active</span>
+          </div>
+        </div>
+
+        <!-- Card Body / Form -->
+        <div class="px-8 py-6 select-text">
+          
+          <!-- Alert Box (Hidden by default) -->
+          <div id="alert-box" class="hidden mb-5 p-3 rounded-xl text-xs font-medium border flex items-start space-x-2.5 transition-all">
+            <svg id="alert-icon" class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+            <span id="alert-text"></span>
+          </div>
+
+          <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+            
+            <!-- Username Input -->
+            <div>
+              <label for="username" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Username
+              </label>
+              <div class="relative rounded-xl shadow-xs">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                </div>
+                <input 
+                  type="text" 
+                  id="username" 
+                  name="username" 
+                  required 
+                  autofocus
+                  autocomplete="username"
+                  placeholder="Enter username" 
+                  class="block w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border border-slate-300 text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange transition duration-150"
+                >
+              </div>
+            </div>
+
+            <!-- Password Input -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="password" class="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                  Password
+                </label>
+              </div>
+              <div class="relative rounded-xl shadow-xs">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                  </svg>
+                </div>
+                <input 
+                  type="password" 
+                  id="password" 
+                  name="password" 
+                  required 
+                  autocomplete="current-password"
+                  placeholder="••••••••" 
+                  class="block w-full pl-10 pr-10 py-2.5 text-sm rounded-xl border border-slate-300 text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange transition duration-150"
+                >
+                <!-- Toggle Password Visibility -->
+                <button 
+                  type="button" 
+                  onclick="togglePasswordVisibility()" 
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                  title="Show/Hide Password"
+                >
+                  <svg id="eye-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center text-xs pt-1">
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="remember" name="remember" checked class="w-4 h-4 rounded text-brand-orange focus:ring-brand-orange border-slate-300">
+                <span class="text-slate-600 font-medium">Keep me signed in</span>
+              </label>
+            </div>
+
+            <!-- Submit Button (Centizen Brand Orange) -->
+            <button 
+              type="submit" 
+              id="submit-btn"
+              class="w-full mt-2 flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-orange to-brand-orangeHover hover:from-brand-orangeHover hover:to-brand-orangeDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange shadow-lg shadow-brand-orange/30 transition-all duration-150 active:scale-[0.99]"
+            >
+              <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="btn-text">Sign In to Portal</span>
+            </button>
+
+          </form>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Bottom Bar (Static & Fixed - Never Overlapped) -->
+  <footer class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2.5 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 select-none shadow-xs">
+    <div class="flex items-center space-x-2">
+      <span class="font-semibold text-slate-700">Centizen IT Services &amp; Solutions Pvt Ltd</span>
+      <span class="text-slate-300 hidden sm:inline">&bull;</span>
+      <span class="text-slate-400 hidden sm:inline">Integrated with 4 Biometric Devices &bull; PostgreSQL &bull; LAN Port 8881 / 80</span>
+    </div>
+    <div class="mt-1 sm:mt-0 text-slate-400">
+      &copy; 2026 Centizen IT Services &amp; Solutions. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    // --- Box-Only Zoom Controller ---
+    let currentZoom = parseFloat(localStorage.getItem('login_box_zoom') || '1.0');
+    if (isNaN(currentZoom) || currentZoom < 0.6 || currentZoom > 1.6) {
+      currentZoom = 1.0;
+    }
+
+    function applyCardZoom(newZoom) {
+      const maxAllowed = window.innerWidth < 640 ? 1.0 : 1.6;
+      currentZoom = Math.round(Math.min(Math.max(newZoom, 0.6), maxAllowed) * 100) / 100;
+      const card = document.getElementById('login-card-box');
+      const badge = document.getElementById('zoom-percentage');
+
+      if (card) {
+        if (CSS.supports && CSS.supports('zoom', '1')) {
+          card.style.zoom = currentZoom;
+        } else {
+          card.style.transform = `scale(${currentZoom})`;
+          card.style.transformOrigin = 'center center';
+        }
+      }
+
+      if (badge) {
+        badge.textContent = Math.round(currentZoom * 100) + '%';
+      }
+
+      localStorage.setItem('login_box_zoom', currentZoom);
+    }
+
+    // Intercept Ctrl + Mouse Wheel / Trackpad pinch on the page -> Zooms ONLY the marked box
+    window.addEventListener('wheel', function(e) {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.05 : -0.05;
+        applyCardZoom(currentZoom + delta);
+      }
+    }, { passive: false });
+
+    // Intercept Ctrl + Keyboard Shortcuts (+, -, 0) -> Zooms ONLY the marked box
+    window.addEventListener('keydown', function(e) {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=' || e.key === '+' || e.code === 'NumpadAdd') {
+          e.preventDefault();
+          applyCardZoom(currentZoom + 0.1);
+        } else if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+          e.preventDefault();
+          applyCardZoom(currentZoom - 0.1);
+        } else if (e.key === '0' || e.code === 'Numpad0') {
+          e.preventDefault();
+          applyCardZoom(1.0);
+        }
+      }
+    });
+
+    // Touchscreen two-finger pinch support for mobile/tablets
+    let initialPinchDistance = null;
+    let initialPinchZoom = 1.0;
+
+    window.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 2) {
+        initialPinchDistance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+        initialPinchZoom = currentZoom;
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', function(e) {
+      if (e.touches.length === 2 && initialPinchDistance) {
+        e.preventDefault();
+        const currentDistance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+        const scaleFactor = currentDistance / initialPinchDistance;
+        applyCardZoom(initialPinchZoom * scaleFactor);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', function(e) {
+      if (e.touches.length < 2) {
+        initialPinchDistance = null;
+      }
+    }, { passive: true });
+
+    // Initialize zoom on load
+    document.addEventListener('DOMContentLoaded', function() {
+      applyCardZoom(currentZoom);
+    });
+
+    // --- Form & Auth Functionality ---
+    function togglePasswordVisibility() {
+      const pwd = document.getElementById('password');
+      const eyeIcon = document.getElementById('eye-icon');
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>
+        `;
+      } else {
+        pwd.type = 'password';
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        `;
+      }
+    }
+
+    function showAlert(msg, type = 'error') {
+      const box = document.getElementById('alert-box');
+      const text = document.getElementById('alert-text');
+      const icon = document.getElementById('alert-icon');
+      box.classList.remove('hidden', 'bg-rose-50', 'text-rose-700', 'border-rose-200', 'bg-emerald-50', 'text-emerald-700', 'border-emerald-200', 'bg-blue-50', 'text-blue-700', 'border-blue-200');
+
+      if (type === 'error') {
+        box.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-200');
+        icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>`;
+      } else if (type === 'success') {
+        box.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
+        icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>`;
+      } else {
+        box.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
+        icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>`;
+      }
+
+      text.textContent = msg;
+    }
+
+    async function handleLoginSubmit(event) {
+      event.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const remember = document.getElementById('remember').checked;
+      const submitBtn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+
+      if (!username || !password) {
+        showAlert('Please enter both username and password.');
+        return;
+      }
+
+      // UI loading state
+      submitBtn.disabled = true;
+      btnSpinner.classList.remove('hidden');
+      btnText.textContent = 'Authenticating...';
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, remember })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          showAlert('Sign in successful! Redirecting to dashboard...', 'success');
+          // Cache user name for header
+          if (data.user) {
+            localStorage.setItem('auth_user', JSON.stringify(data.user));
+          }
+          setTimeout(() => {
+            window.location.href = data.redirect || '/';
+          }, 400);
+        } else {
+          showAlert(data.detail || 'Invalid username or password. Please try again.');
+          submitBtn.disabled = false;
+          btnSpinner.classList.add('hidden');
+          btnText.textContent = 'Sign In to Portal';
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        showAlert('Unable to connect to server. Please check your network connection.');
+        submitBtn.disabled = false;
+        btnSpinner.classList.add('hidden');
+        btnText.textContent = 'Sign In to Portal';
+      }
+    }
+  </script>
+</body>
+</html>

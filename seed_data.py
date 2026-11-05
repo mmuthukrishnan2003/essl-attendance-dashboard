@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta, time
 from sqlalchemy.orm import Session
 
 from app.database import engine, Base, SessionLocal
-from app.models import Device, Employee, AttendancePunch, Setting, Shift
+from app.models import Device, Employee, AttendancePunch, Setting, Shift, User
 from app.config import DEFAULT_DEVICES, DEFAULT_SETTINGS
 
 DEFAULT_SHIFTS = [
@@ -102,6 +102,10 @@ def init_db():
             s = db.query(Setting).filter(Setting.key == k).first()
             if not s:
                 db.add(Setting(key=k, value=v))
+
+        # 4. Initialize Default Admin User
+        from app.routes.auth import ensure_default_admin
+        ensure_default_admin(db)
 
         db.commit()
     finally:

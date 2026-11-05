@@ -1,10 +1,13 @@
 import csv
 import io
+import json
+import asyncio
 from datetime import date, datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, HTTPException, Response
+from fastapi import APIRouter, Depends, Query, HTTPException, Response, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from app.live_sync import live_manager
 
 from app.database import get_db
 from app.models import AttendancePunch, Employee
@@ -230,8 +233,8 @@ def export_attendance_csv(
     writer = csv.writer(output)
 
     writer.writerow([
-        "Date", "Employee ID", "Employee Name", "Shift",
-        "First IN", "Last OUT", "Intermediate Punches Count"
+        "Date", "Employee ID", "Employee Name", "Shift Timing",
+        "First IN", "Last OUT", "Intermediate Punches"
     ])
 
     cur = s_date
@@ -242,6 +245,7 @@ def export_attendance_csv(
             department_filter=department if department != "ALL" else None,
             shift_filter=shift if shift != "ALL" else None
         )
+        date_str = cur.strftime("%d-%m-%Y")
         for r in daily_res["records"]:
             if r.get("is_wfh") and not r.get("first_in"):
                 first_in_val = "🏠 WFH (Remote)"
@@ -250,7 +254,7 @@ def export_attendance_csv(
                 first_in_val = f"{r['first_in_time']} ({r['first_in_device']})" if r.get("first_in") else "--"
                 last_out_val = f"{r['last_out_time']} ({r['last_out_device']})" if r.get("last_out") else "--"
             writer.writerow([
-                r["date"],
+                date_str,
                 r["emp_code"],
                 r["name"],
                 r["shift"],
@@ -543,7 +547,7 @@ def export_monthly_exceeded_csv(
 
     writer.writerow([
         "Emp ID", "Employee Name", "Shift Timing",
-        "Monthly Quota", "Morning Late", "Evening Early", "Midday Out",
+        "Monthly Quota", "Morning Late", "Evening Early",
         "Total Permission Used", "Balance Left", "Exceeded Duration (> 2h)", "Status"
     ])
 
@@ -555,7 +559,6 @@ def export_monthly_exceeded_csv(
             emp_s["monthly_quota_text"],
             emp_s["morning_late_text"],
             emp_s["evening_early_text"],
-            emp_s["midday_break_text"],
             emp_s["total_used_text"],
             emp_s["balance_text"],
             emp_s["exceeded_text"],
@@ -692,3 +695,52 @@ def export_monthly_late_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+@router.get("/live-stream")
+async def live_attendance_stream(request: Request):
+    """
+    Real-time Server-Sent Events (SSE) stream.
+    Pushes live biometric punches within milliseconds directly to the portal dashboard.
+    """
+    async def event_generator():
+        q = asyncio.Queue()
+        live_manager.subscribers.add(q)
+        try:
+            # Send initial connected status
+            init_msg = json.dumps({"type": "connected", "version": live_manager.version})
+            yield f"data: {init_msg}\n\n"
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    # Wait for next punch event with 12-second heartbeat
+                    data = await asyncio.wait_for(q.get(), timeout=12.0)
+                    yield f"data: {json.dumps(data)}\n\n"
+                except asyncio.TimeoutError:
+                    # Send keep-alive comment so proxy/browser connection stays open
+                    yield ": heartbeat\n\n"
+        finally:
+            live_manager.subscribers.discard(q)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
+@router.get("/live-status")
+def get_live_attendance_status():
+    """
+    Fast sub-second poll endpoint providing current punch version and latest punch info.
+    """
+    return {
+        "version": live_manager.version,
+        "last_punch": live_manager.last_punch_info,
+        "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }

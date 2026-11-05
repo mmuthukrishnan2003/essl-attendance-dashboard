@@ -131,3 +131,30 @@ class Setting(Base):
 
     key = Column(String(64), primary_key=True)
     value = Column(Text, nullable=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(64), unique=True, nullable=False, index=True)
+    password_hash = Column(String(256), nullable=False)
+    salt = Column(String(64), nullable=False, default="")
+    full_name = Column(String(128), default="Administrator")
+    email = Column(String(128), nullable=True)
+    role = Column(String(32), default="admin")
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=func.now())
+    last_login = Column(DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "full_name": self.full_name,
+            "email": self.email or "",
+            "role": self.role,
+            "is_active": self.is_active,
+            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S") if self.created_at else "",
+            "last_login": self.last_login.strftime("%Y-%m-%d %H:%M:%S") if self.last_login else None,
+        }

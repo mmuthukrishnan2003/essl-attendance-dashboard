@@ -186,8 +186,10 @@ function refreshCurrentPage() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const savedZoom = localStorage.getItem('dashboard_zoom') || '90%';
-  setDashboardZoom(savedZoom);
+  updateGlobalDbStatusBadge();
+  setDashboardZoom('100%');
+  initUserProfile();
+  initLiveBiometricSync();
   initLiveClock();
   initDefaults();
 
@@ -224,40 +226,55 @@ window.addEventListener('hashchange', () => {
 
 
 
-// ================= ZOOM CONTROL =================
-
-function setDashboardZoom(val = '90%') {
-
-  document.body.style.zoom = val;
-
+// ================= ZOOM CONTROL (Cleaned / Default 100%) =================
+function setDashboardZoom(val = '100%') {
+  document.body.style.zoom = '100%';
   try {
-
-    localStorage.setItem('dashboard_zoom', val);
-
+    localStorage.removeItem('dashboard_zoom');
   } catch (e) {}
+}
 
+// ================= GLOBAL ACTIVE DB STATUS SYNC =================
+async function updateGlobalDbStatusBadge() {
+  try {
+    const res = await fetch('/api/database/info');
+    if (!res.ok) return;
+    const data = await res.json();
+    const isPostgres = Boolean(data.is_postgres || (data.dialect && data.dialect.toUpperCase().includes('POSTGRES')));
+    const dbName = data.database_name || (isPostgres ? (data.connection_url ? data.connection_url.split('/').pop().split('?')[0] : 'essl_attendance') : 'attendance.db');
 
-
-  ['85', '90', '100'].forEach(z => {
-
-    const btn = document.getElementById(`zoom-btn-${z}`);
-
-    if (btn) {
-
-      if (`${z}%` === val) {
-
-        btn.className = 'px-2 py-1 rounded text-[11px] bg-white text-brand-navy shadow-xs font-bold transition';
-
+    const headerDbDot = document.getElementById('header-db-dot');
+    const headerDbText = document.getElementById('header-db-text');
+    const headerDbBadge = document.getElementById('header-db-badge');
+    if (headerDbBadge && headerDbDot && headerDbText) {
+      if (isPostgres) {
+        headerDbBadge.className = 'hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 shadow-xs cursor-pointer hover:bg-blue-100 transition';
+        headerDbDot.className = 'w-2 h-2 rounded-full bg-blue-600 animate-pulse';
+        headerDbText.textContent = `DB: PostgreSQL (${dbName})`;
       } else {
-
-        btn.className = 'px-2 py-1 rounded text-[11px] font-medium text-slate-600 hover:text-slate-900 transition';
-
+        headerDbBadge.className = 'hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs cursor-pointer hover:bg-emerald-100 transition';
+        headerDbDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        headerDbText.textContent = 'DB: SQLite';
       }
-
     }
 
-  });
-
+    const sideDot = document.getElementById('sidebar-db-dot');
+    const sideLabel = document.getElementById('sidebar-db-label');
+    const sideName = document.getElementById('sidebar-db-name');
+    if (sideDot && sideLabel && sideName) {
+      if (isPostgres) {
+        sideDot.className = 'w-2 h-2 rounded-full bg-blue-500 animate-pulse';
+        sideLabel.textContent = 'DB: Postgres';
+        sideName.textContent = dbName;
+      } else {
+        sideDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        sideLabel.textContent = 'DB: SQLite';
+        sideName.textContent = 'attendance.db';
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to update DB badge:', e);
+  }
 }
 
 
@@ -469,6 +486,7 @@ function setDateRangePreset(preset) {
 // ================= TAB NAVIGATION (LEFT SIDEBAR) =================
 
 function switchTab(tabId, updateHistory = true) {
+  updateGlobalDbStatusBadge();
   if (!VALID_TABS.includes(tabId)) {
     tabId = 'dashboard';
   }
@@ -506,7 +524,7 @@ function switchTab(tabId, updateHistory = true) {
 
     monthly: { title: 'Monthly Attendance Report & Muster Roll', sub: 'Comprehensive 1–31 days attendance matrix, muster roll, and monthly payroll summary' },
     late: { title: 'Monthly Late Punch Count', sub: 'Punctuality tracking, late punch counts, and arrival incidents based on 09:05 AM shift cutoff' },
-    exceeded: { title: 'Employees Exceeding 2 Hours List Monthly', sub: 'Employees whose break / out-of-office duration exceeded 2 hours during the month' },
+    exceeded: { title: 'Permission (2 Hours Monthly Quota)', sub: '2-hour monthly permission quota applied to General Shift (9-7) and Standard Shift (9-6)' },
     shifts: { title: 'Shift Management', sub: 'Configure daytime and overnight cross-midnight shifts and assignments' },
     employees: { title: 'Employee Management', sub: 'Manage employee directory and biometric enrollments' },
     devices: { title: 'Connected eSSL Biometric Devices (4)', sub: 'Live integration with 4 eSSL F18 + F12 devices over Port 4370' },
@@ -2211,33 +2229,29 @@ function editEmployee(empCode) {
 
 
 function onEmpShiftSelectChange(code) {
-
-  if (code === 'SHIFT_9_7') {
-
-    document.getElementById('emp-form-shift-start').value = '09:00';
-
-    document.getElementById('emp-form-shift-end').value = '19:00';
-
-  } else if (code === 'SHIFT_9_6') {
-
-    document.getElementById('emp-form-shift-start').value = '09:00';
-
-    document.getElementById('emp-form-shift-end').value = '18:00';
-
-  } else if (code === 'SHIFT_NIGHT') {
-
-    document.getElementById('emp-form-shift-start').value = '21:00';
-
-    document.getElementById('emp-form-shift-end').value = '06:00';
-
-  } else if (code === 'SHIFT_WFH') {
-
-    document.getElementById('emp-form-shift-start').value = '09:30';
-
-    document.getElementById('emp-form-shift-end').value = '18:30';
-
+  const shift = (allShiftsCache || []).find(s => s.code === code);
+  if (shift) {
+    if (shift.start_time && shift.start_time !== '00:00') {
+      document.getElementById('emp-form-shift-start').value = shift.start_time;
+    }
+    if (shift.end_time && shift.end_time !== '00:00') {
+      document.getElementById('emp-form-shift-end').value = shift.end_time;
+    }
+    return;
   }
-
+  if (code === 'SHIFT_9_7') {
+    document.getElementById('emp-form-shift-start').value = '09:00';
+    document.getElementById('emp-form-shift-end').value = '19:00';
+  } else if (code === 'SHIFT_9_6') {
+    document.getElementById('emp-form-shift-start').value = '09:00';
+    document.getElementById('emp-form-shift-end').value = '18:00';
+  } else if (code === 'SHIFT_NIGHT') {
+    document.getElementById('emp-form-shift-start').value = '21:00';
+    document.getElementById('emp-form-shift-end').value = '06:00';
+  } else if (code === 'SHIFT_WFH') {
+    document.getElementById('emp-form-shift-start').value = '09:30';
+    document.getElementById('emp-form-shift-end').value = '18:30';
+  }
 }
 
 
@@ -4558,6 +4572,69 @@ let allShiftsCache = [];
 
 
 
+function populateAllShiftDropdowns(shifts) {
+  if (!shifts || shifts.length === 0) return;
+
+  // 1. Bulk Assign dropdown in Shift Management: #quick-assign-shift-code
+  const quickAssignSelect = document.getElementById('quick-assign-shift-code');
+  if (quickAssignSelect) {
+    const currentVal = quickAssignSelect.value;
+    quickAssignSelect.innerHTML = shifts.map(s => {
+      const timingPart = (s.start_time && s.end_time && s.start_time !== '00:00') ? ` (${s.start_time} - ${s.end_time})` : '';
+      return `<option value="${s.code}">${s.name}${s.name.includes('(') ? '' : timingPart}</option>`;
+    }).join('');
+    if (currentVal && shifts.some(s => s.code === currentVal)) {
+      quickAssignSelect.value = currentVal;
+    }
+  }
+
+  // 2. Employee Add/Edit modal shift select: #emp-form-shift-select
+  const empFormSelect = document.getElementById('emp-form-shift-select');
+  if (empFormSelect) {
+    const currentVal = empFormSelect.value;
+    empFormSelect.innerHTML = shifts.map(s => {
+      const timingPart = (s.start_time && s.end_time && s.start_time !== '00:00') ? ` (${s.start_time} - ${s.end_time})` : '';
+      return `<option value="${s.code}" data-start="${s.start_time}" data-end="${s.end_time}">${s.name}${s.name.includes('(') ? '' : timingPart}</option>`;
+    }).join('');
+    if (currentVal && shifts.some(s => s.code === currentVal)) {
+      empFormSelect.value = currentVal;
+    }
+  }
+
+  // 3. Daily Report filter: #report-shift-select
+  const reportShiftSelect = document.getElementById('report-shift-select');
+  if (reportShiftSelect) {
+    const currentVal = reportShiftSelect.value;
+    reportShiftSelect.innerHTML = `<option value="ALL">All Shifts</option>` + shifts.map(s => {
+      const timingPart = (s.start_time && s.end_time && s.start_time !== '00:00') ? ` (${s.start_time} - ${s.end_time})` : '';
+      return `<option value="${s.code}">${s.name}${s.name.includes('(') ? '' : timingPart}</option>`;
+    }).join('');
+    if (currentVal) reportShiftSelect.value = currentVal;
+  }
+
+  // 4. Monthly Attendance Report filter: #monthly-shift-select
+  const monthlyShiftSelect = document.getElementById('monthly-shift-select');
+  if (monthlyShiftSelect) {
+    const currentVal = monthlyShiftSelect.value;
+    monthlyShiftSelect.innerHTML = `<option value="ALL">All Shifts</option>` + shifts.map(s => {
+      const timingPart = (s.start_time && s.end_time && s.start_time !== '00:00') ? ` (${s.start_time} - ${s.end_time})` : '';
+      return `<option value="${s.code}">${s.name}${s.name.includes('(') ? '' : timingPart}</option>`;
+    }).join('');
+    if (currentVal) monthlyShiftSelect.value = currentVal;
+  }
+
+  // 5. Permission filter: #exceeded-shift-select
+  const exceededShiftSelect = document.getElementById('exceeded-shift-select');
+  if (exceededShiftSelect) {
+    const currentVal = exceededShiftSelect.value;
+    exceededShiftSelect.innerHTML = `<option value="ALL">All Applicable Shifts</option>` + shifts.map(s => {
+      const timingPart = (s.start_time && s.end_time && s.start_time !== '00:00') ? ` (${s.start_time} - ${s.end_time})` : '';
+      return `<option value="${s.code}">${s.name}${s.name.includes('(') ? '' : timingPart}</option>`;
+    }).join('');
+    if (currentVal) exceededShiftSelect.value = currentVal;
+  }
+}
+
 async function loadShiftsData() {
 
   try {
@@ -4573,6 +4650,7 @@ async function loadShiftsData() {
     allShiftsCache = data.shifts || [];
 
     renderShiftsCards(allShiftsCache);
+    populateAllShiftDropdowns(allShiftsCache);
 
 
 
@@ -4843,7 +4921,7 @@ function renderShiftAssignmentTable(employees, shifts) {
 
         <select onchange="quickChangeEmpShift('${e.emp_code}', this.value)" class="text-xs px-2 py-1 rounded border border-slate-300 bg-white">
 
-          ${(shifts || []).map(s => `<option value="${s.code}" ${s.code === e.shift_code ? 'selected' : ''}>${s.name}</option>`).join('')}
+          ${(shifts || []).map(s => { const t = (s.start_time && s.end_time && s.start_time !== '00:00') ? ` (${s.start_time} - ${s.end_time})` : ''; return `<option value="${s.code}" ${s.code === e.shift_code ? 'selected' : ''}>${s.name}${s.name.includes('(') ? '' : t}</option>`; }).join('')}
 
         </select>
 
@@ -4976,17 +5054,24 @@ async function quickChangeEmpShift(empCode, shiftCode) {
 
 
 function openAddShiftModal() {
-
   document.getElementById('modal-shift-title').textContent = 'Create New Shift';
-
   document.getElementById('shift-form-id').value = '';
-
   document.getElementById('shift-form-code').disabled = false;
-
   document.getElementById('shift-form').reset();
-
+  document.getElementById('shift-form-start').value = '09:00';
+  document.getElementById('shift-form-end').value = '18:00';
   openModal('modal-shift');
+}
 
+function autoSuggestShiftCode(name) {
+  const codeEl = document.getElementById('shift-form-code');
+  if (codeEl && !codeEl.disabled && (!codeEl.value || codeEl.dataset.isAuto !== 'false')) {
+    const slug = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    if (slug) {
+      codeEl.value = slug.startsWith('SHIFT_') ? slug : 'SHIFT_' + slug;
+      codeEl.dataset.isAuto = 'true';
+    }
+  }
 }
 
 
@@ -5443,8 +5528,7 @@ function renderExceededTable(data) {
           <th class="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[150px]">Shift Timing</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[95px]">Monthly Quota</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50/50 min-w-[130px]">Morning Late (&gt; 09:05)</th>
-        <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50/50 min-w-[130px]">Evening Early (&lt; 07:00)</th>
-        <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[90px]">Midday Out</th>
+        <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50/50 min-w-[130px]">Evening Early (Shift End)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-800 bg-slate-200/60 min-w-[105px]">Total Used</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-emerald-800 min-w-[95px]">Balance Left</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-rose-700 min-w-[140px]">Exceeded (&gt; 2h)</th>
@@ -5482,9 +5566,6 @@ function renderExceededTable(data) {
           <td class="px-3 py-2.5 text-center font-mono text-xs text-indigo-800 bg-indigo-50/30 whitespace-nowrap font-semibold">
             ${emp_s.evening_early_text}
           </td>
-          <td class="px-3 py-2.5 text-center font-mono text-xs text-slate-600 whitespace-nowrap">
-            ${emp_s.midday_break_text}
-          </td>
           <td class="px-3 py-2.5 text-center font-bold text-slate-900 bg-slate-100/50 whitespace-nowrap">
             ${emp_s.total_used_text}
           </td>
@@ -5520,8 +5601,7 @@ function renderExceededTable(data) {
           <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50/50 min-w-[130px]">First IN (Device)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50/50 min-w-[130px]">Last OUT (Device)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[95px]">Late (&gt; 09:05)</th>
-        <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[95px]">Early (&lt; 07:00)</th>
-        <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[85px]">Midday</th>
+        <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50/50 min-w-[130px]">Evening Early (Shift End)</th>
         <th class="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-rose-700 min-w-[100px]">Deducted</th>
         <th class="px-3.5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-700 min-w-[190px]">Deduction Reasons</th>
       </tr>
@@ -5552,9 +5632,6 @@ function renderExceededTable(data) {
           </td>
           <td class="px-3 py-2 text-center font-mono text-xs font-semibold ${inc.evening_early_mins > 0 ? 'text-indigo-700' : 'text-slate-400'}">
             ${inc.evening_early_mins > 0 ? `+${inc.evening_early_mins}m` : '--'}
-          </td>
-          <td class="px-3 py-2 text-center font-mono text-xs text-slate-600">
-            ${inc.midday_break_mins > 0 ? `+${inc.midday_break_mins}m` : '--'}
           </td>
           <td class="px-3 py-2 text-center font-extrabold text-rose-700 whitespace-nowrap">
             <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
@@ -5624,9 +5701,6 @@ function openEmployeePermissionDrilldown(empCode) {
           </td>
           <td class="px-3 py-2 text-center font-mono text-xs font-semibold ${inc.evening_early_mins > 0 ? 'text-indigo-700' : 'text-slate-400'}">
             ${inc.evening_early_mins > 0 ? `+${inc.evening_early_mins}m` : '--'}
-          </td>
-          <td class="px-3 py-2 text-center font-mono text-xs text-slate-600">
-            ${inc.midday_break_mins > 0 ? `+${inc.midday_break_mins}m` : '--'}
           </td>
           <td class="px-3 py-2 text-center font-bold text-rose-700">-${inc.day_deducted_text}</td>
           <td class="px-3 py-2 text-left text-xs text-slate-600">${inc.reasons_str}</td>
@@ -6330,4 +6404,179 @@ function exportMonthlyLateCSV() {
   const shift = document.getElementById('late-shift-select')?.value || 'ALL';
   const onlyLate = document.getElementById('late-only-checkbox')?.checked ? 'true' : 'false';
   window.location.href = `/api/attendance/export/monthly-late-csv?year=${y}&month=${m}&only_late=${onlyLate}&department=${encodeURIComponent(dept)}&shift=${encodeURIComponent(shift)}`;
+}
+
+
+// ================= AUTHENTICATION & USER SESSION =================
+async function initUserProfile() {
+  try {
+    let user = null;
+    try {
+      const cached = localStorage.getItem('auth_user');
+      if (cached) user = JSON.parse(cached);
+    } catch (e) {}
+
+    const res = await fetch('/api/auth/me');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.user) {
+        user = data.user;
+        try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch (e) {}
+      }
+    } else if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    if (user) {
+      const nameEl = document.getElementById('sidebar-user-name') || document.getElementById('header-user-name');
+      const roleEl = document.getElementById('sidebar-user-role') || document.getElementById('header-user-role');
+      const avatarEl = document.getElementById('sidebar-user-avatar') || document.getElementById('header-user-avatar');
+      if (nameEl) nameEl.textContent = user.name || user.username || 'Centizen Administrator';
+      if (roleEl) roleEl.textContent = user.role || 'Administrator';
+      if (avatarEl) {
+        const initial = (user.name || user.username || 'C').charAt(0).toUpperCase();
+        avatarEl.textContent = initial;
+      }
+    }
+  } catch (err) {
+    console.warn('initUserProfile error:', err);
+  }
+}
+
+async function handleLogout() {
+  if (!confirm('Are you sure you want to sign out of the Centizen Attendance Portal?')) {
+    return;
+  }
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (e) {}
+  try {
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('session_token');
+  } catch (e) {}
+  window.location.href = '/login';
+}
+
+
+// ================= REAL-TIME SUB-SECOND BIOMETRIC AUTO-SYNC (< 1s) =================
+let livePunchVersion = 0;
+let liveEventSource = null;
+
+function initLiveBiometricSync() {
+  console.log('⚡ Initializing real-time biometric auto-sync (< 1s latency)...');
+  connectLiveEventStream();
+  setInterval(pollLiveStatusHeartbeat, 1000);
+}
+
+function connectLiveEventStream() {
+  if (!window.EventSource) return;
+
+  try {
+    if (liveEventSource) {
+      liveEventSource.close();
+    }
+
+    liveEventSource = new EventSource('/api/attendance/live-stream');
+
+    liveEventSource.onmessage = function(e) {
+      if (!e.data) return;
+      try {
+        const payload = JSON.parse(e.data);
+        if (payload.type === 'connected') {
+          livePunchVersion = payload.version || livePunchVersion;
+          console.log('⚡ Live biometric stream connected at version:', livePunchVersion);
+        } else if (payload.type === 'new_punch') {
+          console.log('⚡ REAL-TIME PUNCH ARRIVED:', payload);
+          livePunchVersion = payload.version || (livePunchVersion + 1);
+          handleLivePunchArrival(payload);
+        } else if (payload.type === 'catchup_synced') {
+          livePunchVersion = payload.version || (livePunchVersion + 1);
+          silentRefreshActiveTab();
+        }
+      } catch (err) {
+        console.warn('Error parsing live stream event:', err);
+      }
+    };
+
+    liveEventSource.onerror = function() {
+      if (liveEventSource.readyState === EventSource.CLOSED) {
+        setTimeout(connectLiveEventStream, 2000);
+      }
+    };
+  } catch (err) {
+    console.warn('Live EventSource setup error:', err);
+  }
+}
+
+async function pollLiveStatusHeartbeat() {
+  // Ultra-fast 1-second fallback poll to ensure 100% sub-second synchronization
+  try {
+    const res = await fetch('/api/attendance/live-status');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.version) {
+      if (livePunchVersion === 0) {
+        livePunchVersion = data.version;
+      } else if (data.version > livePunchVersion) {
+        console.log(`⚡ Punch version changed: ${livePunchVersion} -> ${data.version}, refreshing dashboard...`);
+        livePunchVersion = data.version;
+        if (data.last_punch) {
+          handleLivePunchArrival(data.last_punch);
+        } else {
+          silentRefreshActiveTab();
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore transient poll blips
+  }
+}
+
+function handleLivePunchArrival(punch) {
+  // 1. Show live toast banner
+  showLivePunchToast(punch);
+
+  // 2. Refresh active tab data in real-time without screen flickering
+  silentRefreshActiveTab();
+}
+
+function showLivePunchToast(punch) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'pointer-events-auto px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2.5 transition-all transform duration-200 animate-fadeIn bg-slate-900 text-white border border-brand-orange/60 shadow-brand-orange/20';
+
+  const punchTypeBadge = punch.punch_type === 1 
+    ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">OUT</span>' 
+    : '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">IN</span>';
+
+  toast.innerHTML = `
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
+    <div class="flex items-center space-x-1.5 truncate">
+      <span class="text-brand-orange font-bold">⚡ Live Punch:</span>
+      <span class="font-bold text-white">${punch.name || ('Emp #' + punch.emp_code)}</span>
+      ${punchTypeBadge}
+      <span class="text-slate-300">at ${punch.device || 'Door'}</span>
+      <span class="font-mono text-emerald-300">(${punch.time_str || punch.timestamp})</span>
+    </div>
+  `;
+
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(() => toast.remove(), 250);
+  }, 4500);
+}
+
+function silentRefreshActiveTab() {
+  if (currentTab === 'dashboard') {
+    loadDashboardData();
+  } else if (currentTab === 'reports') {
+    loadDailyReport();
+  } else if (currentTab === 'devices') {
+    loadDevicesData();
+  }
 }

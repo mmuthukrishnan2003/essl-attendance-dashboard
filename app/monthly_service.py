@@ -53,14 +53,31 @@ def get_monthly_attendance_matrix(
     if department_filter and department_filter != "ALL":
         emp_query = emp_query.filter(Employee.department == department_filter)
     if shift_filter and shift_filter != "ALL":
-        if shift_filter == "SHIFT_WFH":
+        if shift_filter == "SHIFT_9_6":
             emp_query = emp_query.filter(
-                (Employee.shift_code == "SHIFT_WFH") | (func.lower(Employee.shift_name).contains("wfh"))
+                (Employee.shift_code == "SHIFT_9_6") | 
+                (func.lower(Employee.shift_name).contains("06:00")) |
+                (func.lower(Employee.shift_name).contains("standard"))
+            )
+        elif shift_filter == "SHIFT_9_7":
+            emp_query = emp_query.filter(
+                (Employee.shift_code == "SHIFT_9_7") | 
+                (func.lower(Employee.shift_name).contains("07:00")) |
+                (func.lower(Employee.shift_name).contains("general"))
             )
         else:
             emp_query = emp_query.filter(
                 (Employee.shift_code == shift_filter) | (Employee.shift_name == shift_filter)
             )
+    else:
+        # Default: Apply to the two permission groups: General Shift and Standard Shift
+        emp_query = emp_query.filter(
+            (Employee.shift_code.in_(["SHIFT_9_7", "SHIFT_9_6"])) |
+            (func.lower(Employee.shift_name).contains("general")) |
+            (func.lower(Employee.shift_name).contains("standard")) |
+            (func.lower(Employee.shift_name).contains("07:00")) |
+            (func.lower(Employee.shift_name).contains("06:00"))
+        )
     if search_query and isinstance(search_query, str) and search_query.strip():
         sq = f"%{search_query.strip().lower()}%"
         emp_query = emp_query.filter(
@@ -120,8 +137,15 @@ def get_monthly_attendance_matrix(
                 f_in_dt = punches_list[0]
                 f_in = f_in_dt.strftime("%H:%M:%S")
                 l_out = punches_list[-1].strftime("%H:%M:%S") if len(punches_list) > 1 else f_in
-                # Check late arrival (> 09:05 AM)
-                if f_in_dt.time() > time(9, 5, 0):
+                # Check late arrival (> 09:05 AM based on shift)
+                emp_n_up = (getattr(emp, "name", "") or "").upper()
+                emp_c_up = str(getattr(emp, "emp_code", "") or "").upper()
+                emp_s_up = f"{getattr(emp, 'shift_code', '') or ''} {getattr(emp, 'shift_name', '') or ''}".upper()
+                is_exempt = ("CLEAN" in emp_n_up or "CLEAN" in emp_c_up or "CLEAN" in emp_s_up or
+                             "VISIT" in emp_n_up or "VISIT" in emp_c_up or
+                             emp_n_up in ("ADMINISTER", "ADMIN") or emp_c_up in ("1", "OA"))
+
+                if not is_exempt and f_in_dt.time() > time(9, 5, 0):
                     day_is_late = True
                     sec_late = int((f_in_dt - datetime.combine(cur_date, time(9, 5, 0))).total_seconds())
                     day_late_mins = sec_late // 60
@@ -475,6 +499,67 @@ def generate_monthly_excel_report(
     return stream
 
 
+def get_shift_permission_rules(emp):
+    """
+    Determines shift timings for 2-hour permission quota:
+    Supported Groups ONLY:
+      1. General Shift (09:00 AM - 07:00 PM): End = 19:00:00 (07:00 PM)
+      2. Standard Shift (09:00 AM - 06:00 PM): End = 18:00:00 (06:00 PM)
+    Both start at 09:00 AM with grace up to 09:05 AM.
+    All other shifts (Cleaning Team, Night Shift, WFH, Visitors, System) are EXCLUDED (is_applicable=False).
+    """
+    name_upper = (getattr(emp, "name", "") or "").upper()
+    code_upper = str(getattr(emp, "emp_code", "") or "").upper()
+    
+    # Exclude visitors, test, or cleaning accounts
+    if "VISIT" in name_upper or "VISIT" in code_upper:
+        return {"is_applicable": False, "shift_name": "Visitor"}
+    if "CLEAN" in name_upper or "CLEAN" in code_upper:
+        return {"is_applicable": False, "shift_name": "Cleaning Team"}
+    if name_upper in ("ADMINISTER", "ADMIN") or code_upper in ("1", "OA"):
+        return {"is_applicable": False, "shift_name": "System"}
+
+    s_code = (getattr(emp, "shift_code", "") or "").upper()
+    s_name = (getattr(emp, "shift_name", "") or "").upper()
+    s_str = f"{s_code} {s_name} {getattr(emp, 'shift_end', '') or ''}".upper()
+
+    # Exclude Night Shift, WFH, Cleaning Team
+    if "NIGHT" in s_str:
+        return {"is_applicable": False, "shift_name": "Night Shift"}
+    if "WFH" in s_str or "REMOTE" in s_str:
+        return {"is_applicable": False, "shift_name": "Work From Home"}
+    if "CLEAN" in s_str:
+        return {"is_applicable": False, "shift_name": "Cleaning Team"}
+
+    # Standard Shift (9-6)
+    if "9_6" in s_str or "18:00" in s_str or "STANDARD" in s_str:
+        return {
+            "shift_code": "SHIFT_9_6",
+            "shift_name": "Standard Shift (09:00 AM - 06:00 PM)",
+            "start_time": time(9, 0, 0),
+            "grace_time": time(9, 5, 0),
+            "end_time": time(18, 0, 0),
+            "end_label": "06:00 PM",
+            "earliest_exit": time(14, 0, 0),
+            "is_applicable": True
+        }
+
+    # General Shift (9-7)
+    if "9_7" in s_str or "19:00" in s_str or "GENERAL" in s_str:
+        return {
+            "shift_code": "SHIFT_9_7",
+            "shift_name": "General Shift (09:00 AM - 07:00 PM)",
+            "start_time": time(9, 0, 0),
+            "grace_time": time(9, 5, 0),
+            "end_time": time(19, 0, 0),
+            "end_label": "07:00 PM",
+            "earliest_exit": time(15, 0, 0),
+            "is_applicable": True
+        }
+
+    return {"is_applicable": False, "shift_name": getattr(emp, "shift_name", "Other")}
+
+
 def get_monthly_exceeded_report(
     year: int,
     month: int,
@@ -557,12 +642,20 @@ def get_monthly_exceeded_report(
             continue
         emp = employees[emp_code]
 
+        # Resolve employee's shift group rules (General Shift 9-7 vs Standard Shift 9-6)
+        shift_cfg = get_shift_permission_rules(emp)
+        if not shift_cfg.get("is_applicable"):
+            continue
+        emp_shift_name = shift_cfg["shift_name"]
+        grace_time = shift_cfg["grace_time"]       # 09:05 AM
+        office_end = shift_cfg["end_time"]         # 19:00:00 or 18:00:00
+        end_label = shift_cfg["end_label"]         # 07:00 PM or 06:00 PM
+        earliest_exit = shift_cfg["earliest_exit"] # 15:00 or 14:00
+
         tot_m_late_mins = 0
         cnt_late_days = 0
         tot_e_early_mins = 0
         cnt_early_days = 0
-        tot_midday_mins = 0
-        cnt_midday_breaks = 0
         active_days_cnt = len(days)
         emp_dates = []
 
@@ -581,40 +674,32 @@ def get_monthly_exceeded_report(
 
             day_m_late = 0
             day_e_early = 0
-            day_midday = 0
             reasons = []
 
             # 1. Morning Late (> 09:05 AM)
-            if first_in.time() > MORNING_GRACE:
-                sec = int((first_in - datetime.combine(dt, MORNING_GRACE)).total_seconds())
+            # Both General Shift and Standard Shift start at 09:00 AM (grace up to 09:05 AM)
+            if grace_time < first_in.time() <= time(13, 0, 0):
+                sec = int((first_in - datetime.combine(dt, grace_time)).total_seconds())
                 if sec >= 60:
                     day_m_late = sec // 60
                     tot_m_late_mins += day_m_late
                     cnt_late_days += 1
                     reasons.append(f"Late: {day_m_late}m (> 09:05 AM)")
 
-            # 2. Evening Early Exit (< 07:00 PM)
-            if last_out and last_out.time() < OFFICE_END:
-                sec = int((datetime.combine(dt, OFFICE_END) - last_out).total_seconds())
+            # 2. Evening Early Exit (< 07:00 PM for General Shift / < 06:00 PM for Standard Shift)
+            # Only consider completed days, or today after the shift end time.
+            # Never deduct if the day is still in progress (today before shift end).
+            now_dt = datetime.now()
+            is_past_or_ended = (dt < now_dt.date()) or (dt == now_dt.date() and now_dt.time() >= office_end)
+            if is_past_or_ended and last_out and earliest_exit <= last_out.time() < office_end:
+                sec = int((datetime.combine(dt, office_end) - last_out).total_seconds())
                 if sec >= 60:
                     day_e_early = sec // 60
                     tot_e_early_mins += day_e_early
                     cnt_early_days += 1
-                    reasons.append(f"Left Early: {day_e_early}m (< 07:00 PM)")
+                    reasons.append(f"Left Early: {day_e_early}m (< {end_label})")
 
-            # 3. Intermediate Midday Breaks
-            if len(v_punches) > 2:
-                for k in range(1, len(v_punches) - 1, 2):
-                    sec = int((v_punches[k + 1].timestamp - v_punches[k].timestamp).total_seconds())
-                    if sec >= 60:
-                        b_mins = sec // 60
-                        day_midday += b_mins
-                        tot_midday_mins += b_mins
-                        cnt_midday_breaks += 1
-                if day_midday > 0:
-                    reasons.append(f"Midday Out: {day_midday}m")
-
-            day_deducted = day_m_late + day_e_early + day_midday
+            day_deducted = day_m_late + day_e_early
 
             if day_deducted > 0:
                 emp_dates.append(dt.strftime("%d-%b"))
@@ -622,7 +707,7 @@ def get_monthly_exceeded_report(
                     "emp_code": emp.emp_code,
                     "name": emp.name,
                     "department": emp.department or "General",
-                    "shift": emp.shift_name or "Standard Shift (09:00 AM - 07:00 PM)",
+                    "shift": emp_shift_name,
                     "date": dt.strftime("%Y-%m-%d"),
                     "date_str": dt.strftime("%d-%b-%Y (%a)"),
                     "first_in": first_in.strftime("%H:%M:%S"),
@@ -631,7 +716,7 @@ def get_monthly_exceeded_report(
                     "last_out_device": devices.get(v_punches[-1].device_ip, v_punches[-1].device_ip) if last_out else "--",
                     "morning_late_mins": day_m_late,
                     "evening_early_mins": day_e_early,
-                    "midday_break_mins": day_midday,
+                    "midday_break_mins": 0,
                     "day_deducted_mins": day_deducted,
                     "day_deducted_text": f"{day_deducted}m" if day_deducted < 60 else f"{day_deducted//60}h {day_deducted%60:02d}m",
                     "reasons": reasons,
@@ -639,7 +724,7 @@ def get_monthly_exceeded_report(
                     "total_punches": len(v_punches)
                 })
 
-        total_used_mins = tot_m_late_mins + tot_e_early_mins + tot_midday_mins
+        total_used_mins = tot_m_late_mins + tot_e_early_mins
         balance_mins = max(0, MONTHLY_QUOTA_MINS - total_used_mins)
         exceeded_mins = max(0, total_used_mins - MONTHLY_QUOTA_MINS)
         is_exceeded = (exceeded_mins > 0)
@@ -652,7 +737,7 @@ def get_monthly_exceeded_report(
             "emp_code": emp.emp_code,
             "name": emp.name,
             "department": emp.department or "General",
-            "shift": emp.shift_name or "Standard Shift (09:00 AM - 07:00 PM)",
+            "shift": emp_shift_name,
             "monthly_quota_mins": MONTHLY_QUOTA_MINS,
             "monthly_quota_text": f"{MONTHLY_QUOTA_MINS//60}h {MONTHLY_QUOTA_MINS%60:02d}m",
             "morning_late_mins": tot_m_late_mins,
@@ -661,9 +746,9 @@ def get_monthly_exceeded_report(
             "evening_early_mins": tot_e_early_mins,
             "evening_early_days": cnt_early_days,
             "evening_early_text": f"{tot_e_early_mins}m ({cnt_early_days}d)" if tot_e_early_mins > 0 else "--",
-            "midday_break_mins": tot_midday_mins,
-            "midday_breaks_count": cnt_midday_breaks,
-            "midday_break_text": f"{tot_midday_mins}m" if tot_midday_mins > 0 else "--",
+            "midday_break_mins": 0,
+            "midday_breaks_count": 0,
+            "midday_break_text": "--",
             "total_used_mins": total_used_mins,
             "total_used_text": f"{total_used_mins//60}h {total_used_mins%60:02d}m" if total_used_mins >= 60 else f"{total_used_mins}m",
             "balance_mins": balance_mins,
@@ -786,7 +871,7 @@ def generate_exceeded_excel_report(
 
     headers1 = [
         "Emp ID", "Employee Name", "Shift Timing",
-        "Monthly Quota", "Morning Late (> 09:05)", "Evening Early (< 07:00)", "Midday Out",
+        "Monthly Quota", "Morning Late (> 09:05)", "Evening Early (Shift End)",
         "Total Permission Used", "Balance Left", "Exceeded Duration (> 2h)", "Status"
     ]
     for col_idx, h in enumerate(headers1, 1):
@@ -801,17 +886,16 @@ def generate_exceeded_excel_report(
         ws1.cell(row=r_idx, column=1, value=emp_s["emp_code"]).alignment = Alignment(horizontal="center")
         ws1.cell(row=r_idx, column=2, value=emp_s["name"]).alignment = Alignment(horizontal="left")
         ws1.cell(row=r_idx, column=3, value=emp_s["shift"]).alignment = Alignment(horizontal="center")
-        ws1.cell(row=r_idx, column=5, value=emp_s["monthly_quota_text"]).alignment = Alignment(horizontal="center")
-        ws1.cell(row=r_idx, column=6, value=emp_s["morning_late_text"]).alignment = Alignment(horizontal="center")
-        ws1.cell(row=r_idx, column=7, value=emp_s["evening_early_text"]).alignment = Alignment(horizontal="center")
-        ws1.cell(row=r_idx, column=8, value=emp_s["midday_break_text"]).alignment = Alignment(horizontal="center")
-        ws1.cell(row=r_idx, column=9, value=emp_s["total_used_text"]).alignment = Alignment(horizontal="center")
-        ws1.cell(row=r_idx, column=10, value=emp_s["balance_text"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=4, value=emp_s["monthly_quota_text"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=5, value=emp_s["morning_late_text"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=6, value=emp_s["evening_early_text"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=7, value=emp_s["total_used_text"]).alignment = Alignment(horizontal="center")
+        ws1.cell(row=r_idx, column=8, value=emp_s["balance_text"]).alignment = Alignment(horizontal="center")
 
-        ex_cell = ws1.cell(row=r_idx, column=11, value=emp_s["exceeded_text"])
+        ex_cell = ws1.cell(row=r_idx, column=9, value=emp_s["exceeded_text"])
         ex_cell.alignment = Alignment(horizontal="center")
 
-        stat_cell = ws1.cell(row=r_idx, column=12, value=emp_s["status"])
+        stat_cell = ws1.cell(row=r_idx, column=10, value=emp_s["status"])
         stat_cell.alignment = Alignment(horizontal="center")
 
         if emp_s["is_exceeded"]:
@@ -824,7 +908,7 @@ def generate_exceeded_excel_report(
             stat_cell.font = green_bold_font
             stat_cell.fill = green_fill
 
-        for c in range(1, 13):
+        for c in range(1, 11):
             cell = ws1.cell(row=r_idx, column=c)
             if not cell.font or cell.font == data_font:
                 cell.font = data_font
@@ -851,9 +935,9 @@ def generate_exceeded_excel_report(
     ws2["A1"].alignment = Alignment(horizontal="center", vertical="center")
 
     headers2 = [
-        "Date", "Emp ID", "Employee Name", "Department",
+        "Date", "Emp ID", "Employee Name",
         "First IN (Device)", "Last OUT (Device)",
-        "Morning Late Mins", "Evening Early Mins", "Midday Out Mins", "Total Day Mins", "Deduction Reasons"
+        "Morning Late Mins", "Evening Early Mins", "Total Day Mins", "Deduction Reasons"
     ]
     for col_idx, h in enumerate(headers2, 1):
         cell = ws2.cell(row=3, column=col_idx, value=h)
@@ -867,16 +951,14 @@ def generate_exceeded_excel_report(
         ws2.cell(row=r_idx, column=1, value=inc["date_str"]).alignment = Alignment(horizontal="center")
         ws2.cell(row=r_idx, column=2, value=inc["emp_code"]).alignment = Alignment(horizontal="center")
         ws2.cell(row=r_idx, column=3, value=inc["name"]).alignment = Alignment(horizontal="left")
-        ws2.cell(row=r_idx, column=4, value=inc["department"]).alignment = Alignment(horizontal="left")
-        ws2.cell(row=r_idx, column=5, value=f"{inc['first_in']} ({inc['first_in_device']})").alignment = Alignment(horizontal="center")
-        ws2.cell(row=r_idx, column=6, value=f"{inc['last_out']} ({inc['last_out_device']})").alignment = Alignment(horizontal="center")
-        ws2.cell(row=r_idx, column=7, value=inc["morning_late_mins"]).alignment = Alignment(horizontal="center")
-        ws2.cell(row=r_idx, column=8, value=inc["evening_early_mins"]).alignment = Alignment(horizontal="center")
-        ws2.cell(row=r_idx, column=9, value=inc["midday_break_mins"]).alignment = Alignment(horizontal="center")
-        ws2.cell(row=r_idx, column=10, value=inc["day_deducted_text"]).alignment = Alignment(horizontal="center")
-        ws2.cell(row=r_idx, column=11, value=inc["reasons_str"]).alignment = Alignment(horizontal="left")
+        ws2.cell(row=r_idx, column=4, value=f"{inc['first_in']} ({inc['first_in_device']})").alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=5, value=f"{inc['last_out']} ({inc['last_out_device']})").alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=6, value=inc["morning_late_mins"]).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=7, value=inc["evening_early_mins"]).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=8, value=inc["day_deducted_text"]).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r_idx, column=9, value=inc["reasons_str"]).alignment = Alignment(horizontal="left")
 
-        for c in range(1, 12):
+        for c in range(1, 10):
             cell = ws2.cell(row=r_idx, column=c)
             cell.font = data_font
             cell.border = thin_border
@@ -966,6 +1048,20 @@ def get_monthly_late_count_report(
             continue
         emp = employees[emp_code]
 
+        name_upper = (getattr(emp, "name", "") or "").upper()
+        code_upper = str(getattr(emp, "emp_code", "") or "").upper()
+        s_code = (getattr(emp, "shift_code", "") or "").upper()
+        s_name = (getattr(emp, "shift_name", "") or "").upper()
+        s_str = f"{s_code} {s_name}".upper()
+
+        if "VISIT" in name_upper or "VISIT" in code_upper or name_upper in ("ADMINISTER", "ADMIN") or code_upper in ("1", "OA"):
+            continue
+        if "CLEAN" in s_str or "CLEAN" in name_upper or "CLEAN" in code_upper:
+            continue
+        if "WFH" in s_str:
+            continue
+
+        emp_shift_name = emp.shift_name or "General Shift (09:00 AM - 07:00 PM)"
         present_days = len(days)
         late_cnt = 0
         tot_late_mins = 0
@@ -996,7 +1092,7 @@ def get_monthly_late_count_report(
                     "emp_code": emp.emp_code,
                     "name": emp.name,
                     "department": emp.department or "General",
-                    "shift": emp.shift_name or "Standard Shift (09:00 AM - 07:00 PM)",
+                    "shift": emp_shift_name,
                     "date": dt.strftime("%Y-%m-%d"),
                     "date_str": dt.strftime("%d-%b-%Y (%a)"),
                     "first_in": first_in.strftime("%H:%M:%S"),
@@ -1021,7 +1117,7 @@ def get_monthly_late_count_report(
             "emp_code": emp.emp_code,
             "name": emp.name,
             "department": emp.department or "General",
-            "shift": emp.shift_name or "Standard Shift (09:00 AM - 07:00 PM)",
+            "shift": emp_shift_name,
             "present_days": present_days,
             "late_punch_count": late_cnt,
             "on_time_days": on_time_days,
