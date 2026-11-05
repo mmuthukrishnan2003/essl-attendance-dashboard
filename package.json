@@ -4,6 +4,7 @@
   "description": "Centizen eSSL Biometric Attendance Management System (Angular 20 + Node Express)",
   "main": "run.js",
   "scripts": {
+    "postinstall": "npm install --prefix backend",
     "start": "node backend/dist/server.js",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm start --prefix frontend",

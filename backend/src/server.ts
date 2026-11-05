@@ -43,9 +43,12 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // Serve frontend Angular production build
 const candidateDistDirs = [
+  path.resolve(__dirname, '../../public'),
+  path.resolve(__dirname, '../public'),
   path.resolve(__dirname, '../../frontend/dist/frontend/browser'),
   path.resolve(__dirname, '../../frontend/dist/frontend'),
-  path.resolve(__dirname, '../public'),
+  path.resolve(process.cwd(), 'public'),
+  path.resolve(process.cwd(), 'frontend/dist/frontend/browser'),
 ];
 
 let staticDir: string | null = null;

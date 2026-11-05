@@ -83,3 +83,12 @@ async def serve_index(request: Request):
 
     return FileResponse(TEMPLATES_DIR / "index.html")
 
+
+@app.get("/login", response_class=HTMLResponse)
+async def serve_login(request: Request):
+    """Direct route for login page."""
+    login_html = TEMPLATES_DIR / "login.html"
+    if login_html.exists():
+        return FileResponse(login_html)
+    return FileResponse(TEMPLATES_DIR / "index.html")
+
