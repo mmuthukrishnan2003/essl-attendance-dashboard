@@ -19,3 +19,4 @@ echo "  [LAN Port 8881] http://172.17.0.38:8881"
 echo ""
 
 node backend/dist/server.js
+
