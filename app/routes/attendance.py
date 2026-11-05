@@ -197,20 +197,25 @@ def export_attendance_excel(
     if s_date > e_date:
         raise HTTPException(status_code=400, detail="start_date must be before or equal to end_date")
 
-    excel_stream = generate_excel_report(
-        start_date=s_date,
-        end_date=e_date,
-        db=db,
-        department=department or "ALL",
-        shift=shift or "ALL"
-    )
-    filename = f"Centizen_Attendance_{s_date.strftime('%Y%m%d')}_to_{e_date.strftime('%Y%m%d')}.xlsx"
+    try:
+        excel_stream = generate_excel_report(
+            start_date=s_date,
+            end_date=e_date,
+            db=db,
+            department=department or "ALL",
+            shift=shift or "ALL"
+        )
+        filename = f"Centizen_Attendance_{s_date.strftime('%Y%m%d')}_to_{e_date.strftime('%Y%m%d')}.xlsx"
 
-    return StreamingResponse(
-        excel_stream,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+        return Response(
+            content=excel_stream.getvalue(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate Excel: {str(e)}")
 
 
 @router.get("/export/csv")
