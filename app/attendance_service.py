@@ -218,14 +218,14 @@ def calculate_daily_attendance_for_date(
     """
     # Query active employees
     emp_query = db.query(Employee).filter(Employee.is_active == True)
-    if department_filter and department_filter != "ALL":
+    if department_filter and isinstance(department_filter, str) and department_filter != "ALL":
         emp_query = emp_query.filter(Employee.department == department_filter)
-    if shift_filter and shift_filter != "ALL":
+    if shift_filter and isinstance(shift_filter, str) and shift_filter != "ALL":
         emp_query = emp_query.filter(
             (Employee.shift_code == shift_filter) |
             (Employee.shift_name == shift_filter)
         )
-    if search_query:
+    if search_query and isinstance(search_query, str) and search_query.strip():
         search_pattern = f"%{search_query.strip()}%"
         emp_query = emp_query.filter(
             (Employee.emp_code.ilike(search_pattern)) |

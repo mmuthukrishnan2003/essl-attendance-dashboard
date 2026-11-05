@@ -489,3 +489,67 @@ export async function getEmployeePunches(empCode: string, dateStr: string) {
   return processPunchesSequence(punches, devicesMap, dateStr === new Date().toISOString().split('T')[0]);
 }
 
+
+export async function getRangeAttendance(
+  startDateStr: string,
+  endDateStr: string,
+  departmentFilter?: string,
+  shiftFilter?: string,
+  searchQuery?: string
+) {
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    throw new Error('Invalid start_date or end_date range');
+  }
+
+  const allRecords: any[] = [];
+  let totalPunchedIn = 0;
+  let totalPunchedOut = 0;
+  let totalWfh = 0;
+  let totalPresent = 0;
+  let totalAbsent = 0;
+  let totalLate = 0;
+  let totalEmployees = 0;
+
+  const cur = new Date(start);
+  while (cur <= end) {
+    const curStr = cur.toISOString().split('T')[0];
+    const dayData = await getDailyAttendance(curStr, departmentFilter, shiftFilter, searchQuery);
+
+    totalEmployees = Math.max(totalEmployees, dayData.total_employees);
+    totalPunchedIn += dayData.punched_in_count;
+    totalPunchedOut += dayData.punched_out_count;
+    totalWfh += dayData.wfh_today;
+    totalPresent += dayData.present_today;
+    totalAbsent += dayData.absent_today;
+    totalLate += dayData.late_today;
+
+    for (const r of dayData.records) {
+      allRecords.push({
+        ...r,
+        date: curStr,
+      });
+    }
+
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  return {
+    date: `${startDateStr} to ${endDateStr}`,
+    start_date: startDateStr,
+    end_date: endDateStr,
+    is_range: true,
+    total_employees: totalEmployees,
+    punched_in_count: totalPunchedIn,
+    punched_out_count: totalPunchedOut,
+    wfh_count: totalWfh,
+    wfh_today: totalWfh,
+    present_count: totalPresent,
+    present_today: totalPresent,
+    absent_count: totalAbsent,
+    absent_today: totalAbsent,
+    late_today: totalLate,
+    records: allRecords,
+  };
+}

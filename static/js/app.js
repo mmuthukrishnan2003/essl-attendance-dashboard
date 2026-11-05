@@ -1586,11 +1586,11 @@ async function loadDailyReport() {
 
 
   } catch (err) {
-
     console.error('Error loading report:', err);
-
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-rose-500 font-semibold">Failed to load attendance report. Please check date range and click Refresh.</td></tr>';
+    }
     showToast('Failed to fetch attendance report', 'error');
-
   }
 
 }

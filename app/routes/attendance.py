@@ -105,7 +105,7 @@ def get_daily_attendance(
                 db=db,
                 department_filter=department,
                 shift_filter=shift,
-                search_query=search
+                search_query=search if isinstance(search, str) else None
             )
             all_records.extend(day_res.get("records", []))
             total_emp = max(total_emp, day_res.get("total_employees", 0))
@@ -131,6 +131,7 @@ def get_daily_attendance(
             "wfh_count": total_wfh,
             "present_count": present_count,
             "absent_count": absent_count,
+            "avg_working_hours": "--",
             "records": all_records
         }
 
@@ -148,7 +149,7 @@ def get_daily_attendance(
         db=db,
         department_filter=department,
         shift_filter=shift,
-        search_query=search
+        search_query=search if isinstance(search, str) else None
     )
 
 
@@ -334,7 +335,7 @@ def get_monthly_attendance(
         db=db,
         department_filter=department,
         shift_filter=shift,
-        search_query=search
+        search_query=search if isinstance(search, str) else None
     )
 
 
@@ -473,7 +474,7 @@ def get_monthly_exceeded(
         category=category or "EXCEEDED",
         department_filter=department,
         shift_filter=shift,
-        search_query=search
+        search_query=search if isinstance(search, str) else None
     )
 
 
@@ -601,7 +602,7 @@ def get_monthly_late_punches(
         only_late=only_late if only_late is not None else True,
         department_filter=department,
         shift_filter=shift,
-        search_query=search
+        search_query=search if isinstance(search, str) else None
     )
 
 

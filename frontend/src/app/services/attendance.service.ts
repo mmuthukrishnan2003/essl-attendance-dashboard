@@ -47,9 +47,13 @@ export class AttendanceService {
     return this.http.get(`${this.apiUrl}/summary`, { params, withCredentials: true });
   }
 
-  getDaily(date?: string, department?: string, shift?: string, search?: string): Observable<any> {
+  getDaily(dateOrStart?: string, endDate?: string, department?: string, shift?: string, search?: string): Observable<any> {
     let params = new HttpParams();
-    if (date) params = params.set('date', date);
+    if (endDate && dateOrStart) {
+      params = params.set('start_date', dateOrStart).set('end_date', endDate);
+    } else if (dateOrStart) {
+      params = params.set('date', dateOrStart);
+    }
     if (department && department !== 'ALL') params = params.set('department', department);
     if (shift && shift !== 'ALL') params = params.set('shift', shift);
     if (search) params = params.set('search', search);
@@ -109,4 +113,3 @@ export class AttendanceService {
     return `${this.apiUrl}/export/csv?year=${year}&month=${month}`;
   }
 }
-

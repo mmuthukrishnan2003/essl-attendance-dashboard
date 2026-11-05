@@ -9,19 +9,39 @@ import { AttendanceService } from '../../services/attendance.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="flex h-screen bg-[#F8FAFC] overflow-hidden">
+    <div class="flex h-screen bg-[#F8FAFC] overflow-hidden relative">
+      <!-- MOBILE BACKDROP OVERLAY -->
+      <div
+        *ngIf="mobileMenuOpen()"
+        (click)="closeMobileMenu()"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 md:hidden transition-opacity"
+      ></div>
+
       <!-- SIDEBAR -->
-      <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 shadow-sm z-20">
+      <aside
+        [class.translate-x-0]="mobileMenuOpen()"
+        [class.-translate-x-full]="!mobileMenuOpen()"
+        class="fixed md:static inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 shadow-lg md:shadow-sm z-40 md:translate-x-0 transition-transform duration-200 ease-in-out"
+      >
         <div>
           <!-- BRAND HEADER -->
-          <div class="p-5 border-b border-slate-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-[#0A5482] flex items-center justify-center text-white font-black text-lg shadow-md shadow-[#0A5482]/20 shrink-0">
-              C
+          <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-[#0A5482] flex items-center justify-center text-white font-black text-lg shadow-md shadow-[#0A5482]/20 shrink-0">
+                C
+              </div>
+              <div class="overflow-hidden">
+                <h2 class="text-xs font-bold text-slate-800 uppercase tracking-tight truncate">Centizen IT Services</h2>
+                <p class="text-[10px] text-slate-400 font-medium truncate">eSSL Attendance Portal</p>
+              </div>
             </div>
-            <div class="overflow-hidden">
-              <h2 class="text-xs font-bold text-slate-800 uppercase tracking-tight truncate">Centizen IT Services</h2>
-              <p class="text-[10px] text-slate-400 font-medium truncate">eSSL Attendance Portal</p>
-            </div>
+
+            <button
+              (click)="closeMobileMenu()"
+              class="md:hidden text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+            >
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
           </div>
 
           <!-- NAV MENU -->
@@ -31,6 +51,7 @@ import { AttendanceService } from '../../services/attendance.service';
               <nav class="space-y-1">
                 <a
                   routerLink="/dashboard"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="bg-[#0A5482] text-white shadow-sm font-semibold"
                   [routerLinkActiveOptions]="{exact: true}"
                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition duration-150"
@@ -41,6 +62,7 @@ import { AttendanceService } from '../../services/attendance.service';
 
                 <a
                   routerLink="/daily-reports"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="bg-[#0A5482] text-white shadow-sm font-semibold"
                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition duration-150"
                 >
@@ -50,6 +72,7 @@ import { AttendanceService } from '../../services/attendance.service';
 
                 <a
                   routerLink="/monthly-report"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="bg-[#0A5482] text-white shadow-sm font-semibold"
                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition duration-150"
                 >
@@ -59,6 +82,7 @@ import { AttendanceService } from '../../services/attendance.service';
 
                 <a
                   routerLink="/shifts"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="bg-[#0A5482] text-white shadow-sm font-semibold"
                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition duration-150"
                 >
@@ -73,6 +97,7 @@ import { AttendanceService } from '../../services/attendance.service';
               <nav class="space-y-1">
                 <a
                   routerLink="/employees"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="bg-[#0A5482] text-white shadow-sm font-semibold"
                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition duration-150"
                 >
@@ -82,6 +107,7 @@ import { AttendanceService } from '../../services/attendance.service';
 
                 <a
                   routerLink="/devices"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="bg-[#0A5482] text-white shadow-sm font-semibold"
                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition duration-150"
                 >
@@ -128,17 +154,27 @@ import { AttendanceService } from '../../services/attendance.service';
       <!-- MAIN CONTENT WRAPPER -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
         <!-- TOP NAVBAR -->
-        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
-          <div class="flex items-center gap-4">
+        <header class="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
+          <div class="flex items-center gap-3">
+            <!-- MOBILE MENU TOGGLE BUTTON (HAMBURGER) -->
+            <button
+              (click)="toggleMobileMenu()"
+              class="md:hidden text-slate-600 hover:text-[#0A5482] p-2 rounded-xl hover:bg-slate-100 transition"
+              aria-label="Toggle Navigation Menu"
+            >
+              <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+
             <div class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Live Sync Active (&lt; 1s)
+              <span class="hidden sm:inline">Live Sync Active (&lt; 1s)</span>
+              <span class="sm:hidden">Live (&lt; 1s)</span>
             </div>
           </div>
 
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3 sm:gap-4">
             <!-- LIVE TIME -->
-            <div class="text-right">
+            <div class="text-right hidden sm:block">
               <div class="text-sm font-bold text-slate-800 tracking-tight">{{ currentTime() }}</div>
               <div class="text-[10px] text-slate-400 font-medium">{{ currentDate() }}</div>
             </div>
@@ -147,7 +183,7 @@ import { AttendanceService } from '../../services/attendance.service';
             <button
               (click)="syncDevices()"
               [disabled]="syncing()"
-              class="px-3.5 py-2 bg-[#0A5482] hover:bg-[#08456b] text-white text-xs font-semibold rounded-xl flex items-center gap-2 shadow-sm transition"
+              class="px-3 py-2 sm:px-3.5 sm:py-2 bg-[#0A5482] hover:bg-[#08456b] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 sm:gap-2 shadow-sm transition"
             >
               <i class="fa-solid fa-rotate text-xs" [ngClass]="{'fa-spin': syncing()}"></i>
               <span>{{ syncing() ? 'Syncing...' : 'Sync Devices' }}</span>
@@ -156,7 +192,7 @@ import { AttendanceService } from '../../services/attendance.service';
         </header>
 
         <!-- ROUTER OUTLET -->
-        <main class="flex-1 overflow-y-auto p-6">
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6">
           <router-outlet></router-outlet>
         </main>
       </div>
@@ -168,6 +204,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   currentTime = signal('');
   currentDate = signal('');
   syncing = signal(false);
+  mobileMenuOpen = signal(false);
   private timer: any;
 
   constructor(
@@ -185,6 +222,14 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.update(v => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
   }
 
   updateClock(): void {

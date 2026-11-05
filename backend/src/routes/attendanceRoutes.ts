@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import {
   getDailyAttendance,
+  getRangeAttendance,
   getEmployeePunches,
 } from '../services/attendanceService';
 import {
@@ -39,10 +40,17 @@ router.get('/summary', async (req: Request, res: Response) => {
 // GET /api/attendance/daily
 router.get('/daily', async (req: Request, res: Response) => {
   try {
-    const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+    const startDate = (req.query.start_date as string) || (req.query.from_date as string);
+    const endDate = (req.query.end_date as string) || (req.query.to_date as string);
+    const date = (req.query.date as string) || (req.query.target_date as string) || new Date().toISOString().split('T')[0];
     const department = (req.query.department as string) || 'ALL';
     const shift = (req.query.shift as string) || 'ALL';
     const search = (req.query.search as string) || '';
+
+    if (startDate && endDate) {
+      const data = await getRangeAttendance(startDate, endDate, department, shift, search);
+      return res.json(data);
+    }
 
     const data = await getDailyAttendance(date, department, shift, search);
     return res.json(data);
