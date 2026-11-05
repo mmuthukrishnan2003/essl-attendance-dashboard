@@ -72,7 +72,7 @@ function toggleEmployeeSort(field) {
 
 
 
-const VALID_TABS = ['dashboard', 'reports', 'monthly', 'late', 'exceeded', 'shifts', 'employees', 'devices', 'database', 'settings'];
+const VALID_TABS = ['dashboard', 'reports', 'monthly', 'shifts', 'employees', 'devices', 'database', 'settings'];
 
 // ================= PER-PAGE IN-PAGE REFRESH FUNCTIONS =================
 
@@ -178,7 +178,6 @@ function refreshCurrentPage() {
   else if (currentTab === 'reports') refreshReportsView();
 
   else if (currentTab === 'monthly') refreshMonthlyView();
-  else if (currentTab === 'exceeded') refreshExceededView();
   else if (currentTab === 'devices') refreshDevicesView();
   else if (currentTab === 'database') refreshDatabaseView();
   else if (currentTab === 'settings') refreshSettingsView();
@@ -524,7 +523,6 @@ function switchTab(tabId, updateHistory = true) {
 
     monthly: { title: 'Monthly Attendance Report & Muster Roll', sub: 'Comprehensive 1–31 days attendance matrix, muster roll, and monthly payroll summary' },
     late: { title: 'Monthly Late Punch Count', sub: 'Punctuality tracking, late punch counts, and arrival incidents based on 09:05 AM shift cutoff' },
-    exceeded: { title: 'Permission (2 Hours Monthly Quota)', sub: '2-hour monthly permission quota applied to General Shift (9-7) and Standard Shift (9-6)' },
     shifts: { title: 'Shift Management', sub: 'Configure daytime and overnight cross-midnight shifts and assignments' },
     employees: { title: 'Employee Management', sub: 'Manage employee directory and biometric enrollments' },
     devices: { title: 'Connected eSSL Biometric Devices (4)', sub: 'Live integration with 4 eSSL F18 + F12 devices over Port 4370' },
@@ -542,17 +540,18 @@ function switchTab(tabId, updateHistory = true) {
   // Close mobile sidebar if open
   toggleMobileSidebar(false);
 
+  // Redirect legacy exceeded / late tabs to monthly
+  if (tabId === 'exceeded' || tabId === 'late') {
+    tabId = 'monthly';
+  }
+
   // Toggle views
   document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
-  const targetViewId = (tabId === 'exceeded' || tabId === 'late') ? 'view-monthly' : `view-${tabId}`;
+  const targetViewId = `view-${tabId}`;
   const activeView = document.getElementById(targetViewId);
   if (activeView) activeView.classList.remove('hidden');
 
-  if (tabId === 'exceeded') {
-    switchMonthlySubTab('exceeded', false);
-  } else if (tabId === 'late') {
-    switchMonthlySubTab('late', false);
-  } else if (tabId === 'monthly') {
+  if (tabId === 'monthly') {
     switchMonthlySubTab('muster', false);
   }
 
@@ -560,8 +559,6 @@ function switchTab(tabId, updateHistory = true) {
   if (tabId === 'dashboard') loadDashboardData();
   else if (tabId === 'reports') loadDailyReport();
   else if (tabId === 'monthly') loadMonthlyAttendanceData();
-  else if (tabId === 'late') loadMonthlyLateData();
-  else if (tabId === 'exceeded') loadExceededData();
   else if (tabId === 'shifts') loadShiftsData();
   else if (tabId === 'employees') loadEmployeesData();
   else if (tabId === 'devices') loadDevicesData();
@@ -5362,51 +5359,11 @@ let exceededSortOrder = 'ASC';
 
 function switchMonthlySubTab(tabName, reloadData = true) {
   const btnMuster = document.getElementById('subtab-btn-muster');
-  const btnLate = document.getElementById('subtab-btn-late');
-  const btnExceeded = document.getElementById('subtab-btn-exceeded');
   const viewMuster = document.getElementById('monthly-subview-muster');
-  const viewLate = document.getElementById('monthly-subview-late');
-  const viewExceeded = document.getElementById('monthly-subview-exceeded');
 
-  // Reset all buttons
-  [btnMuster, btnLate, btnExceeded].forEach(b => {
-    if (b) b.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition';
-  });
-
-  // Hide all views
-  if (viewMuster) viewMuster.classList.add('hidden');
-  if (viewLate) viewLate.classList.add('hidden');
-  if (viewExceeded) viewExceeded.classList.add('hidden');
-
-  if (tabName === 'late') {
-    if (btnLate) btnLate.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-navy text-white shadow-xs transition';
-    if (viewLate) viewLate.classList.remove('hidden');
-
-    const mMonth = document.getElementById('monthly-month-select');
-    const mYear = document.getElementById('monthly-year-select');
-    const lMonth = document.getElementById('late-month-select');
-    const lYear = document.getElementById('late-year-select');
-    if (mMonth && lMonth && !lMonth.dataset.userChanged) lMonth.value = mMonth.value;
-    if (mYear && lYear && !lYear.dataset.userChanged) lYear.value = mYear.value;
-
-    if (reloadData) loadMonthlyLateData();
-  } else if (tabName === 'exceeded') {
-    if (btnExceeded) btnExceeded.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-navy text-white shadow-xs transition';
-    if (viewExceeded) viewExceeded.classList.remove('hidden');
-
-    const mMonth = document.getElementById('monthly-month-select');
-    const mYear = document.getElementById('monthly-year-select');
-    const eMonth = document.getElementById('exceeded-month-select');
-    const eYear = document.getElementById('exceeded-year-select');
-    if (mMonth && eMonth && !eMonth.dataset.userChanged) eMonth.value = mMonth.value;
-    if (mYear && eYear && !eYear.dataset.userChanged) eYear.value = mYear.value;
-
-    if (reloadData) loadExceededData();
-  } else {
-    if (btnMuster) btnMuster.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-navy text-white shadow-xs transition';
-    if (viewMuster) viewMuster.classList.remove('hidden');
-    if (reloadData) loadMonthlyAttendanceData();
-  }
+  if (btnMuster) btnMuster.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-navy text-white shadow-xs transition';
+  if (viewMuster) viewMuster.classList.remove('hidden');
+  if (reloadData) loadMonthlyAttendanceData();
 }
 
 function setExceededTableMode(mode) {
@@ -6534,41 +6491,13 @@ async function pollLiveStatusHeartbeat() {
 }
 
 function handleLivePunchArrival(punch) {
-  // 1. Show live toast banner
-  showLivePunchToast(punch);
-
-  // 2. Refresh active tab data in real-time without screen flickering
+  // Real-time silent refresh of active tab data (IN/OUT toast notifications disabled)
   silentRefreshActiveTab();
 }
 
 function showLivePunchToast(punch) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = 'pointer-events-auto px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2.5 transition-all transform duration-200 animate-fadeIn bg-slate-900 text-white border border-brand-orange/60 shadow-brand-orange/20';
-
-  const punchTypeBadge = punch.punch_type === 1 
-    ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">OUT</span>' 
-    : '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">IN</span>';
-
-  toast.innerHTML = `
-    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
-    <div class="flex items-center space-x-1.5 truncate">
-      <span class="text-brand-orange font-bold">⚡ Live Punch:</span>
-      <span class="font-bold text-white">${punch.name || ('Emp #' + punch.emp_code)}</span>
-      ${punchTypeBadge}
-      <span class="text-slate-300">at ${punch.device || 'Door'}</span>
-      <span class="font-mono text-emerald-300">(${punch.time_str || punch.timestamp})</span>
-    </div>
-  `;
-
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-10px)';
-    setTimeout(() => toast.remove(), 250);
-  }, 4500);
+  // Live IN/OUT punch notification popup disabled per user request
+  return;
 }
 
 function silentRefreshActiveTab() {
