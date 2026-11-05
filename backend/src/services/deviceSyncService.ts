@@ -114,3 +114,4 @@ export function startBackgroundDeviceSync(intervalMs: number = 10000) {
     syncAllDevices().catch(() => {});
   }, intervalMs);
 }
+
