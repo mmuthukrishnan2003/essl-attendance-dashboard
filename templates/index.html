@@ -1082,6 +1082,12 @@
             </button>
           </div>
 
+          <!-- Change Day Status (WFH / Leave / Absent) Button -->
+          <button type="button" onclick="openDayOverrideModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-slate-800 text-white shadow-xs transition" title="Change an employee's day status (WFH / Absent / Half Day Leave / Present)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <span>Change Day Status</span>
+          </button>
+
           <!-- Refresh Button -->
           <button type="button" onclick="refreshMonthlyView()" id="btn-refresh-monthly-view" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition" title="Refresh monthly attendance calculation">
             <svg id="monthly-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -1183,11 +1189,20 @@
           <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-600 mr-1"></span>Late (&gt; 09:05)
           </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            WFH = Work From Home
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+            ½L = Half Day Leave
+          </span>
           <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
             A = Absent
           </span>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-            WO = Week Off
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+            WO = Week Off (Sat &amp; Sun)
+          </span>
+          <span class="text-[10px] text-slate-400 font-medium ml-1 hidden sm:inline">
+            (💡 Click any cell to change employee status)
           </span>
         </div>
       </div>
@@ -3084,6 +3099,124 @@
         </div>
       </div>
     </div>
+
+
+    
+  <!-- MODAL: CHANGE EMPLOYEE DAY ATTENDANCE STATUS -->
+  <div id="modal-edit-day-attendance" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-brand-navy/10 text-brand-navy flex items-center justify-center font-bold">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">Change Employee Day Attendance</h3>
+            <p class="text-xs text-slate-500">Update status to WFH, Absent, Half Day Leave, or Present</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeModal('modal-edit-day-attendance')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Modal Form -->
+      <form id="form-edit-day-attendance" onsubmit="submitDayOverrideForm(event)" class="p-5 space-y-4 text-xs">
+        <!-- Employee Select -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">Select Employee</label>
+          <select id="override-emp-select" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-brand-navy bg-white">
+            <!-- Dynamically populated with all employees -->
+          </select>
+        </div>
+
+        <!-- Date & Current Status -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">Target Date</label>
+            <input type="date" id="override-date-input" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-navy bg-white">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">Current Status</label>
+            <div id="override-current-status-display" class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 font-bold text-slate-700 text-xs truncate">
+              --
+            </div>
+          </div>
+        </div>
+
+        <!-- New Status Cards -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1.5">Select New Status</label>
+          <div class="grid grid-cols-3 gap-2">
+            <!-- WFH -->
+            <label class="override-status-option relative flex flex-col items-center justify-center p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50 cursor-pointer transition">
+              <input type="radio" name="override_status" value="WFH" class="sr-only" required>
+              <span class="text-base">🏠</span>
+              <span class="font-bold text-indigo-700 text-xs mt-0.5">WFH</span>
+              <span class="text-[9px] text-indigo-500">Work From Home</span>
+            </label>
+
+            <!-- Absent (A) -->
+            <label class="override-status-option relative flex flex-col items-center justify-center p-2.5 rounded-xl border border-rose-200 bg-rose-50/40 hover:bg-rose-50 cursor-pointer transition">
+              <input type="radio" name="override_status" value="A" class="sr-only">
+              <span class="text-base">❌</span>
+              <span class="font-bold text-rose-700 text-xs mt-0.5">Absent</span>
+              <span class="text-[9px] text-rose-500">Full Day Absent</span>
+            </label>
+
+            <!-- Half Day Leave (HDL) -->
+            <label class="override-status-option relative flex flex-col items-center justify-center p-2.5 rounded-xl border border-purple-200 bg-purple-50/40 hover:bg-purple-50 cursor-pointer transition">
+              <input type="radio" name="override_status" value="HDL" class="sr-only">
+              <span class="text-base">🌓</span>
+              <span class="font-bold text-purple-700 text-xs mt-0.5">Half Day Leave</span>
+              <span class="text-[9px] text-purple-500">0.5 Day Leave (½L)</span>
+            </label>
+
+            <!-- Present (P) -->
+            <label class="override-status-option relative flex flex-col items-center justify-center p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50 cursor-pointer transition">
+              <input type="radio" name="override_status" value="P" class="sr-only">
+              <span class="text-base">✅</span>
+              <span class="font-bold text-emerald-700 text-xs mt-0.5">Present</span>
+              <span class="text-[9px] text-emerald-500">Manual Present</span>
+            </label>
+
+            <!-- Week Off (WO) -->
+            <label class="override-status-option relative flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer transition">
+              <input type="radio" name="override_status" value="WO" class="sr-only">
+              <span class="text-base">🏖️</span>
+              <span class="font-bold text-slate-700 text-xs mt-0.5">Week Off</span>
+              <span class="text-[9px] text-slate-500">Saturday / Sunday</span>
+            </label>
+
+            <!-- Reset / Auto -->
+            <label class="override-status-option relative flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition">
+              <input type="radio" name="override_status" value="CLEAR" class="sr-only">
+              <span class="text-base">🔄</span>
+              <span class="font-bold text-slate-600 text-xs mt-0.5">Reset / Auto</span>
+              <span class="text-[9px] text-slate-400">Restore Punches</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Remarks -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">Reason / Remarks (Optional)</label>
+          <input type="text" id="override-remarks-input" placeholder="e.g. Approved by HR / Sick Leave / Remote Assignment" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-navy">
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-end space-x-2.5">
+          <button type="button" onclick="closeModal('modal-edit-day-attendance')" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition">
+            Cancel
+          </button>
+          <button type="submit" id="btn-save-override" class="px-4 py-2 rounded-lg bg-brand-navy hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition flex items-center space-x-1.5">
+            <span>Save Attendance Status</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 
     <script src="/static/js/app.js?v=5.0"></script>

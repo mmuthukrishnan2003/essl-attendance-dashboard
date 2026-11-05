@@ -70,17 +70,5 @@
     "created_at": 1793813110.145119,
     "expires_at": 1796405110.145119,
     "remember": true
-  },
-  "a15e26bd13ad0d0166f29f0b613a163c62a4d93e68eb97ed91f51cd5d51d5ede": {
-    "user": {
-      "id": 2,
-      "username": "hr",
-      "name": "Centizen Administrator",
-      "email": "hr@centizen.com",
-      "role": "Administrator"
-    },
-    "created_at": 1793849799.1219306,
-    "expires_at": 1796441799.1011221,
-    "remember": true
   }
 }

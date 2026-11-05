@@ -744,3 +744,39 @@ def get_live_attendance_status():
         "last_punch": live_manager.last_punch_info,
         "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+
+
+from pydantic import BaseModel
+
+class AttendanceOverrideRequest(BaseModel):
+    emp_code: str
+    date: str
+    status: str
+    remarks: Optional[str] = ""
+
+@router.post("/override")
+def save_attendance_override(
+    payload: AttendanceOverrideRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Saves or clears manual attendance status override (WFH, Absent, Half Day Leave, Present, Week Off).
+    """
+    from app.monthly_service import set_attendance_override
+    res = set_attendance_override(
+        db=db,
+        emp_code=payload.emp_code,
+        date_str=payload.date,
+        status=payload.status,
+        remarks=payload.remarks or ""
+    )
+    return res
+
+@router.get("/overrides")
+def get_attendance_overrides(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    from app.monthly_service import get_all_attendance_overrides
+    return get_all_attendance_overrides(db, year=year, month=month)

@@ -5866,6 +5866,7 @@ function renderMonthlyMusterTable(data) {
     <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-amber-50 text-amber-900 min-w-[50px]" title="Monthly Late Punch Count (> 09:05 AM)">Late</th>
     <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-rose-50 text-rose-900 min-w-[45px]">A</th>
     <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-indigo-50 text-indigo-900 min-w-[45px]">WFH</th>
+    <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-purple-50 text-purple-900 min-w-[45px]" title="Half Day Leave (0.5d)">½L</th>
     <th rowspan="2" class="px-2 py-2 border-r border-slate-200 text-center font-bold bg-slate-100 text-slate-700 min-w-[45px]">WO</th>
     <th rowspan="2" class="px-2 py-2 text-center font-bold bg-blue-50 text-blue-900 min-w-[55px]">Rate %</th>
   </tr>`;
@@ -5913,6 +5914,9 @@ function renderMonthlyMusterTable(data) {
       let cellBg = 'bg-white text-slate-400';
       let title = `Day ${d.day} (${d.weekday}): No Punch`;
 
+      const isOverride = Boolean(dayData?.is_override);
+      const overrideDot = isOverride ? `<span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-600 mr-0.5" title="Manual Override: ${dayData.override_remarks || 'Adjusted by HR'}"></span>` : '';
+
       if (status === 'P') {
         if (isLate) {
           cellBg = 'bg-amber-50/70 border-amber-200';
@@ -5927,10 +5931,19 @@ function renderMonthlyMusterTable(data) {
       } else if (status === 'WFH') {
         cellBg = 'bg-indigo-50/50 text-indigo-800';
         title = `Day ${d.day}: WFH (Remote)`;
+      } else if (status === 'HDL') {
+        cellBg = 'bg-purple-50/60 text-purple-800 font-bold';
+        title = `Day ${d.day}: Half Day Leave (HDL)`;
       } else if (status === 'WO') {
-        cellBg = 'bg-slate-100 text-slate-500';
+        cellBg = 'bg-slate-100 text-slate-500 font-bold';
         title = `Day ${d.day}: Week Off (${d.weekday})`;
       }
+
+      if (isOverride && dayData?.override_remarks) {
+        title += `\n[HR Override: ${dayData.override_remarks}]`;
+      }
+
+      const cellClickAttr = `onclick="openDayOverrideModal('${r.emp_code}', '${(r.name || '').replace(/'/g, "\\'")}', '${d.date}', '${status}', '${(dayData?.override_remarks || '').replace(/'/g, "\\'")}')"`;
 
       if (monthlyGridMode === 'inout') {
         let cellBody = '';
@@ -5948,22 +5961,36 @@ function renderMonthlyMusterTable(data) {
             </div>
           `;
         } else if (status === 'A') {
-          cellBody = `<div class="py-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">A</span></div>`;
+          cellBody = `<div class="py-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">${overrideDot}A</span></div>`;
         } else if (status === 'WO') {
           cellBody = `<div class="py-2 text-center text-slate-400 font-bold text-[10px]">WO</div>`;
         } else if (status === 'WFH') {
-          cellBody = `<div class="py-2 text-center text-indigo-700 font-bold text-[10px]">WFH</div>`;
+          cellBody = `<div class="py-2 text-center text-indigo-700 font-bold text-[10px]">${overrideDot}WFH</div>`;
+        } else if (status === 'HDL') {
+          cellBody = `<div class="py-2 text-center text-purple-700 font-bold text-[10px]">${overrideDot}½L</div>`;
         } else {
           cellBody = `<div class="py-2 text-center text-slate-300 font-mono">--</div>`;
         }
 
-        dayCells += `<td class="px-0.5 py-1 border-r border-slate-200 text-center ${cellBg}" title="${title}">
+        dayCells += `<td ${cellClickAttr} class="px-0.5 py-1 border-r border-slate-200 text-center ${cellBg} cursor-pointer hover:ring-2 hover:ring-brand-navy/60 hover:z-20 relative transition" title="${title} • Click to change status">
           ${cellBody}
         </td>`;
       } else {
         // Status Only Mode
-        dayCells += `<td class="px-1 py-1.5 border-r border-slate-200 text-center text-[10px] ${cellBg}" title="${title}">
-          ${status === 'P' && isLate ? `<span class="relative inline-block"><span class="w-1.5 h-1.5 bg-amber-600 rounded-full inline-block mr-0.5"></span>P</span>` : status}
+        let statusBadge = status;
+        if (status === 'P' && isLate) {
+          statusBadge = `<span class="relative inline-block"><span class="w-1.5 h-1.5 bg-amber-600 rounded-full inline-block mr-0.5"></span>P</span>`;
+        } else if (status === 'HDL') {
+          statusBadge = `<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">½L</span>`;
+        } else if (status === 'WFH') {
+          statusBadge = `<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">WFH</span>`;
+        } else if (status === 'A') {
+          statusBadge = `<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">A</span>`;
+        } else if (status === 'WO') {
+          statusBadge = `<span class="text-slate-400 font-bold">WO</span>`;
+        }
+        dayCells += `<td ${cellClickAttr} class="px-1 py-1.5 border-r border-slate-200 text-center text-[10px] ${cellBg} cursor-pointer hover:ring-2 hover:ring-brand-navy/60 hover:z-20 relative transition" title="${title} • Click to change status">
+          ${overrideDot}${statusBadge}
         </td>`;
       }
     });
@@ -5982,6 +6009,7 @@ function renderMonthlyMusterTable(data) {
       <td class="px-2 py-2 text-center border-r border-slate-200">${lateBadge}</td>
       <td class="px-2 py-2 text-center font-bold text-rose-600 border-r border-slate-200 font-mono">${r.absent_count}</td>
       <td class="px-2 py-2 text-center font-bold text-indigo-700 border-r border-slate-200 font-mono">${r.wfh_count || 0}</td>
+      <td class="px-2 py-2 text-center font-bold text-purple-700 border-r border-slate-200 font-mono" title="Half Day Leave">${r.hdl_count || 0}</td>
       <td class="px-2 py-2 text-center font-bold text-slate-500 border-r border-slate-200 font-mono">${r.wo_count || 0}</td>
       <td class="px-2 py-2 text-center font-extrabold text-blue-700 font-mono">${r.attendance_rate}%</td>
     </tr>`;
@@ -6507,5 +6535,130 @@ function silentRefreshActiveTab() {
     loadDailyReport();
   } else if (currentTab === 'devices') {
     loadDevicesData();
+  }
+}
+
+
+
+// ================= CHANGE EMPLOYEE DAY ATTENDANCE MODAL =================
+
+function openDayOverrideModal(empCode, empName, dateStr, currentStatus, remarks) {
+  const modal = document.getElementById('modal-edit-day-attendance');
+  if (!modal) return;
+
+  // 1. Populate and select Employee
+  const empSelect = document.getElementById('override-emp-select');
+  if (empSelect && monthlyMusterCache && monthlyMusterCache.records) {
+    empSelect.innerHTML = monthlyMusterCache.records.map(r => `
+      <option value="${r.emp_code}">${r.name} (#${r.emp_code}) • ${r.shift || 'Standard'}</option>
+    `).join('');
+    if (empCode) {
+      empSelect.value = String(empCode);
+    }
+  }
+
+  // 2. Set target date
+  const dateInput = document.getElementById('override-date-input');
+  if (dateInput) {
+    if (dateStr) {
+      dateInput.value = dateStr;
+    } else {
+      const m = document.getElementById('monthly-month-select')?.value || (new Date().getMonth() + 1);
+      const y = document.getElementById('monthly-year-select')?.value || new Date().getFullYear();
+      dateInput.value = `${y}-${String(m).padStart(2, '0')}-01`;
+    }
+  }
+
+  // 3. Show current status
+  const curDisplay = document.getElementById('override-current-status-display');
+  if (curDisplay) {
+    const statusMap = {
+      'P': 'Present (On Time)',
+      'A': 'Absent (No Punches)',
+      'WFH': 'Work From Home (Remote)',
+      'HDL': 'Half Day Leave (½L)',
+      'WO': 'Week Off (Saturday / Sunday)',
+      '--': 'No Recorded Data'
+    };
+    curDisplay.textContent = statusMap[currentStatus] || (currentStatus || 'Calculated');
+  }
+
+  // 4. Set remarks
+  const remarksInput = document.getElementById('override-remarks-input');
+  if (remarksInput) {
+    remarksInput.value = remarks || '';
+  }
+
+  // 5. Select matching status radio
+  const targetRadioVal = (currentStatus === 'HALF_DAY') ? 'HDL' : (currentStatus || 'WFH');
+  const radios = document.querySelectorAll('input[name="override_status"]');
+  radios.forEach(r => {
+    r.checked = (r.value === targetRadioVal);
+  });
+  updateOverridePillsHighlight();
+
+  openModal('modal-edit-day-attendance');
+}
+
+function updateOverridePillsHighlight() {
+  document.querySelectorAll('.override-status-option').forEach(el => {
+    const inp = el.querySelector('input[type="radio"]');
+    if (inp && inp.checked) {
+      el.classList.add('ring-2', 'ring-brand-navy', 'shadow-md', 'scale-[1.02]');
+    } else {
+      el.classList.remove('ring-2', 'ring-brand-navy', 'shadow-md', 'scale-[1.02]');
+    }
+  });
+}
+
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.name === 'override_status') {
+    updateOverridePillsHighlight();
+  }
+});
+
+async function submitDayOverrideForm(e) {
+  e.preventDefault();
+  const empCode = document.getElementById('override-emp-select')?.value;
+  const dateVal = document.getElementById('override-date-input')?.value;
+  const selectedStatus = document.querySelector('input[name="override_status"]:checked')?.value;
+  const remarks = document.getElementById('override-remarks-input')?.value || '';
+
+  if (!empCode || !dateVal || !selectedStatus) {
+    showToast('Please select employee, date, and status', 'error');
+    return;
+  }
+
+  const btnSave = document.getElementById('btn-save-override');
+  if (btnSave) {
+    btnSave.disabled = true;
+    btnSave.textContent = 'Saving...';
+  }
+
+  try {
+    const res = await fetch('/api/attendance/override', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        emp_code: String(empCode),
+        date: dateVal,
+        status: selectedStatus,
+        remarks: remarks
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to save attendance override');
+
+    showToast(`Attendance updated: ${selectedStatus} on ${dateVal}`, 'success');
+    closeModal('modal-edit-day-attendance');
+    loadMonthlyAttendanceData();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    if (btnSave) {
+      btnSave.disabled = false;
+      btnSave.textContent = 'Save Attendance Status';
+    }
   }
 }

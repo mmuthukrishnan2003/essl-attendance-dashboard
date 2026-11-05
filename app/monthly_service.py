@@ -1,3 +1,4 @@
+import json
 import calendar
 import io
 from datetime import datetime, date, timedelta, time
@@ -9,8 +10,76 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from app.models import Employee, AttendancePunch, Shift, Device
+from app.models import Employee, AttendancePunch, Shift, Device, Setting
 from app.attendance_service import get_setting_dict
+
+
+def get_all_attendance_overrides(db: Session, year: Optional[int] = None, month: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Retrieves manual attendance overrides from settings table.
+    Stored under key 'attendance_overrides' as JSON:
+      { "EMPCODE_YYYY-MM-DD": { "status": "WFH"|"A"|"HDL"|"P"|"WO", "remarks": "...", "updated_at": "..." } }
+    """
+    try:
+        row = db.query(Setting).filter(Setting.key == "attendance_overrides").first()
+        if not row or not row.value:
+            return {}
+        data = json.loads(row.value)
+        if not isinstance(data, dict):
+            return {}
+        if year and month:
+            prefix = f"{year}-{month:02d}"
+            return {k: v for k, v in data.items() if f"_{prefix}-" in f"_{k}" or k.endswith(f"_{prefix}") or prefix in k}
+        return data
+    except Exception:
+        return {}
+
+
+def set_attendance_override(
+    db: Session,
+    emp_code: str,
+    date_str: str,
+    status: str,
+    remarks: Optional[str] = ""
+) -> Dict[str, Any]:
+    """
+    Saves or clears a manual attendance status override for an employee on a given date.
+    status in ('CLEAR', 'AUTO', 'RESET', '') deletes the override.
+    """
+    status = (status or "").strip().upper()
+    key = f"{emp_code}_{date_str}"
+    
+    row = db.query(Setting).filter(Setting.key == "attendance_overrides").first()
+    if not row:
+        row = Setting(key="attendance_overrides", value="{}")
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        data = {}
+    else:
+        try:
+            data = json.loads(row.value) if row.value else {}
+        except Exception:
+            data = {}
+
+    if status in ("CLEAR", "AUTO", "RESET", ""):
+        if key in data:
+            del data[key]
+    else:
+        # Standardize allowed status: WFH, A, HDL, P, WO
+        if status in ("HALF_DAY", "HALFDAY", "HALF"):
+            status = "HDL"
+        data[key] = {
+            "emp_code": str(emp_code),
+            "date": date_str,
+            "status": status,
+            "remarks": (remarks or "").strip(),
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+    row.value = json.dumps(data)
+    db.commit()
+    return {"success": True, "key": key, "status": status, "count": len(data), "override": data.get(key)}
 
 def get_monthly_attendance_matrix(
     year: int,
@@ -86,6 +155,9 @@ def get_monthly_attendance_matrix(
 
     employees = emp_query.order_by(func.lower(Employee.name).asc()).all()
 
+    # Fetch manual attendance overrides for this month
+    overrides = get_all_attendance_overrides(db, year=year, month=month)
+
     # Meta for each day of the month
     days_meta = []
     working_days_count = 0
@@ -93,13 +165,14 @@ def get_monthly_attendance_matrix(
 
     for d in range(1, num_days + 1):
         cur_date = date(year, month, d)
-        is_sun = (cur_date.weekday() == 6)
-        if not is_sun:
+        # Every Saturday (5) and Sunday (6) is a Week Off
+        is_weekend = (cur_date.weekday() in (5, 6))
+        if not is_weekend:
             working_days_count += 1
         days_meta.append({
             "day": d,
             "weekday": cur_date.strftime("%a"),
-            "is_weekend": is_sun,
+            "is_weekend": is_weekend,
             "date": cur_date.strftime("%Y-%m-%d"),
             "is_past_or_today": (cur_date <= today)
         })
@@ -119,18 +192,52 @@ def get_monthly_attendance_matrix(
         pres_cnt = 0
         abs_cnt = 0
         wfh_cnt = 0
+        hdl_cnt = 0
         wo_cnt = 0
 
         for d in range(1, num_days + 1):
             cur_date = date(year, month, d)
-            is_sun = (cur_date.weekday() == 6)
+            date_str = cur_date.strftime("%Y-%m-%d")
+            # Every Saturday (5) & Sunday (6) is a Week Off
+            is_weekend = (cur_date.weekday() in (5, 6))
             punches_list = emp_day_punches[emp.emp_code].get(d, [])
 
-            if is_sun:
+            # Check for manual attendance override
+            override = overrides.get(f"{emp.emp_code}_{date_str}")
+            is_override = bool(override)
+            override_remarks = override.get("remarks", "") if override else ""
+
+            if override:
+                st = override.get("status")
+                f_in = punches_list[0].strftime("%H:%M:%S") if punches_list else None
+                l_out = punches_list[-1].strftime("%H:%M:%S") if len(punches_list) > 1 else f_in
+                day_is_late = False
+                day_late_mins = 0
+
+                if st == "WFH":
+                    wfh_cnt += 1
+                    status = "WFH"
+                elif st == "A":
+                    abs_cnt += 1
+                    status = "A"
+                elif st in ("HDL", "HALF_DAY"):
+                    hdl_cnt += 1
+                    status = "HDL"
+                elif st == "P":
+                    pres_cnt += 1
+                    status = "P"
+                elif st == "WO":
+                    wo_cnt += 1
+                    status = "WO"
+                else:
+                    status = st
+            elif is_weekend:
                 wo_cnt += 1
                 status = "WO"
                 f_in = punches_list[0].strftime("%H:%M:%S") if punches_list else None
                 l_out = punches_list[-1].strftime("%H:%M:%S") if len(punches_list) > 1 else f_in
+                day_is_late = False
+                day_late_mins = 0
             elif punches_list:
                 pres_cnt += 1
                 status = "P"
@@ -157,28 +264,40 @@ def get_monthly_attendance_matrix(
                 status = "WFH"
                 f_in = None
                 l_out = None
+                day_is_late = False
+                day_late_mins = 0
             else:
                 abs_cnt += 1
                 status = "A"
                 f_in = None
                 l_out = None
+                day_is_late = False
+                day_late_mins = 0
 
             emp_days[str(d)] = {
                 "day": d,
+                "date": date_str,
+                "weekday": cur_date.strftime("%a"),
                 "status": status,
                 "first_in": f_in,
                 "last_out": l_out,
                 "punches_count": len(punches_list),
-                "is_late": day_is_late if punches_list and not is_sun else False,
-                "late_mins": day_late_mins if punches_list and not is_sun else 0
+                "is_late": day_is_late if punches_list and not is_weekend and not is_override else False,
+                "late_mins": day_late_mins if punches_list and not is_weekend and not is_override else 0,
+                "is_override": is_override,
+                "override_remarks": override_remarks
             }
 
         total_present_overall += pres_cnt
         total_absent_overall += abs_cnt
         total_wfh_overall += wfh_cnt
+        if 'total_hdl_overall' not in locals():
+            total_hdl_overall = 0
+        total_hdl_overall += hdl_cnt
 
-        total_work_days = pres_cnt + abs_cnt + wfh_cnt
-        attendance_rate = round(((pres_cnt + wfh_cnt) / total_work_days * 100), 1) if total_work_days > 0 else 0.0
+        total_work_days = pres_cnt + abs_cnt + wfh_cnt + hdl_cnt
+        effective_pres = pres_cnt + wfh_cnt + (0.5 * hdl_cnt)
+        attendance_rate = round((effective_pres / total_work_days * 100), 1) if total_work_days > 0 else 0.0
 
         emp_late_cnt = sum(1 for d_info in emp_days.values() if d_info.get("is_late"))
         emp_total_late_mins = sum(d_info.get("late_mins", 0) for d_info in emp_days.values())
@@ -195,13 +314,16 @@ def get_monthly_attendance_matrix(
             "total_late_mins": emp_total_late_mins,
             "absent_count": abs_cnt,
             "wfh_count": wfh_cnt,
+            "hdl_count": hdl_cnt,
             "wo_count": wo_cnt,
             "attendance_rate": attendance_rate
         })
 
+    total_hdl_overall = sum(r.get("hdl_count", 0) for r in records)
     # Overall attendance rate
-    all_work_days = total_present_overall + total_absent_overall + total_wfh_overall
-    overall_rate = round(((total_present_overall + total_wfh_overall) / all_work_days * 100), 1) if all_work_days > 0 else 0.0
+    all_work_days = total_present_overall + total_absent_overall + total_wfh_overall + total_hdl_overall
+    all_effective = total_present_overall + total_wfh_overall + (0.5 * total_hdl_overall)
+    overall_rate = round((all_effective / all_work_days * 100), 1) if all_work_days > 0 else 0.0
 
     return {
         "year": year,
