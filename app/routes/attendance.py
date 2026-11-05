@@ -360,21 +360,26 @@ def export_monthly_excel(
     y = year or now.year
     m = month or now.month
 
-    excel_stream = generate_monthly_excel_report(
-        year=y,
-        month=m,
-        db=db,
-        department=department or "ALL",
-        shift=shift or "ALL"
-    )
-    month_name = date(y, m, 1).strftime("%B_%Y")
-    filename = f"Centizen_Monthly_Attendance_{month_name}.xlsx"
+    try:
+        excel_stream = generate_monthly_excel_report(
+            year=y,
+            month=m,
+            db=db,
+            department=department or "ALL",
+            shift=shift or "ALL"
+        )
+        month_name = date(y, m, 1).strftime("%B_%Y")
+        filename = f"Centizen_Monthly_Attendance_{month_name}.xlsx"
 
-    return StreamingResponse(
-        excel_stream,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+        return Response(
+            content=excel_stream.getvalue(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate monthly Excel: {str(e)}")
 
 
 @router.get("/export/monthly-csv")

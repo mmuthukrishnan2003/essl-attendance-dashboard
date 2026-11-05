@@ -124,7 +124,7 @@ router.get('/live-status', (req, res) => {
     return res.json((0, liveSyncService_1.getLiveStatus)());
 });
 // GET /api/attendance/export/excel
-router.get('/export/excel', async (req, res) => {
+router.get(['/export/excel', '/export/monthly-excel'], async (req, res) => {
     try {
         const startDate = req.query.start_date || req.query.from_date;
         const endDate = req.query.end_date || req.query.to_date;
@@ -154,7 +154,7 @@ router.get('/export/excel', async (req, res) => {
     }
 });
 // GET /api/attendance/export/csv
-router.get('/export/csv', async (req, res) => {
+router.get(['/export/csv', '/export/monthly-csv'], async (req, res) => {
     try {
         const startDate = req.query.start_date || req.query.from_date;
         const endDate = req.query.end_date || req.query.to_date;

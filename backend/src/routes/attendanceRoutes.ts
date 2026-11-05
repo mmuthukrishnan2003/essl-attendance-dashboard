@@ -138,7 +138,7 @@ router.get('/live-status', (req: Request, res: Response) => {
 });
 
 // GET /api/attendance/export/excel
-router.get('/export/excel', async (req: Request, res: Response) => {
+router.get(['/export/excel', '/export/monthly-excel'], async (req: Request, res: Response) => {
   try {
     const startDate = (req.query.start_date as string) || (req.query.from_date as string);
     const endDate = (req.query.end_date as string) || (req.query.to_date as string);
@@ -170,7 +170,7 @@ router.get('/export/excel', async (req: Request, res: Response) => {
 });
 
 // GET /api/attendance/export/csv
-router.get('/export/csv', async (req: Request, res: Response) => {
+router.get(['/export/csv', '/export/monthly-csv'], async (req: Request, res: Response) => {
   try {
     const startDate = (req.query.start_date as string) || (req.query.from_date as string);
     const endDate = (req.query.end_date as string) || (req.query.to_date as string);
