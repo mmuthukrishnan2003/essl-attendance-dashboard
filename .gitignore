@@ -16,3 +16,4 @@ attendance.db
 
 # Environment secrets
 .env
+attendance.log
