@@ -10,7 +10,7 @@ import {
   getAllAttendanceOverrides,
   setAttendanceOverride,
 } from '../services/monthlyService';
-import { generateMonthlyExcel } from '../services/excelService';
+import { generateMonthlyExcel, generateDateRangeExcel } from '../services/excelService';
 import { addSseClient, getLiveStatus } from '../services/liveSyncService';
 
 const router = Router();
@@ -140,16 +140,26 @@ router.get('/live-status', (req: Request, res: Response) => {
 // GET /api/attendance/export/excel
 router.get('/export/excel', async (req: Request, res: Response) => {
   try {
-    const now = new Date();
-    const year = parseInt((req.query.year as string) || String(now.getFullYear()), 10);
-    const month = parseInt((req.query.month as string) || String(now.getMonth() + 1), 10);
+    const startDate = (req.query.start_date as string) || (req.query.from_date as string);
+    const endDate = (req.query.end_date as string) || (req.query.to_date as string);
     const department = (req.query.department as string) || 'ALL';
     const shift = (req.query.shift as string) || 'ALL';
     const search = (req.query.search as string) || '';
 
-    const buffer = await generateMonthlyExcel(year, month, department, shift, search);
+    let buffer: Buffer;
+    let filename: string;
 
-    const filename = `Attendance_Report_${year}_${String(month).padStart(2, '0')}.xlsx`;
+    if (startDate && endDate) {
+      buffer = await generateDateRangeExcel(startDate, endDate, department, shift, search);
+      filename = `Centizen_Attendance_${startDate.replace(/-/g, '')}_to_${endDate.replace(/-/g, '')}.xlsx`;
+    } else {
+      const now = new Date();
+      const year = parseInt((req.query.year as string) || String(now.getFullYear()), 10);
+      const month = parseInt((req.query.month as string) || String(now.getMonth() + 1), 10);
+      buffer = await generateMonthlyExcel(year, month, department, shift, search);
+      filename = `Centizen_Monthly_Muster_${year}_${String(month).padStart(2, '0')}.xlsx`;
+    }
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return res.send(buffer);
@@ -162,17 +172,52 @@ router.get('/export/excel', async (req: Request, res: Response) => {
 // GET /api/attendance/export/csv
 router.get('/export/csv', async (req: Request, res: Response) => {
   try {
+    const startDate = (req.query.start_date as string) || (req.query.from_date as string);
+    const endDate = (req.query.end_date as string) || (req.query.to_date as string);
+    const department = (req.query.department as string) || 'ALL';
+    const shift = (req.query.shift as string) || 'ALL';
+    const search = (req.query.search as string) || '';
+
+    if (startDate && endDate) {
+      const rangeData = await getRangeAttendance(startDate, endDate, department, shift, search);
+      const header = ['Date', 'Emp ID', 'Employee Name', 'Shift', 'First IN', 'Last OUT', 'Intermediate Punches', 'Work Duration', 'Status'];
+      const lines = [header.join(',')];
+
+      for (const rec of rangeData.records) {
+        const inStr = rec.first_in_time !== '--' ? `"${rec.first_in_time} (${rec.first_in_device})"` : '"--"';
+        const outStr = rec.last_out_time !== '--' ? `"${rec.last_out_time} (${rec.last_out_device})"` : '"--"';
+        const row = [
+          `"${rec.date}"`,
+          `"${rec.emp_code}"`,
+          `"${(rec.name || '').replace(/"/g, '""')}"`,
+          `"${(rec.shift_name || '').replace(/"/g, '""')}"`,
+          inStr,
+          outStr,
+          String(rec.intermediate_count),
+          `"${rec.duration}"`,
+          `"${rec.status}"`,
+        ];
+        lines.push(row.join(','));
+      }
+
+      const csvContent = lines.join('\n');
+      const filename = `Centizen_Attendance_${startDate.replace(/-/g, '')}_to_${endDate.replace(/-/g, '')}.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(csvContent);
+    }
+
     const now = new Date();
     const year = parseInt((req.query.year as string) || String(now.getFullYear()), 10);
     const month = parseInt((req.query.month as string) || String(now.getMonth() + 1), 10);
 
-    const data = await getMonthlyAttendanceMatrix(year, month);
+    const data = await getMonthlyAttendanceMatrix(year, month, department, shift, search);
 
     const header = ['Emp ID', 'Name', 'Department', 'Shift'];
     for (const d of data.days_meta) {
       header.push(`Day ${d.day} (${d.weekday})`);
     }
-    header.push('Present', 'Absent', 'WFH', 'Half Day', 'Attendance Rate');
+    header.push('Present', 'Absent', 'WFH', 'Half Day', 'Week Off', 'Attendance Rate');
 
     const lines = [header.join(',')];
 
@@ -192,13 +237,14 @@ router.get('/export/csv', async (req: Request, res: Response) => {
         String(rec.absent_count),
         String(rec.wfh_count),
         String(rec.hdl_count),
+        String(rec.wo_count),
         `"${rec.attendance_rate}%"`
       );
       lines.push(row.join(','));
     }
 
     const csvContent = lines.join('\n');
-    const filename = `Attendance_Report_${year}_${String(month).padStart(2, '0')}.csv`;
+    const filename = `Centizen_Attendance_${year}_${String(month).padStart(2, '0')}.csv`;
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return res.send(csvContent);
@@ -209,4 +255,3 @@ router.get('/export/csv', async (req: Request, res: Response) => {
 });
 
 export default router;
-

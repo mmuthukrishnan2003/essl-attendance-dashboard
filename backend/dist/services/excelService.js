@@ -3,9 +3,81 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateDateRangeExcel = generateDateRangeExcel;
 exports.generateMonthlyExcel = generateMonthlyExcel;
 const exceljs_1 = __importDefault(require("exceljs"));
 const monthlyService_1 = require("./monthlyService");
+const attendanceService_1 = require("./attendanceService");
+async function generateDateRangeExcel(startDateStr, endDateStr, departmentFilter, shiftFilter, searchQuery) {
+    const rangeData = await (0, attendanceService_1.getRangeAttendance)(startDateStr, endDateStr, departmentFilter, shiftFilter, searchQuery);
+    const workbook = new exceljs_1.default.Workbook();
+    workbook.creator = 'Centizen IT Services';
+    workbook.lastModifiedBy = 'Centizen IT Services';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+    const navyHex = 'FF0A5482';
+    const whiteHex = 'FFFFFFFF';
+    const borderGrey = 'FFCBD5E1';
+    const thinBorder = {
+        top: { style: 'thin', color: { argb: borderGrey } },
+        left: { style: 'thin', color: { argb: borderGrey } },
+        bottom: { style: 'thin', color: { argb: borderGrey } },
+        right: { style: 'thin', color: { argb: borderGrey } },
+    };
+    const sheet = workbook.addWorksheet('Daily Attendance Report', {
+        views: [{ state: 'frozen', ySplit: 2 }],
+    });
+    const titleRow = sheet.addRow([`Centizen IT Services - Daily Attendance Report (${startDateStr} to ${endDateStr})`]);
+    titleRow.font = { name: 'Arial', size: 14, bold: true, color: { argb: navyHex } };
+    sheet.mergeCells(1, 1, 1, 9);
+    const headerCols = [
+        'Date', 'Emp ID', 'Employee Name', 'Shift', 'First IN', 'Last OUT', 'Intermediate Punches', 'Work Duration', 'Status'
+    ];
+    const headerRow = sheet.addRow(headerCols);
+    headerRow.height = 26;
+    headerRow.eachCell((cell) => {
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: whiteHex } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: navyHex } };
+        cell.border = thinBorder;
+    });
+    rangeData.records.forEach((rec, idx) => {
+        const isEven = idx % 2 === 0;
+        const row = sheet.addRow([
+            rec.date,
+            rec.emp_code,
+            rec.name,
+            rec.shift_name,
+            rec.first_in_time !== '--' ? `${rec.first_in_time} (${rec.first_in_device})` : '--',
+            rec.last_out_time !== '--' ? `${rec.last_out_time} (${rec.last_out_device})` : '--',
+            rec.intermediate_count,
+            rec.duration,
+            rec.status,
+        ]);
+        row.height = 22;
+        row.eachCell((cell, colNum) => {
+            cell.font = { name: 'Arial', size: 9 };
+            cell.border = thinBorder;
+            cell.alignment = { vertical: 'middle', horizontal: colNum === 3 ? 'left' : 'center' };
+            if (!isEven) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+            }
+        });
+    });
+    sheet.columns = [
+        { width: 14 },
+        { width: 12 },
+        { width: 26 },
+        { width: 34 },
+        { width: 25 },
+        { width: 25 },
+        { width: 22 },
+        { width: 16 },
+        { width: 14 },
+    ];
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+}
 async function generateMonthlyExcel(year, month, departmentFilter, shiftFilter, searchQuery) {
     const data = await (0, monthlyService_1.getMonthlyAttendanceMatrix)(year, month, departmentFilter, shiftFilter, searchQuery);
     const workbook = new exceljs_1.default.Workbook();

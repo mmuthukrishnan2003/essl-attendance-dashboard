@@ -651,15 +651,20 @@ def generate_excel_report(start_date: date, end_date: date, db: Session, departm
             ws.cell(row=row_idx, column=3, value=rec["name"]).alignment = Alignment(horizontal="left")
             ws.cell(row=row_idx, column=4, value=rec["shift"]).alignment = Alignment(horizontal="center")
 
-            if rec.get("is_wfh") and not rec["first_in"]:
+            if rec.get("is_wfh") and not rec.get("first_in"):
                 first_in_val = "🏠 WFH (Remote)"
                 last_out_val = "🏠 WFH (Remote)"
             else:
-                first_in_val = f"{rec['first_in_time']} ({rec['first_in_device']})" if rec['first_in'] else "--"
-                last_out_val = f"{rec['last_out_time']} ({rec['last_out_device']})" if rec['last_out'] else "--"
+                f_time = rec.get("first_in_time") or "--"
+                f_dev = rec.get("first_in_device") or ""
+                first_in_val = f"{f_time} ({f_dev})" if rec.get("first_in") and f_time != "--" else "--"
+
+                l_time = rec.get("last_out_time") or "--"
+                l_dev = rec.get("last_out_device") or ""
+                last_out_val = f"{l_time} ({l_dev})" if rec.get("last_out") and l_time != "--" else "--"
             ws.cell(row=row_idx, column=5, value=first_in_val).alignment = Alignment(horizontal="center")
             ws.cell(row=row_idx, column=6, value=last_out_val).alignment = Alignment(horizontal="center")
-            ws.cell(row=row_idx, column=7, value=rec["intermediate_count"]).alignment = Alignment(horizontal="center")
+            ws.cell(row=row_idx, column=7, value=rec.get("intermediate_count", 0)).alignment = Alignment(horizontal="center")
 
             for c in range(1, 8):
                 cell_item = ws.cell(row=row_idx, column=c)
