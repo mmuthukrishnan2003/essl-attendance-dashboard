@@ -86,3 +86,18 @@ class SettingsUpdate(BaseModel):
     full_day_hours: Optional[str] = None
     auto_sync_interval_mins: Optional[str] = None
     auto_sync_enabled: Optional[str] = None
+
+
+class AttendanceOverrideCreate(BaseModel):
+    emp_code: str
+    date: str  # YYYY-MM-DD
+    status: str  # WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, AUTO
+    notes: Optional[str] = None
+
+
+class AttendanceBatchOverrideCreate(BaseModel):
+    emp_codes: List[str]
+    start_date: str  # YYYY-MM-DD
+    end_date: str    # YYYY-MM-DD
+    status: str      # WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, AUTO
+    notes: Optional[str] = None

@@ -9,7 +9,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from app.models import Employee, AttendancePunch, Setting, Device, Shift
+from app.models import Employee, AttendancePunch, Setting, Device, Shift, AttendanceOverride
 
 
 def get_setting_dict(db: Session) -> Dict[str, str]:
@@ -248,6 +248,12 @@ def calculate_daily_attendance_for_date(
     is_today = (target_date == date.today())
     now_time = datetime.now()
 
+    target_date_str = target_date.strftime("%Y-%m-%d")
+    overrides_list = db.query(AttendanceOverride).filter(
+        AttendanceOverride.date == target_date_str
+    ).all()
+    override_by_emp = {o.emp_code: o for o in overrides_list}
+
     for emp in employees:
         shift_obj = shifts_map.get(emp.shift_code)
         is_wfh = (
@@ -321,6 +327,25 @@ def calculate_daily_attendance_for_date(
             last_out_time = processed["last_out_time"]
             last_out_device = processed["last_out_device"]
             duration = processed["duration"]
+
+        ovr = override_by_emp.get(emp.emp_code)
+        ovr_status = ovr.status if ovr else None
+        if ovr:
+            if ovr.status in ("WFH", "WFH-FN", "WFH-AN"):
+                is_wfh = True
+                if not is_present:
+                    total_wfh_count += 1
+                is_present = True
+                if processed["total_punches"] == 0:
+                    first_in_time = f"🏠 {ovr.status}"
+                    first_in_device = "Remote Work"
+                    last_out_time = f"🏠 {ovr.status}"
+                    last_out_device = "Remote Work"
+                    duration = {"text": "9h 00m", "hours": 9.0, "total_seconds": 32400}
+            elif ovr.status in ("P", "PRESENT"):
+                is_present = True
+            elif ovr.status in ("A", "ABSENT"):
+                is_present = False
 
         # Resolve shift start, grace, and end times based on employee's shift
         office_start_t = time(9, 0, 0)
@@ -463,6 +488,9 @@ def calculate_daily_attendance_for_date(
             "is_wfh": is_wfh,
             "is_present": is_present,
             "is_absent": not is_present,
+            "is_overridden": bool(ovr),
+            "override_status": ovr_status,
+            "override_notes": ovr.notes if ovr else "",
             "total_punches": processed["total_punches"],
             "first_in": processed["first_in"],
             "first_in_time": first_in_time,

@@ -1,6 +1,14 @@
 // Centizen eSSL Attendance Management System Frontend Application
 
-
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 let currentTab = 'dashboard';
 
@@ -1766,17 +1774,15 @@ function filterReportTable() {
 
 
   if (statusFilter === 'PRESENT') {
-
     filtered = filtered.filter(r => (r.total_punches > 0 || r.first_in || r.is_wfh));
-
   } else if (statusFilter === 'ABSENT') {
-
     filtered = filtered.filter(r => (!r.is_wfh && (!r.total_punches || r.total_punches === 0)));
-
   } else if (statusFilter === 'WFH') {
-
-    filtered = filtered.filter(r => (r.is_wfh || (r.shift && r.shift.toUpperCase().includes('WFH'))));
-
+    filtered = filtered.filter(r => (r.override_status === 'WFH' || r.is_wfh || (r.shift && r.shift.toUpperCase().includes('WFH'))));
+  } else if (statusFilter === 'WFH-FN') {
+    filtered = filtered.filter(r => (r.override_status === 'WFH-FN' || (r.shift && r.shift.toUpperCase().includes('WFH-FN'))));
+  } else if (statusFilter === 'WFH-AN') {
+    filtered = filtered.filter(r => (r.override_status === 'WFH-AN' || (r.shift && r.shift.toUpperCase().includes('WFH-AN'))));
   }
 
 
@@ -5968,8 +5974,14 @@ function renderMonthlyMusterTable(data) {
         cellBg = 'bg-rose-50/40 text-rose-600';
         title = `Day ${d.day}: Absent`;
       } else if (status === 'WFH') {
-        cellBg = 'bg-indigo-50/50 text-indigo-800';
-        title = `Day ${d.day}: WFH (Remote)`;
+        cellBg = 'bg-indigo-50/70 text-indigo-900 border-indigo-200';
+        title = `Day ${d.day}: Work From Home (Full Day)`;
+      } else if (status === 'WFH-FN') {
+        cellBg = 'bg-purple-50/70 text-purple-900 border-purple-200';
+        title = `Day ${d.day}: WFH - Forenoon (1st Half)`;
+      } else if (status === 'WFH-AN') {
+        cellBg = 'bg-sky-50/70 text-sky-900 border-sky-200';
+        title = `Day ${d.day}: WFH - Afternoon (2nd Half)`;
       } else if (status === 'WO') {
         cellBg = 'bg-slate-100 text-slate-500';
         title = `Day ${d.day}: Week Off (${d.weekday})`;
@@ -5995,18 +6007,67 @@ function renderMonthlyMusterTable(data) {
         } else if (status === 'WO') {
           cellBody = `<div class="py-2 text-center text-slate-400 font-bold text-[10px]">WO</div>`;
         } else if (status === 'WFH') {
-          cellBody = `<div class="py-2 text-center text-indigo-700 font-bold text-[10px]">WFH</div>`;
+          cellBody = `<div class="py-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200 shadow-2xs">🏠 WFH</span></div>`;
+        } else if (status === 'WFH-FN') {
+          const inTime = firstIn && !firstIn.includes('WFH') ? firstIn.slice(0, 5) : '';
+          const outTime = lastOut && !lastOut.includes('WFH') ? lastOut.slice(0, 5) : '';
+          cellBody = `
+            <div class="leading-tight py-0.5 flex flex-col justify-center items-center">
+              <span class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200">WFH-FN</span>
+              ${inTime ? `<span class="font-mono text-[9px] text-slate-600 mt-0.5">${inTime}${outTime && outTime !== inTime ? ' - ' + outTime : ''}</span>` : ''}
+            </div>
+          `;
+        } else if (status === 'WFH-AN') {
+          const inTime = firstIn && !firstIn.includes('WFH') ? firstIn.slice(0, 5) : '';
+          const outTime = lastOut && !lastOut.includes('WFH') ? lastOut.slice(0, 5) : '';
+          cellBody = `
+            <div class="leading-tight py-0.5 flex flex-col justify-center items-center">
+              <span class="px-1 py-0.2 rounded text-[9px] font-bold bg-sky-100 text-sky-800 border border-sky-200">WFH-AN</span>
+              ${inTime ? `<span class="font-mono text-[9px] text-slate-600 mt-0.5">${inTime}${outTime && outTime !== inTime ? ' - ' + outTime : ''}</span>` : ''}
+            </div>
+          `;
         } else {
           cellBody = `<div class="py-2 text-center text-slate-300 font-mono">--</div>`;
         }
 
-        dayCells += `<td class="px-0.5 py-1 border-r border-slate-200 text-center ${cellBg}" title="${title}">
+        const overrideDot = dayData?.is_overridden
+          ? `<span class="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-brand-navy rounded-full" title="Manual override: ${dayData.override_status || status}"></span>`
+          : '';
+
+        dayCells += `<td onclick="openAttendanceStatusModal('${r.emp_code}', '${escapeHtml(r.name)}', '${d.date}', '${status}', '${firstIn || ''}', '${lastOut || ''}')"
+          class="px-0.5 py-1 border-r border-slate-200 text-center ${cellBg} cursor-pointer hover:ring-2 hover:ring-brand-navy hover:shadow-xs transition select-none relative group"
+          title="${title} • Click to change status">
           ${cellBody}
+          ${overrideDot}
         </td>`;
       } else {
         // Status Only Mode
-        dayCells += `<td class="px-1 py-1.5 border-r border-slate-200 text-center text-[10px] ${cellBg}" title="${title}">
-          ${status === 'P' && isLate ? `<span class="relative inline-block"><span class="w-1.5 h-1.5 bg-amber-600 rounded-full inline-block mr-0.5"></span>P</span>` : status}
+        let statusBadgeText = status;
+        if (status === 'P') {
+          statusBadgeText = isLate
+            ? `<span class="relative inline-block"><span class="w-1.5 h-1.5 bg-amber-600 rounded-full inline-block mr-0.5"></span>P</span>`
+            : '<span class="font-bold text-emerald-700">P</span>';
+        } else if (status === 'A') {
+          statusBadgeText = '<span class="font-bold text-rose-600">A</span>';
+        } else if (status === 'WFH') {
+          statusBadgeText = '<span class="px-1 py-0.2 rounded text-[9px] font-bold bg-indigo-100 text-indigo-800">WFH</span>';
+        } else if (status === 'WFH-FN') {
+          statusBadgeText = '<span class="px-1 py-0.2 rounded text-[9px] font-bold bg-purple-100 text-purple-800">WFH-FN</span>';
+        } else if (status === 'WFH-AN') {
+          statusBadgeText = '<span class="px-1 py-0.2 rounded text-[9px] font-bold bg-sky-100 text-sky-800">WFH-AN</span>';
+        } else if (status === 'WO') {
+          statusBadgeText = '<span class="font-bold text-slate-400">WO</span>';
+        }
+
+        const overrideDot = dayData?.is_overridden
+          ? `<span class="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-brand-navy rounded-full" title="Manual override: ${dayData.override_status || status}"></span>`
+          : '';
+
+        dayCells += `<td onclick="openAttendanceStatusModal('${r.emp_code}', '${escapeHtml(r.name)}', '${d.date}', '${status}', '${firstIn || ''}', '${lastOut || ''}')"
+          class="px-1 py-1.5 border-r border-slate-200 text-center text-[10px] ${cellBg} cursor-pointer hover:ring-2 hover:ring-brand-navy hover:shadow-xs transition select-none relative group"
+          title="${title} • Click to change status">
+          ${statusBadgeText}
+          ${overrideDot}
         </td>`;
       }
     });
@@ -6100,14 +6161,26 @@ function openMonthlyEmpDrilldown(empCode) {
       } else if (status === 'WFH') {
         statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">WFH</span>';
         note = '<span class="text-indigo-700 text-[11px]">Work From Home</span>';
+      } else if (status === 'WFH-FN') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">WFH-FN</span>';
+        note = '<span class="text-purple-700 text-[11px]">WFH Forenoon (1st Half)</span>';
+      } else if (status === 'WFH-AN') {
+        statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-200">WFH-AN</span>';
+        note = '<span class="text-sky-700 text-[11px]">WFH Afternoon (2nd Half)</span>';
       }
+
+      const dayFullDate = `${monthlyMusterCache.year}-${String(monthlyMusterCache.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
 
       return `
         <tr class="hover:bg-slate-50 transition border-b border-slate-100 ${status === 'P' && isLate ? 'bg-amber-50/20' : ''}">
           <td class="px-3 py-2 font-bold text-slate-800">${d.day}</td>
-          <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${monthlyMusterCache.year}-${String(monthlyMusterCache.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}</td>
+          <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${dayFullDate}</td>
           <td class="px-3 py-2 ${d.is_weekend ? 'font-bold text-amber-800' : 'text-slate-700'}">${d.weekday}</td>
-          <td class="px-3 py-2 text-center">${statusBadge}</td>
+          <td class="px-3 py-2 text-center">
+            <button type="button" onclick="closeModal('modal-monthly-emp-drilldown'); openAttendanceStatusModal('${emp.emp_code}', '${escapeHtml(emp.name)}', '${dayFullDate}', '${status}', '${fIn !== '--' ? fIn : ''}', '${lOut !== '--' ? lOut : ''}')" class="hover:opacity-80 transition cursor-pointer" title="Click to change status">
+              ${statusBadge}
+            </button>
+          </td>
           <td class="px-3 py-2 text-center font-bold ${isLate ? 'text-amber-800' : 'text-emerald-700'}">${fIn}</td>
           <td class="px-3 py-2 text-center font-semibold text-blue-700">${lOut}</td>
           <td class="px-3 py-2 text-center text-slate-700">${punches}</td>
@@ -6157,6 +6230,180 @@ function exportMonthlyCSV() {
   const dept = document.getElementById('monthly-dept-select')?.value || 'ALL';
   const shift = document.getElementById('monthly-shift-select')?.value || 'ALL';
   window.location.href = `/api/attendance/export/monthly-csv?year=${y}&month=${m}&department=${encodeURIComponent(dept)}&shift=${encodeURIComponent(shift)}`;
+}
+
+
+// ================= ATTENDANCE STATUS CHANGE (WFH, WFH-FN, WFH-AN, PRESENT, ABSENT) =================
+
+function populateStatusModalEmpSelect(selectedCode) {
+  const sel = document.getElementById('status-change-emp-select');
+  if (!sel) return;
+  const emps = (monthlyMusterCache && monthlyMusterCache.records) ? monthlyMusterCache.records : (allEmployeesCache || []);
+  sel.innerHTML = emps.map(e => `
+    <option value="${e.emp_code}" ${String(e.emp_code) === String(selectedCode) ? 'selected' : ''}>
+      ${e.emp_code} - ${e.name}
+    </option>
+  `).join('');
+}
+
+function openBulkStatusModalFromToolbar() {
+  const emps = (monthlyMusterCache && monthlyMusterCache.records) ? monthlyMusterCache.records : (allEmployeesCache || []);
+  if (!emps || emps.length === 0) {
+    showToast('No employees found', 'warning');
+    return;
+  }
+  const firstEmp = emps[0];
+  const m = document.getElementById('monthly-month-select')?.value || (new Date().getMonth() + 1);
+  const y = document.getElementById('monthly-year-select')?.value || new Date().getFullYear();
+  const dateStr = `${y}-${String(m).padStart(2, '0')}-01`;
+
+  openAttendanceStatusModal(firstEmp.emp_code, firstEmp.name, dateStr, 'P', '', '');
+}
+
+function onStatusModalEmpSelect(empCode) {
+  const emps = (monthlyMusterCache && monthlyMusterCache.records) ? monthlyMusterCache.records : (allEmployeesCache || []);
+  const emp = emps.find(e => String(e.emp_code) === String(empCode));
+  const dateStr = document.getElementById('status-change-date-input')?.value;
+  if (emp && dateStr) {
+    const codeEl = document.getElementById('status-change-emp-code');
+    const subEl = document.getElementById('modal-status-emp-sub');
+    if (codeEl) codeEl.value = emp.emp_code;
+    if (subEl) subEl.textContent = `${emp.name} (#${emp.emp_code}) • ${dateStr}`;
+  }
+}
+
+function onStatusModalDateSelect(dateVal) {
+  const empCode = document.getElementById('status-change-emp-select')?.value;
+  const emps = (monthlyMusterCache && monthlyMusterCache.records) ? monthlyMusterCache.records : (allEmployeesCache || []);
+  const emp = emps.find(e => String(e.emp_code) === String(empCode));
+  if (emp && dateVal) {
+    const dateEl = document.getElementById('status-change-date');
+    const subEl = document.getElementById('modal-status-emp-sub');
+    if (dateEl) dateEl.value = dateVal;
+    if (subEl) subEl.textContent = `${emp.name} (#${emp.emp_code}) • ${dateVal}`;
+  }
+}
+
+function openAttendanceStatusModal(empCode, empName, dateStr, currentStatus, firstIn, lastOut) {
+  const codeEl = document.getElementById('status-change-emp-code');
+  const dateEl = document.getElementById('status-change-date');
+  const subEl = document.getElementById('modal-status-emp-sub');
+  const badgeEl = document.getElementById('status-change-current-badge');
+  const punchesEl = document.getElementById('status-change-punches-info');
+  const notesEl = document.getElementById('status-change-notes');
+  const dateInput = document.getElementById('status-change-date-input');
+
+  if (codeEl) codeEl.value = empCode;
+  if (dateEl) dateEl.value = dateStr;
+  if (dateInput) dateInput.value = dateStr;
+  if (subEl) subEl.textContent = `${empName} (#${empCode}) • ${dateStr}`;
+
+  populateStatusModalEmpSelect(empCode);
+
+  if (badgeEl) {
+    let bClass = 'bg-slate-200 text-slate-800';
+    let bText = currentStatus || '--';
+    if (currentStatus === 'P') { bClass = 'bg-emerald-100 text-emerald-800'; bText = 'Present (P)'; }
+    else if (currentStatus === 'A') { bClass = 'bg-rose-100 text-rose-800'; bText = 'Absent (A)'; }
+    else if (currentStatus === 'WFH') { bClass = 'bg-indigo-100 text-indigo-800'; bText = 'WFH (Full Day)'; }
+    else if (currentStatus === 'WFH-FN') { bClass = 'bg-purple-100 text-purple-800'; bText = 'WFH-FN (Forenoon)'; }
+    else if (currentStatus === 'WFH-AN') { bClass = 'bg-sky-100 text-sky-800'; bText = 'WFH-AN (Afternoon)'; }
+    else if (currentStatus === 'WO') { bClass = 'bg-slate-100 text-slate-700'; bText = 'Week Off (WO)'; }
+    badgeEl.className = `px-2.5 py-0.5 rounded text-[11px] font-bold ${bClass}`;
+    badgeEl.textContent = bText;
+  }
+
+  if (punchesEl) {
+    if (firstIn && firstIn !== '--' && !firstIn.includes('WFH')) {
+      punchesEl.textContent = `IN: ${firstIn} | OUT: ${lastOut || '--'}`;
+    } else {
+      punchesEl.textContent = 'No biometric punches logged on this date';
+    }
+  }
+
+  if (notesEl) notesEl.value = '';
+
+  // Pre-select choice
+  selectStatusOption(currentStatus && currentStatus.startsWith('WFH') ? currentStatus : 'WFH');
+
+  openModal('modal-change-attendance-status');
+}
+
+function selectStatusOption(status) {
+  const choiceEl = document.getElementById('selected-status-choice');
+  if (choiceEl) choiceEl.value = status;
+
+  const btnMap = {
+    'WFH': { id: 'opt-status-wfh', activeBorder: 'border-indigo-600 bg-indigo-50/70 shadow-xs ring-2 ring-indigo-200' },
+    'WFH-FN': { id: 'opt-status-wfh-fn', activeBorder: 'border-purple-600 bg-purple-50/70 shadow-xs ring-2 ring-purple-200' },
+    'WFH-AN': { id: 'opt-status-wfh-an', activeBorder: 'border-sky-600 bg-sky-50/70 shadow-xs ring-2 ring-sky-200' },
+    'PRESENT': { id: 'opt-status-present', activeBorder: 'border-emerald-600 bg-emerald-50/70 shadow-xs ring-2 ring-emerald-200' },
+    'ABSENT': { id: 'opt-status-absent', activeBorder: 'border-rose-600 bg-rose-50/70 shadow-xs ring-2 ring-rose-200' },
+    'AUTO': { id: 'opt-status-auto', activeBorder: 'border-amber-600 bg-amber-50/70 shadow-xs ring-2 ring-amber-200' }
+  };
+
+  document.querySelectorAll('.status-option-btn').forEach(btn => {
+    btn.className = 'status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white text-left transition flex flex-col justify-between';
+  });
+
+  const optKey = (status === 'P' ? 'PRESENT' : (status === 'A' ? 'ABSENT' : status));
+  const activeCfg = btnMap[optKey] || btnMap['WFH'];
+  const activeBtn = document.getElementById(activeCfg.id);
+  if (activeBtn) {
+    activeBtn.className = `status-option-btn p-3 rounded-xl border-2 ${activeCfg.activeBorder} text-left transition flex flex-col justify-between`;
+  }
+}
+
+async function submitAttendanceStatusChange(e) {
+  if (e) e.preventDefault();
+  const empCode = document.getElementById('status-change-emp-code')?.value;
+  const dateStr = document.getElementById('status-change-date')?.value;
+  const statusChoice = document.getElementById('selected-status-choice')?.value || 'WFH';
+  const notes = document.getElementById('status-change-notes')?.value || '';
+  const saveBtn = document.getElementById('btn-save-status-change');
+
+  if (!empCode || !dateStr) {
+    showToast('Missing employee or date info', 'error');
+    return;
+  }
+
+  const origText = saveBtn ? saveBtn.innerHTML : 'Save Status';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="animate-spin inline-block mr-1">↻</span> Saving...';
+  }
+
+  try {
+    const res = await fetch('/api/attendance/override', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        emp_code: empCode,
+        date: dateStr,
+        status: statusChoice,
+        notes: notes
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || 'Failed to update attendance status');
+    }
+
+    showToast(`✓ Attendance for ${empCode} on ${dateStr} changed to ${statusChoice}`, 'success');
+    closeModal('modal-change-attendance-status');
+
+    // Refresh monthly muster data to reflect change immediately
+    await loadMonthlyAttendanceData();
+  } catch (err) {
+    console.error('Status override error:', err);
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = origText;
+    }
+  }
 }
 
 

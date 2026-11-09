@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta, time
 from sqlalchemy.orm import Session
 
 from app.database import engine, Base, SessionLocal
-from app.models import Device, Employee, AttendancePunch, Setting, Shift, User
+from app.models import Device, Employee, AttendancePunch, Setting, Shift, User, AttendanceOverride
 from app.config import DEFAULT_DEVICES, DEFAULT_SETTINGS
 
 DEFAULT_SHIFTS = [
@@ -38,6 +38,22 @@ DEFAULT_SHIFTS = [
         "end_time": "18:30",
         "is_night_shift": False,
         "description": "Remote Work From Home arrangement with flexible office logging",
+    },
+    {
+        "name": "Work From Home - Forenoon (WFH-FN)",
+        "code": "SHIFT_WFH_FN",
+        "start_time": "09:30",
+        "end_time": "18:30",
+        "is_night_shift": False,
+        "description": "WFH in Forenoon (Morning 1st Half) with Office in Afternoon (2nd Half)",
+    },
+    {
+        "name": "Work From Home - Afternoon (WFH-AN)",
+        "code": "SHIFT_WFH_AN",
+        "start_time": "09:30",
+        "end_time": "18:30",
+        "is_night_shift": False,
+        "description": "Office in Forenoon (Morning 1st Half) with WFH in Afternoon (2nd Half)",
     },
 ]
 

@@ -7,7 +7,7 @@ from app.config import DATABASE_URL, DATABASE_PATH, DB_CONFIG_FILE
 logger = logging.getLogger("essl.database")
 
 def create_initial_engine():
-    connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+    connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {"connect_timeout": 3}
     try:
         eng = create_engine(DATABASE_URL, connect_args=connect_args, echo=False)
         with eng.connect() as conn:
