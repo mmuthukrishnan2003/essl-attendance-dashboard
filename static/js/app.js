@@ -80,7 +80,7 @@ function toggleEmployeeSort(field) {
 
 
 
-const VALID_TABS = ['dashboard', 'reports', 'monthly', 'late', 'exceeded', 'shifts', 'employees', 'devices', 'database', 'settings'];
+const VALID_TABS = ['dashboard', 'reports', 'monthly', 'late', 'shifts', 'employees', 'devices', 'database', 'settings'];
 
 // ================= PER-PAGE IN-PAGE REFRESH FUNCTIONS =================
 
@@ -525,6 +525,9 @@ function setDateRangePreset(preset) {
 
 function switchTab(tabId, updateHistory = true) {
   updateGlobalDbStatusBadge();
+  if (tabId === 'exceeded' || tabId === 'permission') {
+    tabId = 'monthly';
+  }
   if (!VALID_TABS.includes(tabId)) {
     tabId = 'dashboard';
   }
@@ -559,10 +562,8 @@ function switchTab(tabId, updateHistory = true) {
   const pageMeta = {
     dashboard: { title: 'Dashboard Overview', sub: "Today's live attendance metrics and punch tracking" },
     reports: { title: 'Daily IN/OUT & Reports', sub: 'Calculated First IN, Last OUT, intermediate punches, and export' },
-
     monthly: { title: 'Monthly Attendance Report & Muster Roll', sub: 'Comprehensive 1–31 days attendance matrix, muster roll, and monthly payroll summary' },
     late: { title: 'Monthly Late Punch Count', sub: 'Punctuality tracking, late punch counts, and arrival incidents based on 09:05 AM shift cutoff' },
-    exceeded: { title: 'Permission (2 Hours Monthly Quota)', sub: '2-hour monthly permission quota applied to General Shift (9-7) and Standard Shift (9-6)' },
     shifts: { title: 'Shift Management', sub: 'Configure daytime and overnight cross-midnight shifts and assignments' },
     employees: { title: 'Employee Management', sub: 'Manage employee directory and biometric enrollments' },
     devices: { title: 'Connected eSSL Biometric Devices (4)', sub: 'Live integration with 4 eSSL F18 + F12 devices over Port 4370' },
@@ -582,13 +583,11 @@ function switchTab(tabId, updateHistory = true) {
 
   // Toggle views
   document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
-  const targetViewId = (tabId === 'exceeded' || tabId === 'late') ? 'view-monthly' : `view-${tabId}`;
+  const targetViewId = (tabId === 'late') ? 'view-monthly' : `view-${tabId}`;
   const activeView = document.getElementById(targetViewId);
   if (activeView) activeView.classList.remove('hidden');
 
-  if (tabId === 'exceeded') {
-    switchMonthlySubTab('exceeded', false);
-  } else if (tabId === 'late') {
+  if (tabId === 'late') {
     switchMonthlySubTab('late', false);
   } else if (tabId === 'monthly') {
     switchMonthlySubTab('muster', false);
@@ -599,7 +598,6 @@ function switchTab(tabId, updateHistory = true) {
   else if (tabId === 'reports') loadDailyReport();
   else if (tabId === 'monthly') loadMonthlyAttendanceData();
   else if (tabId === 'late') loadMonthlyLateData();
-  else if (tabId === 'exceeded') loadExceededData();
   else if (tabId === 'shifts') loadShiftsData();
   else if (tabId === 'employees') loadEmployeesData();
   else if (tabId === 'devices') loadDevicesData();
@@ -6934,29 +6932,15 @@ async function pollLiveStatusHeartbeat() {
 }
 
 function handleLivePunchArrival(punch) {
-  // 1. Show live toast banner
-  showLivePunchToast(punch);
+  // Live punch popup notifications removed as requested.
+  // Silently record into DB Activity Feed if present in DOM
+  updateLiveSyncDbFeedSilently(punch);
 
-  // 2. Flash top header badge with DB sync indicator
-  flashHeaderDbSyncBadge(punch);
-
-  // 3. Refresh active tab data in real-time without screen flickering
+  // Silently refresh active tab data in real-time without screen flickering or popup notifications
   silentRefreshActiveTab();
 }
 
-function flashHeaderDbSyncBadge(punch) {
-  const badge = document.getElementById('header-db-badge');
-  const text = document.getElementById('header-db-text');
-  const ind = document.getElementById('header-db-sync-indicator');
-  if (!badge || !text) return;
-
-  badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-400 shadow-md ring-2 ring-amber-400/40 transition-all select-none animate-pulse';
-  text.innerHTML = `⚡ Synced Emp #${punch.emp_code} to DB!`;
-  if (ind) {
-    ind.className = 'hidden md:inline-flex items-center text-[10px] font-bold text-amber-800 bg-white/90 px-1.5 py-0.5 rounded border border-amber-300';
-    ind.innerHTML = '✓ Committed';
-  }
-
+function updateLiveSyncDbFeedSilently(punch) {
   // Prepend row to DB Feed table if present in DOM
   const tbody = document.getElementById('db-live-sync-feed-body');
   if (tbody) {
@@ -6972,14 +6956,14 @@ function flashHeaderDbSyncBadge(punch) {
       : `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">${targetDb}</span>`;
 
     const tr = document.createElement('tr');
-    tr.className = 'bg-emerald-50/80 transition-colors animate-fadeIn';
+    tr.className = 'hover:bg-slate-50 transition-colors animate-fadeIn';
     tr.innerHTML = `
-      <td class="px-4 py-2 font-medium text-slate-800 font-bold">${punch.timestamp || punch.time_str || '--'}</td>
+      <td class="px-4 py-2 font-medium text-slate-800">${punch.timestamp || punch.time_str || '--'}</td>
       <td class="px-4 py-2">
-        <div class="font-bold text-emerald-950">${punch.name || ('Emp #' + punch.emp_code)}</div>
+        <div class="font-bold text-slate-900">${punch.name || ('Emp #' + punch.emp_code)}</div>
         <div class="text-[10px] text-slate-500">ID: ${punch.emp_code}</div>
       </td>
-      <td class="px-4 py-2 text-slate-700 font-semibold">${punch.device || punch.device_ip || 'Door'}</td>
+      <td class="px-4 py-2 text-slate-700">${punch.device || punch.device_ip || 'Door'}</td>
       <td class="px-4 py-2">${typeBadge}</td>
       <td class="px-4 py-2">${targetBadge}</td>
       <td class="px-4 py-2 text-right">
@@ -6989,9 +6973,9 @@ function flashHeaderDbSyncBadge(punch) {
       </td>
     `;
     tbody.insertBefore(tr, tbody.firstChild);
-    setTimeout(() => {
-      tr.className = 'hover:bg-slate-50 transition-colors';
-    }, 3000);
+    if (tbody.children.length > 25) {
+      tbody.removeChild(tbody.lastChild);
+    }
   }
 
   const lastSyncTag = document.getElementById('db-last-sync-tag');
@@ -7005,40 +6989,11 @@ function flashHeaderDbSyncBadge(punch) {
     const curVal = parseInt(recEl.textContent.replace(/[^0-9]/g, ''), 10) || 0;
     recEl.textContent = `${(curVal + 1).toLocaleString()} Records`;
   }
-
-  setTimeout(() => {
-    updateGlobalDbStatusBadge();
-  }, 3500);
 }
 
 function showLivePunchToast(punch) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = 'pointer-events-auto px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2.5 transition-all transform duration-200 animate-fadeIn bg-slate-900 text-white border border-brand-orange/60 shadow-brand-orange/20';
-
-  const punchTypeBadge = punch.punch_type === 1 
-    ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">OUT</span>' 
-    : '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">IN</span>';
-
-  toast.innerHTML = `
-    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
-    <div class="flex items-center space-x-1.5 truncate">
-      <span class="text-brand-orange font-bold">⚡ Live Punch:</span>
-      <span class="font-bold text-white">${punch.name || ('Emp #' + punch.emp_code)}</span>
-      ${punchTypeBadge}
-      <span class="text-slate-300">at ${punch.device || 'Door'}</span>
-      <span class="font-mono text-emerald-300">(${punch.time_str || punch.timestamp})</span>
-    </div>
-  `;
-
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-10px)';
-    setTimeout(() => toast.remove(), 250);
-  }, 4500);
+  // Live punch popup notification banner removed as requested
+  return;
 }
 
 function silentRefreshActiveTab() {
@@ -7052,7 +7007,5 @@ function silentRefreshActiveTab() {
     loadLiveSyncFeed();
   } else if (currentTab === 'monthly') {
     loadMonthlyAttendance();
-  } else if (currentTab === 'permission') {
-    loadPermissionLedger();
   }
 }
