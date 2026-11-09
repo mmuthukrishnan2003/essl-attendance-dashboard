@@ -57,3 +57,35 @@ def switch_database_engine(new_url: str):
         pass
 
     return engine
+
+
+def get_active_db_info():
+    """
+    Returns structured connection metadata for the currently active database engine.
+    """
+    dialect = engine.dialect.name
+    is_sqlite = "sqlite" in dialect
+    is_postgres = "postgres" in dialect
+
+    if is_postgres:
+        db_name = engine.url.database or "essl_attendance"
+        host_str = f"{engine.url.host or '127.0.0.1'}:{engine.url.port or 5432}"
+        label = f"PostgreSQL ({db_name})"
+        full_label = f"PostgreSQL Server (\"local essl\") • Database: {db_name} • Host: {host_str}"
+    else:
+        db_name = "attendance.db"
+        host_str = "Local Embedded"
+        label = "SQLite (attendance.db)"
+        full_label = "SQLite (Default Embedded Database) • File: attendance.db"
+
+    return {
+        "dialect": dialect.upper(),
+        "is_sqlite": is_sqlite,
+        "is_postgres": is_postgres,
+        "db_name": db_name,
+        "host_endpoint": host_str,
+        "label": label,
+        "full_label": full_label,
+        "connection_url": str(engine.url)
+    }
+

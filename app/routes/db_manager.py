@@ -221,6 +221,26 @@ def get_database_info(db: Session = Depends(get_db)):
         if engine.url.password:
             conn_details["password"] = engine.url.password
 
+    # Get punch count specifically
+    total_punches = 0
+    try:
+        total_punches = int(db.execute(text("SELECT COUNT(*) FROM attendance_punches")).scalar() or 0)
+    except Exception:
+        pass
+
+    from app.live_sync import live_manager
+    from app.database import get_active_db_info
+    active_meta = get_active_db_info()
+
+    live_status = {
+        "is_active": live_manager.running,
+        "last_db_sync_time": live_manager.last_db_sync_time or "Active / Listening",
+        "last_synced_punch": live_manager.last_punch_info,
+        "recent_sync_log": live_manager.recent_synced_punches[:15],
+        "active_db": active_meta,
+        "active_workers": [name for name, t in live_manager.workers.items() if t.is_alive()]
+    }
+
     return {
         "status": status,
         "dialect": dialect_name.upper(),
@@ -247,8 +267,115 @@ def get_database_info(db: Session = Depends(get_db)):
         "error": error_msg,
         "total_tables": len(tables_meta),
         "total_records": total_records,
+        "total_punches": total_punches,
+        "live_sync_status": live_status,
         "tables": tables_meta
     }
+
+
+@router.get("/live-sync-feed")
+def get_live_sync_feed(db: Session = Depends(get_db)):
+    """
+    Returns real-time biometric punch sync feed and current database connection status.
+    """
+    from app.live_sync import live_manager
+    from app.database import get_active_db_info
+
+    total_punches = 0
+    try:
+        total_punches = int(db.execute(text("SELECT COUNT(*) FROM attendance_punches")).scalar() or 0)
+    except Exception:
+        pass
+
+    return {
+        "connected_db": get_active_db_info(),
+        "is_live_sync_active": live_manager.running,
+        "last_db_sync_time": live_manager.last_db_sync_time,
+        "total_punches": total_punches,
+        "recent_syncs": live_manager.recent_synced_punches[:25]
+    }
+
+
+@router.post("/sync-sqlite-to-postgres")
+def sync_sqlite_to_postgres(db: Session = Depends(get_db)):
+    """
+    Transfers/synchronizes all biometric punch records, employees, shifts, and overrides
+    from the default SQLite attendance.db into the currently connected PostgreSQL database.
+    """
+    import sqlite3
+    from app.config import DATABASE_PATH
+    from app.database import engine, get_active_db_info
+
+    meta = get_active_db_info()
+    if not meta["is_postgres"]:
+        raise HTTPException(status_code=400, detail="Active database is SQLite. Switch to PostgreSQL first before syncing SQLite data into PostgreSQL.")
+
+    if not os.path.exists(DATABASE_PATH):
+        raise HTTPException(status_code=404, detail="attendance.db not found on server.")
+
+    conn = sqlite3.connect(DATABASE_PATH)
+    cur = conn.cursor()
+
+    try:
+        # 1. Sync Employees
+        cur.execute("SELECT emp_code, name, department, designation, email, phone, shift_code, shift_name, shift_start, shift_end, card_number, is_active FROM employees")
+        emp_rows = cur.fetchall()
+        for r in emp_rows:
+            db.execute(text("""
+                INSERT INTO employees (emp_code, name, department, designation, email, phone, shift_code, shift_name, shift_start, shift_end, card_number, is_active)
+                VALUES (:emp_code, :name, :department, :designation, :email, :phone, :shift_code, :shift_name, :shift_start, :shift_end, :card_number, :is_active)
+                ON CONFLICT (emp_code) DO NOTHING
+            """), {
+                "emp_code": r[0], "name": r[1], "department": r[2], "designation": r[3],
+                "email": r[4], "phone": r[5], "shift_code": r[6], "shift_name": r[7],
+                "shift_start": r[8], "shift_end": r[9], "card_number": r[10], "is_active": bool(r[11])
+            })
+        db.commit()
+
+        # 2. Sync Attendance Punches in chunks
+        cur.execute("SELECT emp_code, timestamp, device_ip, punch_type, verify_type FROM attendance_punches")
+        punches = cur.fetchall()
+        chunk_size = 500
+        for i in range(0, len(punches), chunk_size):
+            chunk = punches[i:i + chunk_size]
+            for p in chunk:
+                db.execute(text("""
+                    INSERT INTO attendance_punches (emp_code, timestamp, device_ip, punch_type, verify_type)
+                    VALUES (:emp_code, :timestamp, :device_ip, :punch_type, :verify_type)
+                    ON CONFLICT (emp_code, timestamp) DO NOTHING
+                """), {
+                    "emp_code": p[0], "timestamp": p[1], "device_ip": p[2], "punch_type": p[3], "verify_type": p[4]
+                })
+            db.commit()
+
+        # 3. Sync Attendance Overrides if any
+        try:
+            cur.execute("SELECT emp_code, date, status, notes, updated_by FROM attendance_overrides")
+            overrides = cur.fetchall()
+            for o in overrides:
+                db.execute(text("""
+                    INSERT INTO attendance_overrides (emp_code, date, status, notes, updated_by)
+                    VALUES (:emp_code, :date, :status, :notes, :updated_by)
+                    ON CONFLICT (emp_code, date) DO UPDATE SET status = EXCLUDED.status, notes = EXCLUDED.notes
+                """), {
+                    "emp_code": o[0], "date": o[1], "status": o[2], "notes": o[3], "updated_by": o[4]
+                })
+            db.commit()
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "message": f"Successfully synced {len(punches)} biometric punches and {len(emp_rows)} employees into PostgreSQL ({meta['db_name']})!",
+            "punches_synced": len(punches),
+            "employees_synced": len(emp_rows),
+            "target_database": meta["db_name"]
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Data sync failed: {str(e)}")
+    finally:
+        conn.close()
 
 
 @router.post("/connect-postgres")

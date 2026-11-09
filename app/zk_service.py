@@ -229,6 +229,13 @@ def sync_device_punches(device: Device, db: Session) -> Dict[str, Any]:
         device.total_punches_synced = (device.total_punches_synced or 0) + new_punches_count
         db.commit()
 
+        if new_punches_count > 0:
+            try:
+                from app.live_sync import live_manager
+                live_manager.record_bulk_sync(new_punches_count, device.device_name)
+            except Exception:
+                pass
+
         sync_report["status"] = "SUCCESS"
         sync_report["synced_count"] = new_punches_count
         return sync_report

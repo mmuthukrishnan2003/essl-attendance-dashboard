@@ -243,26 +243,56 @@ function setDashboardZoom(val = '100%') {
 }
 
 // ================= GLOBAL ACTIVE DB STATUS SYNC =================
+let cachedConnectedDbMeta = null;
+
 async function updateGlobalDbStatusBadge() {
   try {
     const res = await fetch('/api/database/info');
     if (!res.ok) return;
     const data = await res.json();
+    cachedConnectedDbMeta = data;
+
     const isPostgres = Boolean(data.is_postgres || (data.dialect && data.dialect.toUpperCase().includes('POSTGRES')));
     const dbName = data.database_name || (isPostgres ? (data.connection_url ? data.connection_url.split('/').pop().split('?')[0] : 'essl_attendance') : 'attendance.db');
 
     const headerDbDot = document.getElementById('header-db-dot');
     const headerDbText = document.getElementById('header-db-text');
     const headerDbBadge = document.getElementById('header-db-badge');
+    const headerSyncInd = document.getElementById('header-db-sync-indicator');
+
     if (headerDbBadge && headerDbDot && headerDbText) {
       if (isPostgres) {
-        headerDbBadge.className = 'hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 shadow-xs cursor-pointer hover:bg-blue-100 transition';
-        headerDbDot.className = 'w-2 h-2 rounded-full bg-blue-600 animate-pulse';
+        headerDbBadge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 shadow-xs cursor-pointer hover:bg-blue-100 transition select-none';
+        headerDbDot.className = 'w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse flex-shrink-0';
         headerDbText.textContent = `DB: PostgreSQL (${dbName})`;
+        if (headerSyncInd) {
+          headerSyncInd.className = 'hidden md:inline-flex items-center text-[10px] font-medium text-blue-700 bg-white/80 px-1.5 py-0.5 rounded border border-blue-200';
+          headerSyncInd.innerHTML = '<span class="mr-1">⚡</span>Live Synced';
+        }
       } else {
-        headerDbBadge.className = 'hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs cursor-pointer hover:bg-emerald-100 transition';
-        headerDbDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
-        headerDbText.textContent = 'DB: SQLite';
+        headerDbBadge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs cursor-pointer hover:bg-emerald-100 transition select-none';
+        headerDbDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0';
+        headerDbText.textContent = 'DB: SQLite (attendance.db)';
+        if (headerSyncInd) {
+          headerSyncInd.className = 'hidden md:inline-flex items-center text-[10px] font-medium text-emerald-700 bg-white/80 px-1.5 py-0.5 rounded border border-emerald-200';
+          headerSyncInd.innerHTML = '<span class="mr-1">⚡</span>Live Synced';
+        }
+      }
+    }
+
+    // Dashboard chip
+    const dashDbDot = document.getElementById('dashboard-db-dot');
+    const dashDbText = document.getElementById('dashboard-db-text');
+    const dashDbChip = document.getElementById('dashboard-db-chip');
+    if (dashDbChip && dashDbDot && dashDbText) {
+      if (isPostgres) {
+        dashDbChip.className = 'inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 cursor-pointer hover:bg-blue-100 transition shadow-xs';
+        dashDbDot.className = 'w-2 h-2 rounded-full bg-blue-600 animate-pulse';
+        dashDbText.textContent = `DB: PostgreSQL (${dbName})`;
+      } else {
+        dashDbChip.className = 'inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 cursor-pointer hover:bg-emerald-100 transition shadow-xs';
+        dashDbDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        dashDbText.textContent = 'DB: SQLite (attendance.db)';
       }
     }
 
@@ -3121,14 +3151,49 @@ async function loadDatabaseData() {
 
 
     document.getElementById('db-stat-size').textContent = data.file_size || '--';
-
     document.getElementById('db-stat-tables').textContent = `${data.total_tables} Tables`;
 
-    document.getElementById('db-stat-records').textContent = `${data.total_records} Records`;
+    const totalRecords = data.total_records || 0;
+    const totalPunches = data.total_punches || 0;
+    const recordsEl = document.getElementById('db-stat-records');
+    if (recordsEl) recordsEl.textContent = `${totalRecords.toLocaleString()} Records`;
+
+    const punchesBreakdownEl = document.getElementById('db-stat-punches-breakdown');
+    if (punchesBreakdownEl) {
+      punchesBreakdownEl.textContent = totalPunches > 0
+        ? `${totalPunches.toLocaleString()} Biometric Punches Synced`
+        : 'Across all default tables';
+    }
 
     document.getElementById('db-connection-path').textContent = data.connection_url;
-
     document.getElementById('db-stat-latency').textContent = `${data.latency_ms}ms`;
+
+    // Real-Time Sync Indicator Banner
+    const targetNameEl = document.getElementById('db-live-target-name');
+    if (targetNameEl) targetNameEl.textContent = isPostgres ? `PostgreSQL (${dbName})` : 'attendance.db';
+
+    const targetPillEl = document.getElementById('db-connected-target-pill');
+    if (targetPillEl) {
+      targetPillEl.textContent = isPostgres ? `Target: PostgreSQL (${dbName})` : 'Target: SQLite (attendance.db)';
+      targetPillEl.className = isPostgres 
+        ? 'text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 border border-blue-200'
+        : 'text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200';
+    }
+
+    const lastSyncTag = document.getElementById('db-last-sync-tag');
+    if (lastSyncTag) {
+      const syncTime = data.live_sync_status?.last_db_sync_time || data.live_sync_status?.last_synced_punch?.time_str;
+      if (syncTime) {
+        lastSyncTag.textContent = `Synced: ${syncTime}`;
+      } else {
+        lastSyncTag.textContent = 'Listening (Zero Latency)';
+      }
+    }
+
+    // Render Live Sync Feed Table
+    if (data.live_sync_status?.recent_sync_log) {
+      renderLiveSyncFeedRows(data.live_sync_status.recent_sync_log);
+    }
 
 
 
@@ -4138,7 +4203,95 @@ async function refreshDatabaseView() {
 
 }
 
+function renderLiveSyncFeedRows(syncLog) {
+  const tbody = document.getElementById('db-live-sync-feed-body');
+  if (!tbody) return;
 
+  if (!syncLog || syncLog.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">No punches synced yet in this session. Listening 24/7 on all biometric devices...</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = syncLog.map(p => {
+    const isOut = p.punch_type === 1;
+    const typeBadge = isOut 
+      ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">OUT (Punch 1)</span>'
+      : '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">IN (Punch 0)</span>';
+
+    const targetDb = p.db_target || 'Active DB';
+    const isPg = targetDb.toLowerCase().includes('postgre');
+    const targetBadge = isPg
+      ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">${targetDb}</span>`
+      : `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">${targetDb}</span>`;
+
+    return `
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="px-4 py-2 font-medium text-slate-700">${p.timestamp || p.time_str || '--'}</td>
+        <td class="px-4 py-2">
+          <div class="font-bold text-slate-900">${p.name || ('Emp #' + p.emp_code)}</div>
+          <div class="text-[10px] text-slate-400">ID: ${p.emp_code}</div>
+        </td>
+        <td class="px-4 py-2 text-slate-600">${p.device || p.device_ip || 'Door'}</td>
+        <td class="px-4 py-2">${typeBadge}</td>
+        <td class="px-4 py-2">${targetBadge}</td>
+        <td class="px-4 py-2 text-right">
+          <span class="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+            ✓ Committed
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function loadLiveSyncFeed() {
+  try {
+    const res = await fetch('/api/database/live-sync-feed');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.recent_syncs) {
+      renderLiveSyncFeedRows(data.recent_syncs);
+    }
+    const lastSyncTag = document.getElementById('db-last-sync-tag');
+    if (lastSyncTag && data.last_db_sync_time) {
+      lastSyncTag.textContent = `Synced: ${data.last_db_sync_time}`;
+    }
+    if (data.total_punches) {
+      const breakdown = document.getElementById('db-stat-punches-breakdown');
+      if (breakdown) breakdown.textContent = `${data.total_punches.toLocaleString()} Biometric Punches Synced`;
+    }
+  } catch (e) {
+    console.warn('Error loading live sync feed:', e);
+  }
+}
+
+async function syncSqliteDataToPostgres() {
+  const btn = document.getElementById('btn-sync-to-pg');
+  if (!confirm('This will synchronize all existing attendance punches and employees from SQLite (attendance.db) into the currently active PostgreSQL database. Proceed?')) {
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-1">↻</span> Syncing Data...';
+  }
+
+  try {
+    const res = await fetch('/api/database/sync-sqlite-to-postgres', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Data sync failed');
+
+    showToast(data.message || 'Data successfully transferred to PostgreSQL!', 'success');
+    await refreshDatabaseView();
+  } catch (err) {
+    showToast(`Sync error: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg><span>Sync to PostgreSQL</span>';
+    }
+  }
+}
 
 async function connectPostgres(event) {
 
@@ -6784,8 +6937,78 @@ function handleLivePunchArrival(punch) {
   // 1. Show live toast banner
   showLivePunchToast(punch);
 
-  // 2. Refresh active tab data in real-time without screen flickering
+  // 2. Flash top header badge with DB sync indicator
+  flashHeaderDbSyncBadge(punch);
+
+  // 3. Refresh active tab data in real-time without screen flickering
   silentRefreshActiveTab();
+}
+
+function flashHeaderDbSyncBadge(punch) {
+  const badge = document.getElementById('header-db-badge');
+  const text = document.getElementById('header-db-text');
+  const ind = document.getElementById('header-db-sync-indicator');
+  if (!badge || !text) return;
+
+  badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-400 shadow-md ring-2 ring-amber-400/40 transition-all select-none animate-pulse';
+  text.innerHTML = `⚡ Synced Emp #${punch.emp_code} to DB!`;
+  if (ind) {
+    ind.className = 'hidden md:inline-flex items-center text-[10px] font-bold text-amber-800 bg-white/90 px-1.5 py-0.5 rounded border border-amber-300';
+    ind.innerHTML = '✓ Committed';
+  }
+
+  // Prepend row to DB Feed table if present in DOM
+  const tbody = document.getElementById('db-live-sync-feed-body');
+  if (tbody) {
+    const isOut = punch.punch_type === 1;
+    const typeBadge = isOut 
+      ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">OUT (Punch 1)</span>'
+      : '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">IN (Punch 0)</span>';
+
+    const targetDb = punch.db_target || (cachedConnectedDbMeta?.server_label || 'Active DB');
+    const isPg = targetDb.toLowerCase().includes('postgre');
+    const targetBadge = isPg
+      ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">${targetDb}</span>`
+      : `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">${targetDb}</span>`;
+
+    const tr = document.createElement('tr');
+    tr.className = 'bg-emerald-50/80 transition-colors animate-fadeIn';
+    tr.innerHTML = `
+      <td class="px-4 py-2 font-medium text-slate-800 font-bold">${punch.timestamp || punch.time_str || '--'}</td>
+      <td class="px-4 py-2">
+        <div class="font-bold text-emerald-950">${punch.name || ('Emp #' + punch.emp_code)}</div>
+        <div class="text-[10px] text-slate-500">ID: ${punch.emp_code}</div>
+      </td>
+      <td class="px-4 py-2 text-slate-700 font-semibold">${punch.device || punch.device_ip || 'Door'}</td>
+      <td class="px-4 py-2">${typeBadge}</td>
+      <td class="px-4 py-2">${targetBadge}</td>
+      <td class="px-4 py-2 text-right">
+        <span class="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-white border border-emerald-300 px-2 py-0.5 rounded shadow-xs">
+          ✓ Committed
+        </span>
+      </td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+    setTimeout(() => {
+      tr.className = 'hover:bg-slate-50 transition-colors';
+    }, 3000);
+  }
+
+  const lastSyncTag = document.getElementById('db-last-sync-tag');
+  if (lastSyncTag) {
+    lastSyncTag.textContent = `Synced: ${punch.time_str || punch.timestamp}`;
+  }
+
+  // Increment records counters
+  const recEl = document.getElementById('db-stat-records');
+  if (recEl && recEl.textContent.includes('Records')) {
+    const curVal = parseInt(recEl.textContent.replace(/[^0-9]/g, ''), 10) || 0;
+    recEl.textContent = `${(curVal + 1).toLocaleString()} Records`;
+  }
+
+  setTimeout(() => {
+    updateGlobalDbStatusBadge();
+  }, 3500);
 }
 
 function showLivePunchToast(punch) {
@@ -6825,5 +7048,11 @@ function silentRefreshActiveTab() {
     loadDailyReport();
   } else if (currentTab === 'devices') {
     loadDevicesData();
+  } else if (currentTab === 'database') {
+    loadLiveSyncFeed();
+  } else if (currentTab === 'monthly') {
+    loadMonthlyAttendance();
+  } else if (currentTab === 'permission') {
+    loadPermissionLedger();
   }
 }

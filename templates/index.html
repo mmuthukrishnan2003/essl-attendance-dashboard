@@ -397,10 +397,12 @@
       <div class="flex items-center space-x-2 sm:space-x-3">
 
         <!-- Global Active Database Status Pill in Header -->
-
-        <div id="header-db-badge" onclick="switchTab('database')" class="hidden md:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 shadow-xs cursor-pointer hover:bg-blue-100 transition" title="Current Active Database (Click to view DB Explorer)">
-          <span id="header-db-dot" class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-          <span id="header-db-text">DB: PostgreSQL (essl_attendance)</span>
+        <div id="header-db-badge" onclick="switchTab('database')" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs cursor-pointer hover:bg-emerald-100 transition select-none" title="Connected Database & Live Sync Status (Click to view DB Explorer)">
+          <span id="header-db-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+          <span id="header-db-text" class="font-bold truncate max-w-[170px] sm:max-w-none">DB: SQLite (attendance.db)</span>
+          <span id="header-db-sync-indicator" class="hidden md:inline-flex items-center text-[10px] font-medium text-emerald-700 bg-white/80 px-1.5 py-0.5 rounded border border-emerald-200">
+            <span class="mr-1">⚡</span>Live Synced
+          </span>
         </div>
 
 
@@ -466,6 +468,11 @@
               <svg id="dashboard-refresh-icon" class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
               <span id="dashboard-refresh-text">Refresh</span>
             </button>
+            <!-- Active DB Indicator in Dashboard -->
+            <div id="dashboard-db-chip" onclick="switchTab('database')" class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 cursor-pointer hover:bg-emerald-100 transition shadow-xs" title="Click to open Database & Schema Explorer">
+              <span id="dashboard-db-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span id="dashboard-db-text">DB: SQLite (attendance.db)</span>
+            </div>
             <div class="flex flex-wrap items-center gap-2" id="dashboard-device-pills">
 
           <!-- Dynamically populated 4 devices pills -->
@@ -2165,81 +2172,67 @@
       
 
       <!-- Top Action & Connection Overview Card -->
-
       <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
         <div>
-
           <div class="flex items-center space-x-2.5">
-
             <h2 class="text-base font-bold text-slate-800">Database Connection & Default Schema</h2>
-
             <span id="db-status-pill" class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
-
               CONNECTED
-
             </span>
-
           </div>
-
           <p id="db-server-subtitle" class="text-xs text-slate-500 mt-0.5">PostgreSQL Server: local essl &bull; Database: essl_att &bull; Schema: public</p>
-
         </div>
-
-
 
         <div class="flex flex-wrap items-center gap-2">
-
           <!-- Refresh Database Info -->
-
           <button type="button" onclick="refreshDatabaseView()" id="btn-refresh-db-view" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-brand-navy hover:bg-brand-navyHover text-white shadow-sm transition" title="Refresh database schema tables, row counts, and connection health">
-
             <svg id="db-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-
             <span id="db-refresh-text">Refresh Data</span>
-
           </button>
-
-
 
           <!-- Check Active DB Connection -->
-
           <button type="button" onclick="checkActiveDbConnection()" id="btn-check-active-db" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-sm transition" title="Test active database connection and query latency">
-
             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-
             <span>Check Active DB</span>
-
           </button>
-
-
 
           <!-- Download Backup -->
-
           <a href="/api/database/download-backup" download class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
-
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-
             <span>Download Backup (.db)</span>
-
           </a>
 
-
-
           <!-- Reset Default Schema -->
-
           <button onclick="resetDefaultSchema()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Re-creates default tables and seed data">
-
             <svg class="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-
             <span>Verify / Seed Schema</span>
-
           </button>
-
         </div>
+      </div>
 
+      <!-- Real-Time Database Sync & Connected Engine Banner -->
+      <div id="db-live-sync-banner" class="bg-gradient-to-r from-emerald-50/80 to-slate-50 p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs flex-shrink-0">
+            ⚡
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-emerald-950">24/7 Biometric Database Sync:</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1.5 animate-pulse"></span>ACTIVE (Syncs on Every Punch)
+              </span>
+            </div>
+            <p id="db-live-sync-sub" class="text-slate-600 mt-0.5">Every biometric punch from all 4 eSSL devices commits instantly to <strong id="db-live-target-name">attendance.db</strong></p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 flex-shrink-0">
+          <div class="bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs flex items-center space-x-2 font-mono">
+            <span class="text-[10px] text-slate-400 uppercase font-semibold">Last Punch:</span>
+            <span id="db-last-sync-tag" class="text-emerald-700 font-bold">Checking...</span>
+          </div>
+        </div>
       </div>
 
 
@@ -2423,11 +2416,14 @@
 
 
               <!-- SQLite -->
-
               <button type="button" onclick="switchToDefaultSqlite()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg border border-slate-300 hover:bg-white text-slate-700 font-semibold text-xs transition whitespace-nowrap" title="Switch back to default local SQLite">
-
                 <span>SQLite</span>
+              </button>
 
+              <!-- Sync SQLite Data to PostgreSQL -->
+              <button type="button" id="btn-sync-to-pg" onclick="syncSqliteDataToPostgres()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs shadow-xs transition" title="Copy all attendance punches and master data from SQLite to PostgreSQL">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                <span>Sync to PostgreSQL</span>
               </button>
 
             </div>
@@ -2497,41 +2493,61 @@
 
 
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-
           <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Records Synced</span>
-
           <p id="db-stat-records" class="text-lg font-bold text-brand-navy mt-1">--</p>
-
-          <span class="text-[11px] text-slate-500">Across all 4 default tables</span>
-
+          <span id="db-stat-punches-breakdown" class="text-[11px] text-slate-500">Across all tables</span>
         </div>
-
-
-
       </div>
 
-
-
       <!-- Active Database Connection Path Card -->
-
       <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-
         <div>
-
           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Connection String / File Path</span>
-
           <p id="db-connection-path" class="font-mono text-slate-800 font-semibold break-all mt-0.5">sqlite:///attendance.db</p>
-
         </div>
-
         <div class="text-right">
-
           <span class="text-[11px] text-slate-400">Response Latency:</span>
-
           <span id="db-stat-latency" class="font-mono font-bold text-emerald-600 ml-1">0.3ms</span>
+        </div>
+      </div>
 
+      <!-- Real-Time Biometric Punch & DB Sync Activity Stream -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 class="text-sm font-bold text-slate-900">Live Punch & Database Sync Stream</h3>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 animate-pulse">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>LIVE SYNC ACTIVE
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Every biometric punch is captured in milliseconds and synchronized immediately into the active database</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span id="db-connected-target-pill" class="text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">Target: SQLite (attendance.db)</span>
+            <button type="button" onclick="loadLiveSyncFeed()" class="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition" title="Refresh Live Sync Feed">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+          </div>
         </div>
 
+        <div class="overflow-x-auto max-h-[360px] overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-[10px] font-semibold text-slate-500 uppercase sticky top-0 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-2.5">Sync Time</th>
+                <th class="px-4 py-2.5">Employee</th>
+                <th class="px-4 py-2.5">Device Source</th>
+                <th class="px-4 py-2.5">Punch Type</th>
+                <th class="px-4 py-2.5">Target Database</th>
+                <th class="px-4 py-2.5 text-right">DB Status</th>
+              </tr>
+            </thead>
+            <tbody id="db-live-sync-feed-body" class="divide-y divide-slate-100 font-mono text-[11px]">
+              <!-- Populated dynamically and updated on every live punch -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
 
@@ -3440,7 +3456,7 @@
     </div>
 
 
-    <script src="/static/js/app.js?v=20261109_v3"></script>
+    <script src="/static/js/app.js?v=20261109_v4"></script>
 
 </body>
 
