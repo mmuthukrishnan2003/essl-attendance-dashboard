@@ -847,43 +847,26 @@
               <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Attendance</label>
 
               <select id="report-status-filter" onchange="filterReportTable()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-
                 <option value="ALL">All Staff</option>
-
                 <option value="PRESENT">Present Only</option>
-
                 <option value="ABSENT">Absent Only</option>
-
-                <option value="WFH">WFH Only</option>
-
+                <option value="WFH">WFH (Full Day)</option>
+                <option value="WFH-FN">WFH-FN (Forenoon 1st Half)</option>
+                <option value="WFH-AN">WFH-AN (Afternoon 2nd Half)</option>
               </select>
-
             </div>
 
-
-
-            
-
-
-
             <!-- Shift Filter -->
-
             <div>
-
               <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Shift Timing</label>
-
               <select id="report-shift-select" onchange="loadDailyReport()" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-
                 <option value="ALL">All Shifts</option>
-
                 <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
-
                 <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
-
                 <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
-
-                <option value="SHIFT_WFH">Work From Home (WFH)</option>
-
+                <option value="SHIFT_WFH">Work From Home (WFH) - Full Day</option>
+                <option value="SHIFT_WFH_FN">Work From Home - Forenoon (WFH-FN)</option>
+                <option value="SHIFT_WFH_AN">Work From Home - Afternoon (WFH-AN)</option>
               </select>
 
             </div>
@@ -1169,7 +1152,9 @@
               <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
               <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
               <option value="SHIFT_NIGHT">Night Shift (09:00 PM - 06:00 AM)</option>
-              <option value="SHIFT_WFH">Work From Home (WFH)</option>
+              <option value="SHIFT_WFH">Work From Home (WFH) - Full Day</option>
+              <option value="SHIFT_WFH_FN">Work From Home - Forenoon (WFH-FN)</option>
+              <option value="SHIFT_WFH_AN">Work From Home - Afternoon (WFH-AN)</option>
             </select>
           </div>
           <!-- Search -->
@@ -1190,6 +1175,14 @@
               </button>
             </div>
           </div>
+
+          <!-- Quick Action to Change Status -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mark Attendance</label>
+            <button type="button" onclick="openBulkStatusModalFromToolbar()" class="px-3.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer" title="Change employee attendance to WFH, WFH-FN, WFH-AN, Present, or Absent">
+              <span>🏠 Change Status (WFH / FN / AN)</span>
+            </button>
+          </div>
         </div>
 
         <!-- Legend -->
@@ -1204,11 +1197,23 @@
           <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-600 mr-1"></span>Late (&gt; 09:05)
           </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            🏠 WFH
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+            🌅 WFH-FN
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+            🌇 WFH-AN
+          </span>
           <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
             A = Absent
           </span>
           <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
             WO = Week Off
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-brand-navy border border-blue-200 shadow-2xs">
+            👆 Click any day cell to change status
           </span>
         </div>
       </div>
@@ -1607,15 +1612,12 @@
           <div class="flex items-center space-x-2">
 
             <select id="quick-assign-shift-code" class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
-
               <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
-
               <option value="SHIFT_9_6">Standard Shift (09:00 AM - 06:00 PM)</option>
-
               <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
-
-              <option value="SHIFT_WFH">Work From Home (WFH) - Remote</option>
-
+              <option value="SHIFT_WFH">Work From Home (WFH) - Full Day</option>
+              <option value="SHIFT_WFH_FN">Work From Home - Forenoon (WFH-FN)</option>
+              <option value="SHIFT_WFH_AN">Work From Home - Afternoon (WFH-AN)</option>
             </select>
 
             <button onclick="applyQuickShiftAssignment()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
@@ -2764,15 +2766,12 @@
           <label class="block font-semibold text-slate-700 mb-1">Assigned Shift *</label>
 
           <select id="emp-form-shift-select" onchange="onEmpShiftSelectChange(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy">
-
             <option value="SHIFT_9_7">General Shift (09:00 AM - 07:00 PM)</option>
-
             <option value="SHIFT_9_6" selected>Standard Shift (09:00 AM - 06:00 PM)</option>
-
             <option value="SHIFT_NIGHT">Night Shift (09:00 PM - Next Day 06:00 AM)</option>
-
-            <option value="SHIFT_WFH">Work From Home (WFH) - Remote (09:30 AM - 06:30 PM)</option>
-
+            <option value="SHIFT_WFH">Work From Home (WFH) - Full Day (09:30 AM - 06:30 PM)</option>
+            <option value="SHIFT_WFH_FN">Work From Home - Forenoon (WFH-FN) (09:30 AM - 06:30 PM)</option>
+            <option value="SHIFT_WFH_AN">Work From Home - Afternoon (WFH-AN) (09:30 AM - 06:30 PM)</option>
           </select>
 
         </div>
@@ -3305,7 +3304,143 @@
     </div>
 
 
-    <script src="/static/js/app.js?v=5.0"></script>
+    <!-- MODAL: CHANGE ATTENDANCE STATUS (WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, AUTO) -->
+    <div id="modal-change-attendance-status" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs hidden p-4">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-brand-navy to-blue-900 px-6 py-4 text-white flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-lg">📝</div>
+            <div>
+              <h3 class="font-bold text-sm">Change Attendance Status</h3>
+              <p id="modal-status-emp-sub" class="text-xs text-blue-100 mt-0.5">Emp: -- • Date: --</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeModal('modal-change-attendance-status')" class="text-white/70 hover:text-white text-lg leading-none transition">&times;</button>
+        </div>
+
+        <!-- Modal Body -->
+        <form id="form-change-status" onsubmit="submitAttendanceStatusChange(event)" class="p-6 space-y-4 text-xs">
+          <input type="hidden" id="status-change-emp-code" />
+          <input type="hidden" id="status-change-date" />
+
+          <!-- Employee and Date Selector Row -->
+          <div id="status-change-picker-row" class="grid grid-cols-2 gap-3 pb-2 border-b border-slate-100">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Employee</label>
+              <select id="status-change-emp-select" onchange="onStatusModalEmpSelect(this.value)" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white">
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Date</label>
+              <input type="date" id="status-change-date-input" onchange="onStatusModalDateSelect(this.value)" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy bg-white" />
+            </div>
+          </div>
+
+          <!-- Current Punch Info Card -->
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-medium">Current Status:</span>
+              <span id="status-change-current-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">--</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-600">
+              <span>First IN / Last OUT:</span>
+              <span id="status-change-punches-info" class="font-mono font-semibold text-slate-800">--</span>
+            </div>
+          </div>
+
+          <!-- Select New Status -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Select New Status</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="selectStatusOption('WFH')" id="opt-status-wfh" class="status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/40 text-left transition flex flex-col justify-between">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-base">🏠</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-100 text-indigo-800">Full Day</span>
+                </div>
+                <div class="mt-2">
+                  <div class="font-bold text-slate-800 text-xs">WFH</div>
+                  <div class="text-[10px] text-slate-500">Work From Home</div>
+                </div>
+              </button>
+
+              <button type="button" onclick="selectStatusOption('WFH-FN')" id="opt-status-wfh-fn" class="status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-purple-500 hover:bg-purple-50/40 text-left transition flex flex-col justify-between">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-base">🌅</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-100 text-purple-800">1st Half</span>
+                </div>
+                <div class="mt-2">
+                  <div class="font-bold text-slate-800 text-xs">WFH-FN</div>
+                  <div class="text-[10px] text-slate-500">Forenoon Remote</div>
+                </div>
+              </button>
+
+              <button type="button" onclick="selectStatusOption('WFH-AN')" id="opt-status-wfh-an" class="status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 hover:bg-sky-50/40 text-left transition flex flex-col justify-between">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-base">🌇</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-sky-100 text-sky-800">2nd Half</span>
+                </div>
+                <div class="mt-2">
+                  <div class="font-bold text-slate-800 text-xs">WFH-AN</div>
+                  <div class="text-[10px] text-slate-500">Afternoon Remote</div>
+                </div>
+              </button>
+
+              <button type="button" onclick="selectStatusOption('PRESENT')" id="opt-status-present" class="status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 text-left transition flex flex-col justify-between">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-base">🏢</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">In Office</span>
+                </div>
+                <div class="mt-2">
+                  <div class="font-bold text-slate-800 text-xs">Present (P)</div>
+                  <div class="text-[10px] text-slate-500">Regular Office</div>
+                </div>
+              </button>
+
+              <button type="button" onclick="selectStatusOption('ABSENT')" id="opt-status-absent" class="status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-rose-500 hover:bg-rose-50/40 text-left transition flex flex-col justify-between">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-base">❌</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-100 text-rose-800">Leave</span>
+                </div>
+                <div class="mt-2">
+                  <div class="font-bold text-slate-800 text-xs">Absent (A)</div>
+                  <div class="text-[10px] text-slate-500">Leave / Absent</div>
+                </div>
+              </button>
+
+              <button type="button" onclick="selectStatusOption('AUTO')" id="opt-status-auto" class="status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 text-left transition flex flex-col justify-between">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-base">🔄</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 text-slate-700">Auto</span>
+                </div>
+                <div class="mt-2">
+                  <div class="font-bold text-slate-800 text-xs">Auto (Biometric)</div>
+                  <div class="text-[10px] text-slate-500">Reset to Punches</div>
+                </div>
+              </button>
+            </div>
+            <input type="hidden" id="selected-status-choice" value="WFH" />
+          </div>
+
+          <!-- Notes / Reason -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Remarks / Reason (Optional)</label>
+            <input type="text" id="status-change-notes" placeholder="e.g. Approved by HR / Manager, Client site work, etc." class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy" />
+          </div>
+
+          <!-- Modal Footer Buttons -->
+          <div class="pt-2 flex items-center justify-end space-x-2 border-t border-slate-100">
+            <button type="button" onclick="closeModal('modal-change-attendance-status')" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">Cancel</button>
+            <button type="submit" id="btn-save-status-change" class="px-5 py-2 text-xs font-bold rounded-lg bg-brand-navy hover:bg-blue-900 text-white shadow-sm transition flex items-center space-x-1.5">
+              <span>Save Status</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <script src="/static/js/app.js?v=20261109_v3"></script>
 
 </body>
 

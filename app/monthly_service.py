@@ -9,7 +9,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from app.models import Employee, AttendancePunch, Shift, Device
+from app.models import Employee, AttendancePunch, Shift, Device, AttendanceOverride
 from app.attendance_service import get_setting_dict
 
 def get_monthly_attendance_matrix(
@@ -104,10 +104,27 @@ def get_monthly_attendance_matrix(
             "is_past_or_today": (cur_date <= today)
         })
 
+    # Query attendance status overrides for the month
+    start_date_str = f"{year:04d}-{month:02d}-01"
+    end_date_str = f"{year:04d}-{month:02d}-{num_days:02d}"
+    overrides_list = db.query(AttendanceOverride).filter(
+        AttendanceOverride.date >= start_date_str,
+        AttendanceOverride.date <= end_date_str
+    ).all()
+    emp_overrides = defaultdict(dict)
+    for o in overrides_list:
+        try:
+            day_num = int(o.date.split("-")[2])
+            emp_overrides[o.emp_code][day_num] = o
+        except Exception:
+            pass
+
     records = []
     total_present_overall = 0
     total_absent_overall = 0
     total_wfh_overall = 0
+    total_wfh_fn_overall = 0
+    total_wfh_an_overall = 0
 
     for emp in employees:
         is_wfh_emp = (
@@ -119,21 +136,28 @@ def get_monthly_attendance_matrix(
         pres_cnt = 0
         abs_cnt = 0
         wfh_cnt = 0
+        wfh_fn_cnt = 0
+        wfh_an_cnt = 0
         wo_cnt = 0
 
         for d in range(1, num_days + 1):
             cur_date = date(year, month, d)
+            cur_date_str = cur_date.strftime("%Y-%m-%d")
             is_sun = (cur_date.weekday() == 6)
             punches_list = emp_day_punches[emp.emp_code].get(d, [])
+            ovr = emp_overrides.get(emp.emp_code, {}).get(d)
+            is_overridden = bool(ovr)
+            override_notes = ovr.notes if ovr else None
+            day_is_late = False
+            day_late_mins = 0
 
+            # Default calculation from punches & shifts
             if is_sun:
-                wo_cnt += 1
-                status = "WO"
+                default_status = "WO"
                 f_in = punches_list[0].strftime("%H:%M:%S") if punches_list else None
                 l_out = punches_list[-1].strftime("%H:%M:%S") if len(punches_list) > 1 else f_in
             elif punches_list:
-                pres_cnt += 1
-                status = "P"
+                default_status = "P"
                 f_in_dt = punches_list[0]
                 f_in = f_in_dt.strftime("%H:%M:%S")
                 l_out = punches_list[-1].strftime("%H:%M:%S") if len(punches_list) > 1 else f_in
@@ -153,29 +177,76 @@ def get_monthly_attendance_matrix(
                     day_is_late = False
                     day_late_mins = 0
             elif is_wfh_emp:
-                wfh_cnt += 1
-                status = "WFH"
+                default_status = "WFH"
                 f_in = None
                 l_out = None
             else:
-                abs_cnt += 1
-                status = "A"
+                default_status = "A"
                 f_in = None
                 l_out = None
 
+            # Apply manual override if present
+            if ovr:
+                status = ovr.status
+                if status == "WFH":
+                    wfh_cnt += 1
+                    day_is_late = False
+                    day_late_mins = 0
+                elif status == "WFH-FN":
+                    wfh_fn_cnt += 1
+                    wfh_cnt += 1
+                    day_is_late = False
+                    day_late_mins = 0
+                elif status == "WFH-AN":
+                    wfh_an_cnt += 1
+                    wfh_cnt += 1
+                    day_is_late = False
+                    day_late_mins = 0
+                elif status in ("P", "PRESENT"):
+                    status = "P"
+                    pres_cnt += 1
+                elif status in ("A", "ABSENT"):
+                    status = "A"
+                    abs_cnt += 1
+                    day_is_late = False
+                    day_late_mins = 0
+                elif status == "WO":
+                    status = "WO"
+                    wo_cnt += 1
+                    day_is_late = False
+                    day_late_mins = 0
+                else:
+                    status = ovr.status
+            else:
+                status = default_status
+                if status == "WO":
+                    wo_cnt += 1
+                elif status == "P":
+                    pres_cnt += 1
+                elif status == "WFH":
+                    wfh_cnt += 1
+                elif status == "A":
+                    abs_cnt += 1
+
             emp_days[str(d)] = {
                 "day": d,
+                "date": cur_date_str,
                 "status": status,
                 "first_in": f_in,
                 "last_out": l_out,
                 "punches_count": len(punches_list),
-                "is_late": day_is_late if punches_list and not is_sun else False,
-                "late_mins": day_late_mins if punches_list and not is_sun else 0
+                "is_late": day_is_late if punches_list and not is_sun and status == "P" else False,
+                "late_mins": day_late_mins if punches_list and not is_sun and status == "P" else 0,
+                "is_overridden": is_overridden,
+                "override_status": ovr.status if ovr else None,
+                "override_notes": override_notes
             }
 
         total_present_overall += pres_cnt
         total_absent_overall += abs_cnt
         total_wfh_overall += wfh_cnt
+        total_wfh_fn_overall += wfh_fn_cnt
+        total_wfh_an_overall += wfh_an_cnt
 
         total_work_days = pres_cnt + abs_cnt + wfh_cnt
         attendance_rate = round(((pres_cnt + wfh_cnt) / total_work_days * 100), 1) if total_work_days > 0 else 0.0
@@ -195,6 +266,8 @@ def get_monthly_attendance_matrix(
             "total_late_mins": emp_total_late_mins,
             "absent_count": abs_cnt,
             "wfh_count": wfh_cnt,
+            "wfh_fn_count": wfh_fn_cnt,
+            "wfh_an_count": wfh_an_cnt,
             "wo_count": wo_cnt,
             "attendance_rate": attendance_rate
         })
@@ -217,6 +290,8 @@ def get_monthly_attendance_matrix(
             "total_late_staff": sum(1 for r in records if r["late_count"] > 0),
             "total_absent_days": total_absent_overall,
             "total_wfh_days": total_wfh_overall,
+            "total_wfh_fn_days": total_wfh_fn_overall,
+            "total_wfh_an_days": total_wfh_an_overall,
             "overall_rate": overall_rate
         },
         "records": records
@@ -252,6 +327,8 @@ def generate_monthly_excel_report(
     late_fill = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")  # Amber light
     a_fill = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")     # Rose light
     wfh_fill = PatternFill(start_color="E0E7FF", end_color="E0E7FF", fill_type="solid")   # Indigo light
+    wfh_fn_fill = PatternFill(start_color="F3E8FF", end_color="F3E8FF", fill_type="solid") # Purple light
+    wfh_an_fill = PatternFill(start_color="E0F2FE", end_color="E0F2FE", fill_type="solid") # Sky light
     wo_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")    # Slate light
     gray_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
 
@@ -362,6 +439,14 @@ def generate_monthly_excel_report(
                 val = "WFH"
                 cell_fill = wfh_fill
                 cell_font = bold_font
+            elif st == "WFH-FN":
+                val = "WFH-FN"
+                cell_fill = wfh_fn_fill
+                cell_font = bold_font
+            elif st == "WFH-AN":
+                val = "WFH-AN"
+                cell_fill = wfh_an_fill
+                cell_font = bold_font
             elif st == "WO":
                 val = "WO"
                 cell_fill = wo_fill
@@ -460,12 +545,14 @@ def generate_monthly_excel_report(
             day_info = rec["days"].get(d_str, {"status": "--"})
             st = day_info["status"]
             c_cell = ws2.cell(row=r_idx, column=idx, value=st)
-            c_cell.font = bold_font if st in ("P", "WFH") else data_font
+            c_cell.font = bold_font if st in ("P", "WFH", "WFH-FN", "WFH-AN") else data_font
             c_cell.alignment = Alignment(horizontal="center", vertical="center")
             c_cell.border = thin_border
             if st == "P": c_cell.fill = p_fill
             elif st == "A": c_cell.fill = a_fill
             elif st == "WFH": c_cell.fill = wfh_fill
+            elif st == "WFH-FN": c_cell.fill = wfh_fn_fill
+            elif st == "WFH-AN": c_cell.fill = wfh_an_fill
             elif st == "WO": c_cell.fill = wo_fill
             else: c_cell.fill = gray_fill
 

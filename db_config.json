@@ -1,9 +1,3 @@
 {
-  "connection_url": "postgresql+psycopg://essl:essl@172.16.3.100:5432/essl_attendance?options=-csearch_path%3Dattendance",
-  "host": "172.16.3.100",
-  "port": 5432,
-  "dbname": "essl_attendance",
-  "schema_name": "attendance",
-  "user": "essl",
-  "password": "essl"
+  "connection_url": "postgresql+psycopg://essl:essl@172.16.3.100:5432/essl_attendance?options=-csearch_path%3Dessl_attendance"
 }

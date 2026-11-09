@@ -158,3 +158,40 @@ class User(Base):
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S") if self.created_at else "",
             "last_login": self.last_login.strftime("%Y-%m-%d %H:%M:%S") if self.last_login else None,
         }
+
+
+class AttendanceOverride(Base):
+    """
+    Manual attendance status override for an employee on a specific date.
+    Supported statuses:
+      - WFH: Work From Home (Full Day)
+      - WFH-FN: Work From Home - Forenoon (1st Half)
+      - WFH-AN: Work From Home - Afternoon (2nd Half)
+      - PRESENT: Present (In Office)
+      - ABSENT: Absent
+      - WO: Week Off
+    """
+    __tablename__ = "attendance_overrides"
+
+    id = Column(Integer, primary_key=True, index=True)
+    emp_code = Column(String(64), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True)  # YYYY-MM-DD
+    status = Column(String(32), nullable=False)            # WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO
+    notes = Column(String(256), nullable=True)
+    updated_by = Column(String(64), default="admin")
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("emp_code", "date", name="uix_override_emp_date"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "emp_code": self.emp_code,
+            "date": self.date,
+            "status": self.status,
+            "notes": self.notes or "",
+            "updated_by": self.updated_by or "admin",
+            "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S") if self.updated_at else "",
+        }

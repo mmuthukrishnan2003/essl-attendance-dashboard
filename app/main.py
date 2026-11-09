@@ -81,5 +81,12 @@ async def serve_index(request: Request):
     if not is_session_valid(token):
         return RedirectResponse(url="/login", status_code=302)
 
-    return FileResponse(TEMPLATES_DIR / "index.html")
+    return FileResponse(
+        TEMPLATES_DIR / "index.html",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 

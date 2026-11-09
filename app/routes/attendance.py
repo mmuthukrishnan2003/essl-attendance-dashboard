@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from app.live_sync import live_manager
 
 from app.database import get_db
-from app.models import AttendancePunch, Employee
-from app.schemas import ManualPunchCreate
+from app.models import AttendancePunch, Employee, AttendanceOverride
+from app.schemas import ManualPunchCreate, AttendanceOverrideCreate, AttendanceBatchOverrideCreate
 from app.attendance_service import (
     calculate_daily_attendance_for_date,
     get_employee_punches_history,
@@ -306,6 +306,143 @@ def add_manual_punch(payload: ManualPunchCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="A punch already exists for this employee at this exact timestamp")
 
     return {"message": "Manual punch added successfully", "punch": punch.to_dict()}
+
+
+@router.post("/override")
+def set_attendance_override(payload: AttendanceOverrideCreate, db: Session = Depends(get_db)):
+    """
+    Sets or resets an attendance status override (WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, AUTO).
+    """
+    emp = db.query(Employee).filter(Employee.emp_code == payload.emp_code).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail=f"Employee {payload.emp_code} not found")
+
+    try:
+        datetime.strptime(payload.date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+
+    status_clean = payload.status.upper().strip()
+    if status_clean in ("AUTO", "CLEAR", "RESET"):
+        existing = db.query(AttendanceOverride).filter(
+            AttendanceOverride.emp_code == payload.emp_code,
+            AttendanceOverride.date == payload.date
+        ).first()
+        if existing:
+            db.delete(existing)
+            db.commit()
+        return {"message": "Attendance status reset to auto biometric calculation", "status": "AUTO", "emp_code": payload.emp_code, "date": payload.date}
+
+    valid_statuses = ("WFH", "WFH-FN", "WFH-AN", "PRESENT", "P", "ABSENT", "A", "WO")
+    if status_clean not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, AUTO")
+
+    # Standardize
+    if status_clean in ("P", "PRESENT"):
+        standard_status = "P"
+    elif status_clean in ("A", "ABSENT"):
+        standard_status = "A"
+    else:
+        standard_status = status_clean  # WFH, WFH-FN, WFH-AN, WO
+
+    existing = db.query(AttendanceOverride).filter(
+        AttendanceOverride.emp_code == payload.emp_code,
+        AttendanceOverride.date == payload.date
+    ).first()
+
+    if existing:
+        existing.status = standard_status
+        existing.notes = payload.notes
+        existing.updated_at = datetime.now()
+    else:
+        existing = AttendanceOverride(
+            emp_code=payload.emp_code,
+            date=payload.date,
+            status=standard_status,
+            notes=payload.notes,
+            updated_by="admin"
+        )
+        db.add(existing)
+
+    db.commit()
+    db.refresh(existing)
+    return {"message": f"Attendance status updated to {standard_status}", "override": existing.to_dict()}
+
+
+@router.post("/batch-override")
+def batch_attendance_override(payload: AttendanceBatchOverrideCreate, db: Session = Depends(get_db)):
+    """
+    Batch applies an attendance status override across multiple employees and date range.
+    """
+    try:
+        s_date = datetime.strptime(payload.start_date, "%Y-%m-%d").date()
+        e_date = datetime.strptime(payload.end_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+
+    if s_date > e_date:
+        raise HTTPException(status_code=400, detail="start_date cannot be after end_date")
+
+    status_clean = payload.status.upper().strip()
+    if status_clean in ("P", "PRESENT"):
+        standard_status = "P"
+    elif status_clean in ("A", "ABSENT"):
+        standard_status = "A"
+    else:
+        standard_status = status_clean
+
+    cur_d = s_date
+    updated_count = 0
+    while cur_d <= e_date:
+        d_str = cur_d.strftime("%Y-%m-%d")
+        for emp_code in payload.emp_codes:
+            if status_clean in ("AUTO", "CLEAR", "RESET"):
+                existing = db.query(AttendanceOverride).filter(
+                    AttendanceOverride.emp_code == emp_code,
+                    AttendanceOverride.date == d_str
+                ).first()
+                if existing:
+                    db.delete(existing)
+                    updated_count += 1
+            else:
+                existing = db.query(AttendanceOverride).filter(
+                    AttendanceOverride.emp_code == emp_code,
+                    AttendanceOverride.date == d_str
+                ).first()
+                if existing:
+                    existing.status = standard_status
+                    existing.notes = payload.notes
+                    existing.updated_at = datetime.now()
+                else:
+                    db.add(AttendanceOverride(
+                        emp_code=emp_code,
+                        date=d_str,
+                        status=standard_status,
+                        notes=payload.notes,
+                        updated_by="admin"
+                    ))
+                updated_count += 1
+        cur_d += timedelta(days=1)
+
+    db.commit()
+    return {"message": f"Batch updated {updated_count} attendance records to {standard_status}"}
+
+
+@router.get("/overrides")
+def get_attendance_overrides(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    emp_code: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(AttendanceOverride)
+    if emp_code:
+        query = query.filter(AttendanceOverride.emp_code == emp_code)
+    if year and month:
+        prefix = f"{year:04d}-{month:02d}-"
+        query = query.filter(AttendanceOverride.date.like(f"{prefix}%"))
+    overrides = query.all()
+    return {"count": len(overrides), "overrides": [o.to_dict() for o in overrides]}
 
 
 @router.get("/monthly")
