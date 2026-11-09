@@ -305,6 +305,19 @@ def add_manual_punch(payload: ManualPunchCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=400, detail="A punch already exists for this employee at this exact timestamp")
 
+    # Broadcast to live sync so DB sync is recorded and UI reflects it immediately
+    emp_name = emp.name if emp else f"Employee {payload.emp_code}"
+    try:
+        live_manager.record_manual_punch(
+            emp_code=payload.emp_code,
+            emp_name=emp_name,
+            punch_time=p_time,
+            device_name=payload.device_ip or "Manual Entry",
+            punch_type=payload.punch_type
+        )
+    except Exception as b_err:
+        pass
+
     return {"message": "Manual punch added successfully", "punch": punch.to_dict()}
 
 
@@ -876,8 +889,12 @@ def get_live_attendance_status():
     """
     Fast sub-second poll endpoint providing current punch version and latest punch info.
     """
+    from app.database import get_active_db_info
     return {
         "version": live_manager.version,
         "last_punch": live_manager.last_punch_info,
+        "last_db_sync_time": live_manager.last_db_sync_time,
+        "connected_db": get_active_db_info(),
+        "recent_punches": live_manager.recent_synced_punches[:5],
         "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }

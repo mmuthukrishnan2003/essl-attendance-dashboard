@@ -25,6 +25,9 @@ class LiveSyncManager:
     def __init__(self):
         self.version: int = 1
         self.last_punch_info: Optional[Dict[str, Any]] = None
+        self.last_db_sync_time: Optional[str] = None
+        self.recent_synced_punches: list = []
+        self.total_punches_synced_session: int = 0
         self.subscribers: Set[asyncio.Queue] = set()
         self.workers: Dict[str, threading.Thread] = {}
         self.running: bool = False
@@ -34,6 +37,7 @@ class LiveSyncManager:
         if self.running:
             return
         self.running = True
+        self._seed_recent_punches()
         self.supervisor = threading.Thread(
             target=self._supervisor_loop,
             daemon=True,
@@ -41,6 +45,45 @@ class LiveSyncManager:
         )
         self.supervisor.start()
         logger.info("Biometric LiveSyncManager started successfully.")
+
+    def _seed_recent_punches(self):
+        """Pre-populates the recent sync feed from the database on startup."""
+        try:
+            db = SessionLocal()
+            recent = (
+                db.query(AttendancePunch, Employee)
+                .outerjoin(Employee, AttendancePunch.emp_code == Employee.emp_code)
+                .order_by(AttendancePunch.timestamp.desc())
+                .limit(20)
+                .all()
+            )
+            from app.database import get_active_db_info
+            db_meta = get_active_db_info()
+
+            feed = []
+            for p, emp in recent:
+                emp_name = emp.name if emp else f"Employee {p.emp_code}"
+                feed.append({
+                    "emp_code": p.emp_code,
+                    "name": emp_name,
+                    "timestamp": p.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "time_str": p.timestamp.strftime("%H:%M:%S"),
+                    "device": p.device_ip,
+                    "device_ip": p.device_ip,
+                    "punch_type": p.punch_type,
+                    "db_synced": True,
+                    "db_target": db_meta["label"],
+                    "db_dialect": db_meta["dialect"],
+                    "sync_time": p.timestamp.strftime("%H:%M:%S"),
+                    "status": "Committed to DB"
+                })
+            self.recent_synced_punches = feed
+            if feed:
+                self.last_db_sync_time = feed[0]["timestamp"]
+                self.last_punch_info = feed[0]
+            db.close()
+        except Exception as e:
+            logger.warning(f"Could not pre-seed recent punches: {e}")
 
     def stop(self):
         self.running = False
@@ -53,7 +96,7 @@ class LiveSyncManager:
         logger.info(
             f"⚡ [INSTANT PUNCH] Emp {punch_data.get('emp_code')} "
             f"({punch_data.get('name')}) at {punch_data.get('device')} "
-            f"[{punch_data.get('timestamp')}]"
+            f"[{punch_data.get('timestamp')}] -> DB: {punch_data.get('db_target', 'Active DB')}"
         )
 
         dead_queues = set()
@@ -63,6 +106,56 @@ class LiveSyncManager:
             except Exception:
                 dead_queues.add(q)
         self.subscribers.difference_update(dead_queues)
+
+    def record_manual_punch(self, emp_code: str, emp_name: str, punch_time: datetime, device_name: str = "Manual Entry", punch_type: int = 0):
+        """Records and broadcasts a manual punch added via API/UI to live sync stream."""
+        from app.database import get_active_db_info
+        db_meta = get_active_db_info()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        self.last_db_sync_time = now_str
+        self.total_punches_synced_session += 1
+
+        punch_data = {
+            "type": "new_punch",
+            "emp_code": emp_code,
+            "name": emp_name,
+            "timestamp": punch_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "time_str": punch_time.strftime("%H:%M:%S"),
+            "device": device_name,
+            "device_ip": "Manual Entry",
+            "punch_type": punch_type,
+            "db_synced": True,
+            "db_target": db_meta["label"],
+            "db_dialect": db_meta["dialect"],
+            "sync_time": now_str,
+            "status": "Committed to DB"
+        }
+        self.last_punch_info = punch_data
+        self.recent_synced_punches.insert(0, punch_data)
+        if len(self.recent_synced_punches) > 30:
+            self.recent_synced_punches.pop()
+
+        self.broadcast_punch(punch_data)
+
+    def record_bulk_sync(self, count: int, device_name: str):
+        """Broadcasts device sync activity."""
+        from app.database import get_active_db_info
+        db_meta = get_active_db_info()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.last_db_sync_time = now_str
+        self.total_punches_synced_session += count
+
+        sync_data = {
+            "type": "catchup_synced",
+            "device": device_name,
+            "count": count,
+            "db_synced": True,
+            "db_target": db_meta["label"],
+            "db_dialect": db_meta["dialect"],
+            "timestamp": now_str
+        }
+        self.broadcast_punch(sync_data)
 
     def _supervisor_loop(self):
         """Continuously monitors and maintains live capture worker threads for all active devices."""
@@ -160,6 +253,20 @@ class LiveSyncManager:
                 db.add(new_punch)
                 db.commit()
 
+                from app.database import get_active_db_info
+                db_meta = get_active_db_info()
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                self.last_db_sync_time = now_str
+                self.total_punches_synced_session += 1
+
+                # Safe secondary dual-sync: if active is Postgres, replicate punch to local SQLite backup
+                if db_meta.get("is_postgres"):
+                    try:
+                        self._replicate_to_sqlite(emp_code, punch_time, ip, punch_type, verify_type)
+                    except Exception as rep_err:
+                        logger.debug(f"SQLite backup replication note: {rep_err}")
+
                 # Instantly broadcast to browser
                 punch_data = {
                     "type": "new_punch",
@@ -169,8 +276,18 @@ class LiveSyncManager:
                     "time_str": punch_time.strftime("%H:%M:%S"),
                     "device": device_name,
                     "device_ip": ip,
-                    "punch_type": punch_type
+                    "punch_type": punch_type,
+                    "db_synced": True,
+                    "db_target": db_meta["label"],
+                    "db_dialect": db_meta["dialect"],
+                    "sync_time": now_str,
+                    "status": "Committed to DB"
                 }
+                self.last_punch_info = punch_data
+                self.recent_synced_punches.insert(0, punch_data)
+                if len(self.recent_synced_punches) > 30:
+                    self.recent_synced_punches.pop()
+
                 self.broadcast_punch(punch_data)
 
         except Exception as e:
@@ -178,6 +295,21 @@ class LiveSyncManager:
             db.rollback()
         finally:
             db.close()
+
+    def _replicate_to_sqlite(self, emp_code: str, punch_time: datetime, ip: str, punch_type: int, verify_type: int):
+        """Mirrors the punch into local attendance.db so offline/fallback SQLite is always current."""
+        import sqlite3
+        from app.config import DATABASE_PATH
+        conn = sqlite3.connect(DATABASE_PATH)
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT OR IGNORE INTO attendance_punches (emp_code, timestamp, device_ip, punch_type, verify_type) VALUES (?, ?, ?, ?, ?)",
+                (emp_code, punch_time.strftime("%Y-%m-%d %H:%M:%S"), ip, punch_type, verify_type)
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     def _fast_catchup(self, conn, ip: str, device_name: str):
         """Catches up any punches that occurred in the last 20 minutes with bulk set checking."""
