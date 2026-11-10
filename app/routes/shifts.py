@@ -87,19 +87,53 @@ def update_shift(shift_id: int, payload: ShiftUpdate, db: Session = Depends(get_
 
 
 @router.delete("/{shift_id}")
-def delete_shift(shift_id: int, db: Session = Depends(get_db)):
-    """Delete a shift (if no employees are assigned)."""
+def delete_shift(shift_id: int, force: bool = False, db: Session = Depends(get_db)):
+    """Delete a shift. If employees are assigned and force is True, reassigns them to default shift."""
     shift = db.query(Shift).filter(Shift.id == shift_id).first()
     if not shift:
         raise HTTPException(status_code=404, detail="Shift not found")
 
     count = db.query(Employee).filter(Employee.shift_code == shift.code).count()
-    if count > 0:
-        raise HTTPException(status_code=400, detail=f"Cannot delete shift '{shift.name}': {count} employees are assigned to it.")
+    if count > 0 and not force:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete shift '{shift.name}': {count} employee(s) are assigned to it. Pass force=true to reassign them to default shift."
+        )
 
+    # If employees are assigned and force is True, reassign them to another active shift
+    reassigned_name = None
+    if count > 0:
+        default_shift = db.query(Shift).filter(
+            Shift.id != shift_id,
+            Shift.code.in_(["SHIFT_9_7", "SHIFT_9_6", "GEN", "DEFAULT"])
+        ).first()
+        if not default_shift:
+            default_shift = db.query(Shift).filter(Shift.id != shift_id).first()
+
+        emps = db.query(Employee).filter(Employee.shift_code == shift.code).all()
+        for e in emps:
+            if default_shift:
+                e.shift_code = default_shift.code
+                e.shift_name = default_shift.name
+                e.shift_start = default_shift.start_time
+                e.shift_end = default_shift.end_time
+                reassigned_name = default_shift.name
+            else:
+                e.shift_code = None
+                e.shift_name = "Unassigned"
+                e.shift_start = "09:00"
+                e.shift_end = "18:00"
+
+    deleted_name = shift.name
     db.delete(shift)
     db.commit()
-    return {"message": f"Shift '{shift.name}' deleted successfully"}
+
+    msg = f"Shift '{deleted_name}' deleted successfully."
+    if count > 0 and reassigned_name:
+        msg += f" {count} employee(s) reassigned to '{reassigned_name}'."
+
+    return {"message": msg, "success": True}
+
 
 
 @router.post("/assign")

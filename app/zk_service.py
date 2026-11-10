@@ -13,7 +13,7 @@ except ImportError:
     ZKError = Exception
     ZKNetworkError = Exception
 
-from app.models import Device, Employee, AttendancePunch
+from app.models import Device, Employee, AttendancePunch, DeletedEmployee
 
 logger = logging.getLogger("essl_zk_service")
 logging.basicConfig(level=logging.INFO)
@@ -157,6 +157,11 @@ def sync_device_punches(device: Device, db: Session) -> Dict[str, Any]:
                 u_id = str(u.user_id).strip()
                 if not u_id:
                     continue
+
+                # Skip users that were permanently deleted by the administrator
+                if db.query(DeletedEmployee).filter(DeletedEmployee.emp_code == u_id).first():
+                    continue
+
                 existing_emp = db.query(Employee).filter(Employee.emp_code == u_id).first()
                 if not existing_emp:
                     emp_name = (u.name.strip() if hasattr(u, "name") and u.name else f"Employee {u_id}")
@@ -187,6 +192,10 @@ def sync_device_punches(device: Device, db: Session) -> Dict[str, Any]:
             if not emp_code:
                 continue
 
+            # Skip punches for employees that were permanently deleted
+            if db.query(DeletedEmployee).filter(DeletedEmployee.emp_code == emp_code).first():
+                continue
+
             # Ensure employee exists in db (auto-create if new ID punched)
             emp = db.query(Employee).filter(Employee.emp_code == emp_code).first()
             if not emp:
@@ -198,6 +207,7 @@ def sync_device_punches(device: Device, db: Session) -> Dict[str, Any]:
                 )
                 db.add(emp)
                 db.flush()
+
 
             punch_time = rec.timestamp
             punch_type = getattr(rec, "status", 0) or 0
@@ -282,4 +292,40 @@ def sync_all_active_devices(db: Session) -> Dict[str, Any]:
         "total_new_users": total_users_added,
         "details": results
     }
+
+
+def delete_user_from_all_devices(emp_code: str):
+    """
+    Attempts to remove the user from all connected eSSL biometric devices
+    so the hardware memory doesn't hold or re-sync them.
+    """
+    from app.database import SessionLocal
+    db = SessionLocal()
+    devices = db.query(Device).filter(Device.is_active == True).all()
+    results = {}
+    for dev in devices:
+        conn = None
+        try:
+            zk = ZK(dev.ip_address, port=dev.port, timeout=3, password=0, force_udp=False, ommit_ping=True)
+            conn = zk.connect()
+            users = conn.get_users()
+            target_user = next((u for u in users if str(u.user_id).strip() == str(emp_code).strip()), None)
+            if target_user:
+                conn.delete_user(uid=target_user.uid, user_id=str(emp_code).strip())
+                logger.info(f"User {emp_code} deleted from biometric device at {dev.ip_address}")
+                results[dev.ip_address] = "Deleted from device"
+            else:
+                results[dev.ip_address] = "Not found on device"
+        except Exception as e:
+            logger.warning(f"Could not delete user {emp_code} from device {dev.ip_address}: {e}")
+            results[dev.ip_address] = f"Device error: {e}"
+        finally:
+            if conn:
+                try:
+                    conn.disconnect()
+                except Exception:
+                    pass
+    db.close()
+    return results
+
 

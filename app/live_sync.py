@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional, Set
 
 from zk import ZK
 from app.database import SessionLocal
-from app.models import Device, Employee, AttendancePunch
+from app.models import Device, Employee, AttendancePunch, DeletedEmployee
 
 logger = logging.getLogger("essl_live_sync")
 
@@ -222,6 +222,10 @@ class LiveSyncManager:
 
         db = SessionLocal()
         try:
+            # Skip live punch if this employee was deleted by administrator
+            if db.query(DeletedEmployee).filter(DeletedEmployee.emp_code == emp_code).first():
+                return
+
             # Check if punch already in DB
             exists = db.query(AttendancePunch).filter(
                 AttendancePunch.emp_code == emp_code,

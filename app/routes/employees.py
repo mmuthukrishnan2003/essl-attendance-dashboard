@@ -1,13 +1,18 @@
 from datetime import date, timedelta
 from typing import Optional
+import threading
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 
 from app.database import get_db
-from app.models import Employee, AttendancePunch, Device
+from app.models import Employee, AttendancePunch, Device, DeletedEmployee, AttendanceOverride
 from app.schemas import EmployeeCreate, EmployeeUpdate
 from app.attendance_service import format_duration
+from app.zk_service import delete_user_from_all_devices
+
+logger = logging.getLogger("essl.employees")
 
 router = APIRouter(prefix="/api/employees", tags=["Employees"])
 
@@ -41,12 +46,16 @@ def list_employees(
 @router.post("")
 def create_employee(payload: EmployeeCreate, db: Session = Depends(get_db)):
     """Add a new employee."""
-    existing = db.query(Employee).filter(Employee.emp_code == payload.emp_code).first()
+    emp_code_clean = payload.emp_code.strip()
+    existing = db.query(Employee).filter(Employee.emp_code == emp_code_clean).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Employee code '{payload.emp_code}' already exists")
 
+    # If this employee code was previously marked deleted, un-blacklist it
+    db.query(DeletedEmployee).filter(DeletedEmployee.emp_code == emp_code_clean).delete()
+
     emp = Employee(
-        emp_code=payload.emp_code.strip(),
+        emp_code=emp_code_clean,
         name=payload.name.strip(),
         department=payload.department.strip() if payload.department else "General",
         designation=payload.designation.strip() if payload.designation else "Staff",
@@ -61,6 +70,7 @@ def create_employee(payload: EmployeeCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(emp)
     return {"message": "Employee created successfully", "employee": emp.to_dict()}
+
 
 
 @router.get("/{emp_code}")
@@ -160,14 +170,33 @@ def update_employee(emp_code: str, payload: EmployeeUpdate, db: Session = Depend
 
 @router.delete("/{emp_code}")
 def delete_employee(emp_code: str, db: Session = Depends(get_db)):
-    """Delete employee and associated punch logs."""
-    emp = db.query(Employee).filter(Employee.emp_code == emp_code).first()
+    """Permanently delete employee, purge punches/overrides, and prevent biometric device resurrection."""
+    emp_code_clean = emp_code.strip()
+    emp = db.query(Employee).filter(Employee.emp_code == emp_code_clean).first()
     if not emp:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    # Delete employee punches
-    db.query(AttendancePunch).filter(AttendancePunch.emp_code == emp_code).delete()
+    emp_name = emp.name
+
+    # 1. Record in DeletedEmployee to permanently prevent auto-resurrection on background sync
+    existing_del = db.query(DeletedEmployee).filter(DeletedEmployee.emp_code == emp_code_clean).first()
+    if not existing_del:
+        db.add(DeletedEmployee(emp_code=emp_code_clean, name=emp_name))
+
+    # 2. Delete employee punches and overrides
+    db.query(AttendancePunch).filter(AttendancePunch.emp_code == emp_code_clean).delete()
+    db.query(AttendanceOverride).filter(AttendanceOverride.emp_code == emp_code_clean).delete()
+
+    # 3. Delete employee record
     db.delete(emp)
     db.commit()
-    return {"message": f"Employee {emp_code} deleted successfully"}
+
+    # 4. Asynchronously remove the user from physical eSSL devices so hardware doesn't hold it
+    try:
+        threading.Thread(target=delete_user_from_all_devices, args=(emp_code_clean,), daemon=True).start()
+    except Exception as e:
+        logger.warning(f"Could not launch device delete thread for {emp_code_clean}: {e}")
+
+    return {"message": f"Employee {emp_code_clean} ({emp_name}) permanently deleted"}
+
 
