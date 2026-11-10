@@ -15,13 +15,14 @@ from seed_data import init_db, populate_sample_data
 async def lifespan(app: FastAPI):
     # Startup: Ensure tables exist and default data is seeded
     init_db()
-    # Check if employees exist, if not seed initial demo data
+    # Check if employees exist, if not seed initial demo data only on fresh database
     from app.database import SessionLocal
-    from app.models import Employee
+    from app.models import Employee, DeletedEmployee
     db = SessionLocal()
     try:
         emp_count = db.query(Employee).count()
-        if emp_count == 0:
+        del_count = db.query(DeletedEmployee).count()
+        if emp_count == 0 and del_count == 0:
             populate_sample_data(db)
     finally:
         db.close()

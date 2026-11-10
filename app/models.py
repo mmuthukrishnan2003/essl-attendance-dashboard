@@ -133,6 +133,24 @@ class Setting(Base):
     value = Column(Text, nullable=False)
 
 
+class DeletedEmployee(Base):
+    """Tracks permanently deleted employees so background biometric device sync doesn't resurrect them."""
+    __tablename__ = "deleted_employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    emp_code = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(128), nullable=True)
+    deleted_at = Column(DateTime, default=func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "emp_code": self.emp_code,
+            "name": self.name,
+            "deleted_at": self.deleted_at.strftime("%Y-%m-%d %H:%M:%S") if self.deleted_at else None,
+        }
+
+
 class User(Base):
     __tablename__ = "users"
 

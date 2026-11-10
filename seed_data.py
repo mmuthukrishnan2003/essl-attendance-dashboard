@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta, time
 from sqlalchemy.orm import Session
 
 from app.database import engine, Base, SessionLocal
-from app.models import Device, Employee, AttendancePunch, Setting, Shift, User, AttendanceOverride
+from app.models import Device, Employee, AttendancePunch, Setting, Shift, User, AttendanceOverride, DeletedEmployee
 from app.config import DEFAULT_DEVICES, DEFAULT_SETTINGS
 
 DEFAULT_SHIFTS = [

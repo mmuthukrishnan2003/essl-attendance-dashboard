@@ -4990,15 +4990,18 @@ function renderShiftsCards(shifts) {
 
 
         <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-
-          <button onclick="editShift(${s.id})" class="text-xs font-semibold text-brand-navy hover:underline">
-
-            Edit Shift
-
+          <button onclick="editShift(${s.id})" class="text-xs font-semibold text-brand-navy hover:underline flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <span>Edit</span>
           </button>
-
-          <span class="text-[11px] text-slate-400">Active</span>
-
+          <div class="flex items-center space-x-2">
+            <button onclick="deleteShiftPrompt(${s.id})" class="text-xs font-semibold text-rose-600 hover:text-rose-800 hover:underline flex items-center space-x-1" title="Delete shift">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              <span>Delete</span>
+            </button>
+            <span class="text-[11px] text-slate-300">|</span>
+            <span class="text-[11px] ${s.is_active ? 'text-emerald-600 font-medium' : 'text-slate-400'}">Active</span>
+          </div>
         </div>
 
       </div>
@@ -5217,6 +5220,8 @@ function openAddShiftModal() {
   document.getElementById('shift-form').reset();
   document.getElementById('shift-form-start').value = '09:00';
   document.getElementById('shift-form-end').value = '18:00';
+  const delBtn = document.getElementById('shift-delete-modal-btn');
+  if (delBtn) delBtn.classList.add('hidden');
   openModal('modal-shift');
 }
 
@@ -5231,38 +5236,67 @@ function autoSuggestShiftCode(name) {
   }
 }
 
-
-
 function editShift(shiftId) {
-
   const shift = allShiftsCache.find(s => s.id === shiftId);
-
   if (!shift) return;
 
-
-
   document.getElementById('modal-shift-title').textContent = `Edit Shift: ${shift.name}`;
-
   document.getElementById('shift-form-id').value = shift.id;
-
   document.getElementById('shift-form-name').value = shift.name;
-
   document.getElementById('shift-form-code').value = shift.code;
-
   document.getElementById('shift-form-code').disabled = true;
-
   document.getElementById('shift-form-start').value = shift.start_time;
-
   document.getElementById('shift-form-end').value = shift.end_time;
-
   document.getElementById('shift-form-is-night').checked = shift.is_night_shift;
-
   document.getElementById('shift-form-desc').value = shift.description || '';
 
-
+  const delBtn = document.getElementById('shift-delete-modal-btn');
+  if (delBtn) delBtn.classList.remove('hidden');
 
   openModal('modal-shift');
+}
 
+async function deleteShiftPrompt(shiftId) {
+  const shift = (allShiftsCache || []).find(s => s.id === shiftId);
+  if (!shift) return;
+
+  const count = shift.assigned_employee_count || 0;
+  let confirmMsg = `Are you sure you want to delete shift "${shift.name}" (${shift.code})?`;
+  if (count > 0) {
+    confirmMsg = `Shift "${shift.name}" currently has ${count} assigned employee(s).\n\nIf you delete this shift, these ${count} employee(s) will be automatically reassigned to the default General Shift.\n\nDo you want to proceed and delete this shift?`;
+  }
+
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/shifts/${shiftId}?force=true`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.detail || data.message || 'Failed to delete shift');
+      return;
+    }
+
+    closeModal('modal-shift');
+    await loadShiftsData();
+    if (typeof loadEmployeesData === 'function') {
+      await loadEmployeesData();
+    }
+    showToast(data.message || `Shift "${shift.name}" deleted successfully.`, 'success');
+  } catch (err) {
+    console.error('Error deleting shift:', err);
+    alert('Error deleting shift: ' + err.message);
+  }
+}
+
+function deleteShiftFromModal() {
+  const shiftId = parseInt(document.getElementById('shift-form-id').value, 10);
+  if (shiftId) {
+    deleteShiftPrompt(shiftId);
+  }
 }
 
 
