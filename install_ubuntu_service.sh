@@ -22,11 +22,17 @@ if [ ! -f "$VENV_PYTHON" ]; then
     python3 -m venv "$APP_DIR/venv"
 fi
 
-# 2. Install / ensure required dependencies including psycopg
-echo "[*] Ensuring all dependencies (including psycopg[binary]) are installed..."
+# 2. Install / ensure required dependencies including psycopg & cryptography
+echo "[*] Ensuring all dependencies (including psycopg[binary] and cryptography) are installed..."
 "$VENV_PIP" install -U pip
 "$VENV_PIP" install -r "$APP_DIR/requirements.txt"
-"$VENV_PIP" install "psycopg[binary]>=3.1.0"
+"$VENV_PIP" install "psycopg[binary]>=3.1.0" "cryptography>=41.0.0"
+
+# 2.1 Ensure local.getzenbasket.com is in /etc/hosts
+if ! grep -q "local.getzenbasket.com" /etc/hosts; then
+    echo "[*] Adding local.getzenbasket.com to /etc/hosts..."
+    echo "172.17.0.38 local.getzenbasket.com" | sudo tee -a /etc/hosts
+fi
 
 # 3. Create service file with dynamic paths
 echo "[*] Generating $SERVICE_DEST ..."
