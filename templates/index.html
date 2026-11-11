@@ -2131,19 +2131,23 @@
 
             <div>
 
-              <label class="block font-semibold text-slate-700 mb-1">Database Name</label>
+              <label class="block font-semibold text-slate-700 mb-1">
+                Database Name <span class="text-xs font-normal text-slate-500">(Type or select)</span>
+              </label>
 
               <div class="relative">
 
-                <input list="pg-dbname-options" id="pg-dbname-select" value="attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="attendance">
+                <input list="pg-dbname-options" id="pg-dbname-select" oninput="onPgInputChanged()" value="essl_attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="Type custom DB name (e.g. essl_attendance)">
 
                 <datalist id="pg-dbname-options">
 
+                  <option value="essl_attendance">essl_attendance (Active)</option>
+
                   <option value="attendance">attendance</option>
 
-                  <option value="essl_att">essl_att (Recommended)</option>
+                  <option value="essl_att">essl_att</option>
 
-                  <option value="postgres">postgres (Default Maintenance)</option>
+                  <option value="postgres">postgres</option>
 
                 </datalist>
 
@@ -2155,15 +2159,19 @@
 
             <div>
 
-              <label class="block font-semibold text-slate-700 mb-1">Schema</label>
+              <label class="block font-semibold text-slate-700 mb-1">
+                Schema <span class="text-xs font-normal text-slate-500">(Type or select)</span>
+              </label>
 
               <div class="relative">
 
-                <input list="pg-schema-options" id="pg-schema-input" value="public" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="public">
+                <input list="pg-schema-options" id="pg-schema-input" oninput="onPgInputChanged()" value="essl_attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="Type custom schema name (e.g. essl_attendance)">
 
                 <datalist id="pg-schema-options">
 
-                  <option value="public">public (Default)</option>
+                  <option value="essl_attendance">essl_attendance (Active)</option>
+
+                  <option value="public">public</option>
 
                   <option value="attendance">attendance</option>
 
@@ -3239,7 +3247,7 @@
     </div>
 
 
-    <script src="/static/js/app.js?v=20261110_v1"></script>
+    <script src="/static/js/app.js?v=20261111_v3"></script>
 
 </body>
 
