@@ -97,14 +97,31 @@ def get_database_info(db: Session = Depends(get_db)):
             file_size_formatted = "Server DB"
 
     # Determine active schema
-    active_schema = "public"
-    if DB_CONFIG_FILE.exists():
+    active_schema = None
+    if not is_sqlite:
+        try:
+            curr_s = db.execute(text("SELECT current_schema()")).scalar()
+            if curr_s:
+                active_schema = str(curr_s)
+        except Exception:
+            pass
+
+    if not active_schema or active_schema == "public":
+        from app.database import extract_schema_from_url
+        url_schema = extract_schema_from_url(str(engine.url))
+        if url_schema and url_schema != "public":
+            active_schema = url_schema
+
+    if (not active_schema or active_schema == "public") and DB_CONFIG_FILE.exists():
         try:
             with open(DB_CONFIG_FILE, "r") as f:
                 saved_cfg = json.load(f)
-                active_schema = str(saved_cfg.get("schema_name") or "public")
+                active_schema = str(saved_cfg.get("schema_name") or active_schema or "public")
         except Exception:
             pass
+
+    if not active_schema:
+        active_schema = "public"
 
     # Inspect tables and schema
     insp = inspect(engine)
@@ -218,8 +235,27 @@ def get_database_info(db: Session = Depends(get_db)):
         conn_details["port"] = engine.url.port or conn_details["port"]
         conn_details["dbname"] = engine.url.database or conn_details["dbname"]
         conn_details["user"] = engine.url.username or conn_details["user"]
+        conn_details["schema"] = active_schema
         if engine.url.password:
             conn_details["password"] = engine.url.password
+
+    # Query existing schemas & databases for quick autocomplete suggestions
+    available_schemas = ["public", active_schema]
+    available_databases = [db_name, "attendance", "postgres"]
+    if is_postgres:
+        try:
+            s_rows = db.execute(text("SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast') ORDER BY schema_name")).fetchall()
+            if s_rows:
+                available_schemas = list(dict.fromkeys([str(r[0]) for r in s_rows] + [active_schema]))
+        except Exception:
+            pass
+
+        try:
+            db_rows = db.execute(text("SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname")).fetchall()
+            if db_rows:
+                available_databases = list(dict.fromkeys([str(r[0]) for r in db_rows] + [db_name]))
+        except Exception:
+            pass
 
     # Get punch count specifically
     total_punches = 0
@@ -252,6 +288,8 @@ def get_database_info(db: Session = Depends(get_db)):
         "subtitle": subtitle_text,
         "connection_url": display_url,
         "schema_name": active_schema,
+        "available_schemas": available_schemas,
+        "available_databases": available_databases,
         "connection_details": {
             "host_port": f"{conn_details['host']}:{conn_details['port']}",
             "host": conn_details["host"],
@@ -421,7 +459,7 @@ def connect_postgres_db(payload: PostgresConnectRequest, db: Session = Depends(g
         except Exception as schema_err:
             print(f"Notice during schema check: {schema_err}")
 
-        switch_database_engine(pg_url)
+        switch_database_engine(pg_url, schema_name=schema_clean)
 
         # Force table creation explicitly in target schema
         with engine.begin() as conn:
@@ -451,18 +489,17 @@ def connect_postgres_db(payload: PostgresConnectRequest, db: Session = Depends(g
             "success": True,
             "message": f"Successfully connected to PostgreSQL 'local essl' ({dbname})!",
             "database": dbname,
-            "schema": payload.schema_name or "public",
+            "schema": schema_clean,
             "schema_created": True,
-            "schema_message": f"Default schema created & verified. Core tables (shifts, devices, employees, attendance_punches, settings) ready in '{dbname}'.",
+            "schema_message": f"Target schema '{schema_clean}' verified. Core tables ready in '{dbname}'.",
             "sync_message": "4 eSSL biometric door units registered. Punch synchronization initiated.",
             "tables_created": ["shifts", "devices", "employees", "attendance_punches", "settings"],
-            "database": dbname,
-            "schema": payload.schema_name,
             "connection_details": {
                 "host_port": f"{host}:{port}",
                 "host": host,
                 "port": port,
                 "dbname": dbname,
+                "schema": schema_clean,
                 "user": payload.user.strip(),
                 "password": payload.password
             }
@@ -684,6 +721,19 @@ def check_database_connection(payload: DbCheckRequest):
 
         ver_short = str(server_ver).split(",")[0].strip() if server_ver else "PostgreSQL"
 
+        available_schemas = ["public", schema_clean]
+        available_databases = [dbname, "postgres"]
+        try:
+            with test_engine.connect() as s_conn:
+                s_rows = s_conn.execute(text("SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast') ORDER BY schema_name")).fetchall()
+                if s_rows:
+                    available_schemas = list(dict.fromkeys([str(r[0]) for r in s_rows] + [schema_clean]))
+                db_rows = s_conn.execute(text("SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname")).fetchall()
+                if db_rows:
+                    available_databases = list(dict.fromkeys([str(r[0]) for r in db_rows] + [dbname]))
+        except Exception:
+            pass
+
         return {
             "success": True,
             "port_open": True,
@@ -698,6 +748,8 @@ def check_database_connection(payload: DbCheckRequest):
             "server_version": ver_short,
             "table_count": len(tables),
             "tables": tables,
+            "available_schemas": available_schemas,
+            "available_databases": available_databases,
             "message": f"Connection verified successfully! {ver_short} responded on {host}:{port} ({latency}ms). Database: '{dbname}', Schema: '{schema_clean}' ({len(tables)} tables)."
         }
     except Exception as exc:

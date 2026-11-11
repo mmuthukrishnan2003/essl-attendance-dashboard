@@ -3082,38 +3082,40 @@ async function loadDatabaseData() {
 
 
 
-      if (hostPortInput && cd.host_port) {
-
-        hostPortInput.value = cd.host_port;
-
+      if (hostPortInput) {
+        hostPortInput.value = cd.host_port || (cd.host ? `${cd.host}:${cd.port || 5432}` : '172.16.3.100:5432');
       }
 
-      if (dbnameInput && cd.dbname) {
-
-        dbnameInput.value = cd.dbname;
-
+      if (dbnameInput) {
+        dbnameInput.value = cd.dbname || data.database_name || 'essl_attendance';
       }
 
       if (userInput && cd.user) {
-
         userInput.value = cd.user;
-
       }
 
       const schemaInput = document.getElementById('pg-schema-input');
-
-      if (schemaInput && (cd.schema || data.schema_name)) {
-
-        schemaInput.value = cd.schema || data.schema_name || 'public';
-
+      if (schemaInput) {
+        schemaInput.value = cd.schema || data.schema_name || 'essl_attendance';
       }
 
       if (passInput && cd.password !== undefined && cd.password !== null) {
-
         passInput.value = cd.password;
-
       }
 
+      // Populate available databases & schemas in datalists
+      if (data.available_databases && Array.isArray(data.available_databases)) {
+        const dbOptionsEl = document.getElementById('pg-dbname-options');
+        if (dbOptionsEl) {
+          dbOptionsEl.innerHTML = data.available_databases.map(d => `<option value="${d}">${d}</option>`).join('');
+        }
+      }
+      if (data.available_schemas && Array.isArray(data.available_schemas)) {
+        const schemaOptionsEl = document.getElementById('pg-schema-options');
+        if (schemaOptionsEl) {
+          schemaOptionsEl.innerHTML = data.available_schemas.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+      }
     }
 
 
@@ -4071,6 +4073,19 @@ async function checkPostgresConnection() {
 
       `;
 
+      if (data.available_databases && Array.isArray(data.available_databases)) {
+        const dbOptionsEl = document.getElementById('pg-dbname-options');
+        if (dbOptionsEl) {
+          dbOptionsEl.innerHTML = data.available_databases.map(d => `<option value="${d}">${d}</option>`).join('');
+        }
+      }
+      if (data.available_schemas && Array.isArray(data.available_schemas)) {
+        const schemaOptionsEl = document.getElementById('pg-schema-options');
+        if (schemaOptionsEl) {
+          schemaOptionsEl.innerHTML = data.available_schemas.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+      }
+
       showToast('Database connection check passed!', 'success');
 
     } else {
@@ -4317,9 +4332,9 @@ async function connectPostgres(event) {
 
 
 
-  const dbname = document.getElementById('pg-dbname-select').value.trim() || 'attendance';
+  const dbname = document.getElementById('pg-dbname-select').value.trim() || 'essl_attendance';
 
-  const schema = document.getElementById('pg-schema-input')?.value.trim() || 'public';
+  const schema = document.getElementById('pg-schema-input')?.value.trim() || 'essl_attendance';
 
   const user = document.getElementById('pg-user-input').value.trim() || 'postgres';
 
