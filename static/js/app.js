@@ -3047,22 +3047,59 @@ async function saveSettings() {
 
 
 // ================= TAB 6: DATABASE & SCHEMA =================
+window.currentActiveDb = 'essl_attendance';
+window.currentActiveSchema = 'essl_attendance';
+
+window.onPgInputChanged = function() {
+  const currentDbVal = document.getElementById('pg-dbname-select')?.value.trim() || '';
+  const currentSchemaVal = document.getElementById('pg-schema-input')?.value.trim() || '';
+  const btnConnect = document.getElementById('btn-pg-connect');
+  const activeBar = document.getElementById('pg-active-status-bar');
+  const activeDot = document.getElementById('pg-active-dot');
+  const activeMsg = document.getElementById('pg-active-msg');
+  const activePill = document.getElementById('pg-active-pill');
+
+  if (!btnConnect) return;
+
+  const isChanged = (currentDbVal && window.currentActiveDb && currentDbVal !== window.currentActiveDb) || 
+                    (currentSchemaVal && window.currentActiveSchema && currentSchemaVal !== window.currentActiveSchema);
+
+  if (isChanged) {
+    btnConnect.className = 'inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition cursor-pointer';
+    btnConnect.innerHTML = `<svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Connect / Switch to Schema "${currentSchemaVal || 'public'}"</span>`;
+    
+    if (activeBar && activeMsg && activePill) {
+      activeBar.className = 'p-3 rounded-lg border text-xs flex items-center justify-between transition-all bg-amber-50 border-amber-300 shadow-xs';
+      if (activeDot) activeDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping';
+      activeMsg.innerHTML = `<span class="font-bold text-amber-900">⚡ Unapplied Settings:</span> <span class="text-amber-800">Target Schema is <strong>"${currentSchemaVal}"</strong> (Active: "${window.currentActiveSchema || 'essl_attendance'}"). Click <strong>"Connect / Switch"</strong> or <strong>"Check DB Connection"</strong> to apply.</span>`;
+      activePill.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-600 text-white';
+      activePill.textContent = 'Unsaved Change';
+    }
+  } else {
+    btnConnect.className = 'inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition';
+    btnConnect.innerHTML = '<svg class="w-4 h-4 mr-1.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Active (Re-Sync)</span>';
+
+    if (activeBar && activeMsg && activePill) {
+      activeBar.className = 'p-3 rounded-lg border text-xs flex items-center justify-between transition-all bg-emerald-50/80 border-emerald-300 shadow-xs';
+      if (activeDot) activeDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+      activeMsg.innerHTML = `<span class="font-bold text-emerald-950">✓ CURRENT ACTIVE DB:</span> <span class="text-emerald-800">Connected to PostgreSQL ("local essl") &bull; Database: <strong>${window.currentActiveDb || 'essl_attendance'}</strong> &bull; Schema: <strong>${window.currentActiveSchema || 'essl_attendance'}</strong></span>`;
+      activePill.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white';
+      activePill.textContent = 'Active Engine';
+    }
+  }
+};
 
 async function loadDatabaseData() {
-
   try {
-
     const res = await fetch('/api/database/info');
-
     if (!res.ok) throw new Error('Failed to load database info');
-
     const data = await res.json();
 
-
-
     const isPostgres = data.is_postgres || data.dialect.includes('POSTGRES');
-
     const dbName = data.database_name || (isPostgres ? data.connection_url.split('/').pop() : 'attendance.db');
+
+    window.currentActiveDb = dbName;
+    window.currentActiveSchema = data.schema_name || (data.connection_details && data.connection_details.schema) || 'essl_attendance';
 
 
 
@@ -4065,10 +4102,14 @@ async function checkPostgresConnection() {
 
         `}
 
-        <div class="pt-2 flex items-center justify-between border-t border-emerald-200/60">
-
-          <span class="text-emerald-700 text-[11px]">Ready to activate: Click <strong>"Connect to local essl"</strong> to switch the active database.</span>
-
+        <div class="mt-3 pt-3 flex flex-wrap items-center justify-between border-t border-emerald-300 gap-2.5">
+          <div class="text-xs text-emerald-950 font-semibold">
+            Target Schema '<strong>${data.schema || schema}</strong>' verified on '<strong>${data.database || dbname}</strong>'!
+          </div>
+          <button type="button" onclick="connectPostgres(event)" id="btn-activate-verified-schema" class="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span>Activate & Switch to Schema "${data.schema || schema}" Now</span>
+          </button>
         </div>
 
       `;
@@ -4536,7 +4577,9 @@ async function connectPostgres(event) {
 
 
 
-    showToast(`Connected to PostgreSQL (${dbname})! Default schema created.`, 'success');
+    window.currentActiveDb = dbname;
+    window.currentActiveSchema = schema;
+    showToast(`Connected to PostgreSQL (${dbname})! Target schema '${schema}' active & saved.`, 'success');
 
 
 

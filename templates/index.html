@@ -2137,7 +2137,7 @@
 
               <div class="relative">
 
-                <input list="pg-dbname-options" id="pg-dbname-select" value="essl_attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="Type custom DB name (e.g. essl_attendance)">
+                <input list="pg-dbname-options" id="pg-dbname-select" oninput="onPgInputChanged()" value="essl_attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="Type custom DB name (e.g. essl_attendance)">
 
                 <datalist id="pg-dbname-options">
 
@@ -2165,7 +2165,7 @@
 
               <div class="relative">
 
-                <input list="pg-schema-options" id="pg-schema-input" value="essl_attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="Type custom schema name (e.g. essl_attendance)">
+                <input list="pg-schema-options" id="pg-schema-input" oninput="onPgInputChanged()" value="essl_attendance" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-brand-navy" placeholder="Type custom schema name (e.g. essl_attendance)">
 
                 <datalist id="pg-schema-options">
 
@@ -3247,7 +3247,7 @@
     </div>
 
 
-    <script src="/static/js/app.js?v=20261111_v2"></script>
+    <script src="/static/js/app.js?v=20261111_v3"></script>
 
 </body>
 

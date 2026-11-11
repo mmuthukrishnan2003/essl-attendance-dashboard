@@ -422,8 +422,21 @@ def connect_postgres_db(payload: PostgresConnectRequest, db: Session = Depends(g
     Connects to the local PostgreSQL server (named 'local essl' in pgAdmin),
     database 'essl_att' (or 'attendance'), with public schema.
     """
-    user_esc = urllib.parse.quote_plus(payload.user.strip())
-    pass_esc = urllib.parse.quote_plus(payload.password)
+    user = payload.user.strip() or "postgres"
+    password = payload.password or ""
+    if not password and engine.url.password and (engine.url.username == user or not payload.user):
+        password = engine.url.password
+    elif not password and DB_CONFIG_FILE.exists():
+        try:
+            with open(DB_CONFIG_FILE, "r") as f:
+                saved = json.load(f)
+                if saved.get("password"):
+                    password = saved["password"]
+        except Exception:
+            pass
+
+    user_esc = urllib.parse.quote_plus(user)
+    pass_esc = urllib.parse.quote_plus(password)
     
     host_raw = payload.host.strip() or "127.0.0.1"
     if ":" in host_raw:
@@ -671,6 +684,16 @@ def check_database_connection(payload: DbCheckRequest):
     dbname = (payload.dbname or "attendance").strip()
     user = (payload.user or "postgres").strip()
     password = payload.password or ""
+    if not password and engine.url.password and (engine.url.username == user or not payload.user):
+        password = engine.url.password
+    elif not password and DB_CONFIG_FILE.exists():
+        try:
+            with open(DB_CONFIG_FILE, "r") as f:
+                saved = json.load(f)
+                if saved.get("password"):
+                    password = saved["password"]
+        except Exception:
+            pass
 
     # Step 1: TCP Port Reachability Check
     is_port_open = test_tcp_port(host, port, timeout_sec=2.0)
