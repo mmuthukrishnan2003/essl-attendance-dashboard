@@ -1715,7 +1715,14 @@ function renderReportTable(records) {
 
           ` : isPresent ? `
 
-            <div class="font-mono font-semibold text-emerald-700">${r.first_in_time}</div>
+            ${r.is_late ? `
+              <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 font-mono" title="${r.late_text || 'Late arrival after 09:05 AM'}">
+                <span>${r.first_in_time}</span>
+                <span class="text-[9px] bg-amber-200 text-amber-900 px-1 rounded font-extrabold uppercase tracking-tight">Late</span>
+              </span>
+            ` : `
+              <div class="font-mono font-semibold text-emerald-700">${r.first_in_time}</div>
+            `}
 
             <div class="text-[10px] text-slate-400 truncate max-w-[120px] mx-auto">${r.first_in_device}</div>
 

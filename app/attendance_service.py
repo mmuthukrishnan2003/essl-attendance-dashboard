@@ -360,11 +360,7 @@ def calculate_daily_attendance_for_date(
         s_name = (getattr(emp, "shift_name", "") or "").upper()
         s_str = f"{s_code} {s_name}".upper()
 
-        if is_wfh or "VISIT" in name_upper or "VISIT" in code_upper or name_upper in ("ADMINISTER", "ADMIN") or code_upper in ("1", "OA"):
-            has_late_cutoff = False
-            has_early_cutoff = False
-        elif "CLEAN" in s_str or "CLEAN" in name_upper or "CLEAN" in code_upper:
-            # Cleaning team - flexible shift, no late arrival penalty
+        if is_wfh or "VISIT" in name_upper or "VISIT" in code_upper:
             has_late_cutoff = False
             has_early_cutoff = False
         elif is_night:
@@ -379,7 +375,7 @@ def calculate_daily_attendance_for_date(
             office_end_t = time(18, 0, 0)
             has_late_cutoff = True
             has_early_cutoff = True
-        elif "9_7" in s_str or "19:00" in s_str or "GENERAL" in s_str:
+        elif "9_7" in s_str or "19:00" in s_str or "GENERAL" in s_str or "ADMIN" in s_str or "CLEAN" in s_str:
             office_start_t = time(9, 0, 0)
             office_late_grace_t = time(9, 5, 0)
             office_end_t = time(19, 0, 0)
@@ -389,8 +385,12 @@ def calculate_daily_attendance_for_date(
             raw_start = getattr(emp, "shift_start", None) or (shift_obj.start_time if shift_obj else None)
             raw_end = getattr(emp, "shift_end", None) or (shift_obj.end_time if shift_obj else None)
             if raw_start in ("00:00", None, "") or raw_end in ("00:00", None, ""):
-                has_late_cutoff = False
-                has_early_cutoff = False
+                # Default office hours 09:00 - 19:00 with 09:05 grace
+                office_start_t = time(9, 0, 0)
+                office_late_grace_t = time(9, 5, 0)
+                office_end_t = time(19, 0, 0)
+                has_late_cutoff = True
+                has_early_cutoff = True
             else:
                 try:
                     p_s = [int(x) for x in str(raw_start).split(":")[:2]]
@@ -403,13 +403,16 @@ def calculate_daily_attendance_for_date(
                     office_late_grace_t = time(gh, gm)
                     has_late_cutoff = True
                 except Exception:
-                    has_late_cutoff = False
+                    office_start_t = time(9, 0, 0)
+                    office_late_grace_t = time(9, 5, 0)
+                    has_late_cutoff = True
                 try:
                     p_e = [int(x) for x in str(raw_end).split(":")[:2]]
                     office_end_t = time(p_e[0], p_e[1])
                     has_early_cutoff = True
                 except Exception:
-                    has_early_cutoff = False
+                    office_end_t = time(19, 0, 0)
+                    has_early_cutoff = True
 
         morning_ot_sec = 0
         evening_ot_sec = 0
