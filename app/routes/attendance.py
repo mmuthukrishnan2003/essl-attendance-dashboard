@@ -324,18 +324,36 @@ def add_manual_punch(payload: ManualPunchCreate, db: Session = Depends(get_db)):
 @router.post("/override")
 def set_attendance_override(payload: AttendanceOverrideCreate, db: Session = Depends(get_db)):
     """
-    Sets or resets an attendance status override (WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, AUTO).
+    Sets or resets an attendance status override (WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, LEAVE, HOLIDAY, AUTO).
+    Supports emp_code='ALL' to apply company-wide full day leave / status change.
     """
-    emp = db.query(Employee).filter(Employee.emp_code == payload.emp_code).first()
-    if not emp:
-        raise HTTPException(status_code=404, detail=f"Employee {payload.emp_code} not found")
-
     try:
         datetime.strptime(payload.date, "%Y-%m-%d")
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
     status_clean = payload.status.upper().strip()
+    valid_statuses = ("WFH", "WFH-FN", "WFH-AN", "PRESENT", "P", "ABSENT", "A", "WO", "LEAVE", "HOLIDAY", "AUTO", "CLEAR", "RESET")
+    if status_clean not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid status. Must be one of: WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, LEAVE, HOLIDAY, AUTO")
+
+    # If applying to ALL employees for this date
+    if payload.emp_code.upper() in ("ALL", "*", "ALL_EMPLOYEES"):
+        all_emps = db.query(Employee.emp_code).filter(Employee.is_active == True).all()
+        target_codes = [e[0] for e in all_emps]
+        batch_payload = AttendanceBatchOverrideCreate(
+            emp_codes=target_codes,
+            start_date=payload.date,
+            end_date=payload.date,
+            status=payload.status,
+            notes=payload.notes
+        )
+        return batch_attendance_override(payload=batch_payload, db=db)
+
+    emp = db.query(Employee).filter(Employee.emp_code == payload.emp_code).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail=f"Employee {payload.emp_code} not found")
+
     if status_clean in ("AUTO", "CLEAR", "RESET"):
         existing = db.query(AttendanceOverride).filter(
             AttendanceOverride.emp_code == payload.emp_code,
@@ -346,17 +364,15 @@ def set_attendance_override(payload: AttendanceOverrideCreate, db: Session = Dep
             db.commit()
         return {"message": "Attendance status reset to auto biometric calculation", "status": "AUTO", "emp_code": payload.emp_code, "date": payload.date}
 
-    valid_statuses = ("WFH", "WFH-FN", "WFH-AN", "PRESENT", "P", "ABSENT", "A", "WO")
-    if status_clean not in valid_statuses:
-        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, WO, AUTO")
-
     # Standardize
     if status_clean in ("P", "PRESENT"):
         standard_status = "P"
     elif status_clean in ("A", "ABSENT"):
         standard_status = "A"
+    elif status_clean in ("WO", "LEAVE", "HOLIDAY", "WEEK_OFF", "OFF"):
+        standard_status = "WO"
     else:
-        standard_status = status_clean  # WFH, WFH-FN, WFH-AN, WO
+        standard_status = status_clean  # WFH, WFH-FN, WFH-AN
 
     existing = db.query(AttendanceOverride).filter(
         AttendanceOverride.emp_code == payload.emp_code,
@@ -385,7 +401,7 @@ def set_attendance_override(payload: AttendanceOverrideCreate, db: Session = Dep
 @router.post("/batch-override")
 def batch_attendance_override(payload: AttendanceBatchOverrideCreate, db: Session = Depends(get_db)):
     """
-    Batch applies an attendance status override across multiple employees and date range.
+    Batch applies an attendance status override across multiple employees (or ALL employees) and date range.
     """
     try:
         s_date = datetime.strptime(payload.start_date, "%Y-%m-%d").date()
@@ -401,14 +417,24 @@ def batch_attendance_override(payload: AttendanceBatchOverrideCreate, db: Sessio
         standard_status = "P"
     elif status_clean in ("A", "ABSENT"):
         standard_status = "A"
+    elif status_clean in ("WO", "LEAVE", "HOLIDAY", "WEEK_OFF", "OFF"):
+        standard_status = "WO"
     else:
         standard_status = status_clean
+
+    # Resolve target employees: if "ALL" or empty list, select all active employees
+    raw_codes = payload.emp_codes or []
+    if not raw_codes or any(str(c).upper() in ("ALL", "*", "ALL_EMPLOYEES") for c in raw_codes):
+        all_emps = db.query(Employee.emp_code).filter(Employee.is_active == True).all()
+        target_emp_codes = [e[0] for e in all_emps]
+    else:
+        target_emp_codes = raw_codes
 
     cur_d = s_date
     updated_count = 0
     while cur_d <= e_date:
         d_str = cur_d.strftime("%Y-%m-%d")
-        for emp_code in payload.emp_codes:
+        for emp_code in target_emp_codes:
             if status_clean in ("AUTO", "CLEAR", "RESET"):
                 existing = db.query(AttendanceOverride).filter(
                     AttendanceOverride.emp_code == emp_code,
@@ -438,7 +464,7 @@ def batch_attendance_override(payload: AttendanceBatchOverrideCreate, db: Sessio
         cur_d += timedelta(days=1)
 
     db.commit()
-    return {"message": f"Batch updated {updated_count} attendance records to {standard_status}"}
+    return {"message": f"Successfully updated {updated_count} attendance records to {standard_status} for {len(target_emp_codes)} employee(s)"}
 
 
 @router.get("/overrides")

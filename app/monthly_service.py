@@ -25,7 +25,7 @@ def get_monthly_attendance_matrix(
     Returns status per day:
       'P' = Present (punched in), includes first_in and last_out times
       'WFH' = Work From Home (WFH shift assigned)
-      'WO' = Weekly Off (Sundays)
+      'WO' = Weekly Off (Saturdays & Sundays) or Approved Company Leave
       'A' = Absent (working day without punch)
     """
     num_days = calendar.monthrange(year, month)[1]
@@ -93,13 +93,14 @@ def get_monthly_attendance_matrix(
 
     for d in range(1, num_days + 1):
         cur_date = date(year, month, d)
-        is_sun = (cur_date.weekday() == 6)
-        if not is_sun:
+        # Every Saturday (5) and Sunday (6) is a leave / week off
+        is_weekend = (cur_date.weekday() in (5, 6))
+        if not is_weekend:
             working_days_count += 1
         days_meta.append({
             "day": d,
             "weekday": cur_date.strftime("%a"),
-            "is_weekend": is_sun,
+            "is_weekend": is_weekend,
             "date": cur_date.strftime("%Y-%m-%d"),
             "is_past_or_today": (cur_date <= today)
         })
@@ -143,7 +144,8 @@ def get_monthly_attendance_matrix(
         for d in range(1, num_days + 1):
             cur_date = date(year, month, d)
             cur_date_str = cur_date.strftime("%Y-%m-%d")
-            is_sun = (cur_date.weekday() == 6)
+            # Every Saturday (5) and Sunday (6) is a leave / week off (WO)
+            is_weekend = (cur_date.weekday() in (5, 6))
             punches_list = emp_day_punches[emp.emp_code].get(d, [])
             ovr = emp_overrides.get(emp.emp_code, {}).get(d)
             is_overridden = bool(ovr)
@@ -152,7 +154,7 @@ def get_monthly_attendance_matrix(
             day_late_mins = 0
 
             # Default calculation from punches & shifts
-            if is_sun:
+            if is_weekend:
                 default_status = "WO"
                 f_in = punches_list[0].strftime("%H:%M:%S") if punches_list else None
                 l_out = punches_list[-1].strftime("%H:%M:%S") if len(punches_list) > 1 else f_in
@@ -165,9 +167,7 @@ def get_monthly_attendance_matrix(
                 emp_n_up = (getattr(emp, "name", "") or "").upper()
                 emp_c_up = str(getattr(emp, "emp_code", "") or "").upper()
                 emp_s_up = f"{getattr(emp, 'shift_code', '') or ''} {getattr(emp, 'shift_name', '') or ''}".upper()
-                is_exempt = ("CLEAN" in emp_n_up or "CLEAN" in emp_c_up or "CLEAN" in emp_s_up or
-                             "VISIT" in emp_n_up or "VISIT" in emp_c_up or
-                             emp_n_up in ("ADMINISTER", "ADMIN") or emp_c_up in ("1", "OA"))
+                is_exempt = ("VISIT" in emp_n_up or "VISIT" in emp_c_up)
 
                 if not is_exempt and f_in_dt.time() > time(9, 5, 0):
                     day_is_late = True
@@ -210,7 +210,7 @@ def get_monthly_attendance_matrix(
                     abs_cnt += 1
                     day_is_late = False
                     day_late_mins = 0
-                elif status == "WO":
+                elif status in ("WO", "LEAVE", "HOLIDAY", "WEEK_OFF", "OFF"):
                     status = "WO"
                     wo_cnt += 1
                     day_is_late = False
@@ -235,8 +235,8 @@ def get_monthly_attendance_matrix(
                 "first_in": f_in,
                 "last_out": l_out,
                 "punches_count": len(punches_list),
-                "is_late": day_is_late if punches_list and not is_sun and status == "P" else False,
-                "late_mins": day_late_mins if punches_list and not is_sun and status == "P" else 0,
+                "is_late": day_is_late if punches_list and not is_weekend and status == "P" else False,
+                "late_mins": day_late_mins if punches_list and not is_weekend and status == "P" else 0,
                 "is_overridden": is_overridden,
                 "override_status": ovr.status if ovr else None,
                 "override_notes": override_notes
@@ -598,25 +598,19 @@ def get_shift_permission_rules(emp):
     name_upper = (getattr(emp, "name", "") or "").upper()
     code_upper = str(getattr(emp, "emp_code", "") or "").upper()
     
-    # Exclude visitors, test, or cleaning accounts
+    # Exclude visitors
     if "VISIT" in name_upper or "VISIT" in code_upper:
         return {"is_applicable": False, "shift_name": "Visitor"}
-    if "CLEAN" in name_upper or "CLEAN" in code_upper:
-        return {"is_applicable": False, "shift_name": "Cleaning Team"}
-    if name_upper in ("ADMINISTER", "ADMIN") or code_upper in ("1", "OA"):
-        return {"is_applicable": False, "shift_name": "System"}
 
     s_code = (getattr(emp, "shift_code", "") or "").upper()
     s_name = (getattr(emp, "shift_name", "") or "").upper()
     s_str = f"{s_code} {s_name} {getattr(emp, 'shift_end', '') or ''}".upper()
 
-    # Exclude Night Shift, WFH, Cleaning Team
+    # Exclude Night Shift, WFH
     if "NIGHT" in s_str:
         return {"is_applicable": False, "shift_name": "Night Shift"}
     if "WFH" in s_str or "REMOTE" in s_str:
         return {"is_applicable": False, "shift_name": "Work From Home"}
-    if "CLEAN" in s_str:
-        return {"is_applicable": False, "shift_name": "Cleaning Team"}
 
     # Standard Shift (9-6)
     if "9_6" in s_str or "18:00" in s_str or "STANDARD" in s_str:
@@ -631,11 +625,11 @@ def get_shift_permission_rules(emp):
             "is_applicable": True
         }
 
-    # General Shift (9-7)
-    if "9_7" in s_str or "19:00" in s_str or "GENERAL" in s_str:
+    # General Shift / Admin & Cleaning Team (9-7)
+    if "9_7" in s_str or "19:00" in s_str or "GENERAL" in s_str or "ADMIN" in s_str or "CLEAN" in s_str:
         return {
             "shift_code": "SHIFT_9_7",
-            "shift_name": "General Shift (09:00 AM - 07:00 PM)",
+            "shift_name": getattr(emp, "shift_name", None) or "General Shift (09:00 AM - 07:00 PM)",
             "start_time": time(9, 0, 0),
             "grace_time": time(9, 5, 0),
             "end_time": time(19, 0, 0),
@@ -644,7 +638,32 @@ def get_shift_permission_rules(emp):
             "is_applicable": True
         }
 
-    return {"is_applicable": False, "shift_name": getattr(emp, "shift_name", "Other")}
+    # Dynamic fallback based on employee shift start/end
+    raw_start = getattr(emp, "shift_start", "09:00") or "09:00"
+    raw_end = getattr(emp, "shift_end", "19:00") or "19:00"
+    try:
+        p_s = [int(x) for x in str(raw_start).split(":")[:2]]
+        st = time(p_s[0], p_s[1])
+        gm = p_s[1] + 5
+        gh = p_s[0]
+        if gm >= 60:
+            gh = (gh + 1) % 24
+            gm -= 60
+        gt = time(gh, gm)
+        p_e = [int(x) for x in str(raw_end).split(":")[:2]]
+        et = time(p_e[0], p_e[1])
+        return {
+            "shift_code": getattr(emp, "shift_code", "CUSTOM") or "CUSTOM",
+            "shift_name": getattr(emp, "shift_name", "Assigned Shift") or "Assigned Shift",
+            "start_time": st,
+            "grace_time": gt,
+            "end_time": et,
+            "end_label": et.strftime("%I:%M %p"),
+            "earliest_exit": time(max(0, p_e[0] - 4), p_e[1]),
+            "is_applicable": True
+        }
+    except Exception:
+        return {"is_applicable": False, "shift_name": getattr(emp, "shift_name", "Other")}
 
 
 def get_monthly_exceeded_report(
@@ -747,6 +766,8 @@ def get_monthly_exceeded_report(
         emp_dates = []
 
         for dt in sorted(days.keys()):
+            if dt.weekday() in (5, 6):
+                continue  # Skip Saturdays and Sundays (leaves / weekly off)
             p_list = days[dt]
             # Deduplicate scans within 45 seconds
             v_punches = []
@@ -1141,9 +1162,7 @@ def get_monthly_late_count_report(
         s_name = (getattr(emp, "shift_name", "") or "").upper()
         s_str = f"{s_code} {s_name}".upper()
 
-        if "VISIT" in name_upper or "VISIT" in code_upper or name_upper in ("ADMINISTER", "ADMIN") or code_upper in ("1", "OA"):
-            continue
-        if "CLEAN" in s_str or "CLEAN" in name_upper or "CLEAN" in code_upper:
+        if "VISIT" in name_upper or "VISIT" in code_upper:
             continue
         if "WFH" in s_str:
             continue
@@ -1156,6 +1175,8 @@ def get_monthly_late_count_report(
         emp_incidents = []
 
         for dt in sorted(days.keys()):
+            if dt.weekday() in (5, 6):
+                continue  # Skip Saturdays and Sundays (leaves / weekly off)
             p_list = days[dt]
             v_punches = []
             for p in p_list:

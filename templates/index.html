@@ -1137,12 +1137,17 @@
             </div>
           </div>
 
-          <!-- Quick Action to Change Status -->
+          <!-- Quick Action to Change Status & Declare Full Day Leave -->
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mark Attendance</label>
-            <button type="button" onclick="openBulkStatusModalFromToolbar()" class="px-3.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer" title="Change employee attendance to WFH, WFH-FN, WFH-AN, Present, or Absent">
-              <span>🏠 Change Status (WFH / FN / AN)</span>
-            </button>
+            <div class="flex items-center space-x-2">
+              <button type="button" onclick="openFullDayLeaveForAllModal()" class="px-3.5 py-1 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer" title="Select a date and change / declare full day leave (or holiday) for ALL employees">
+                <span>🏖️ Full Day Leave (All)</span>
+              </button>
+              <button type="button" onclick="openBulkStatusModalFromToolbar()" class="px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer" title="Change individual employee attendance to WFH, Present, Absent, etc.">
+                <span>🏠 Change Status</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -3092,10 +3097,10 @@
 
 
     <!-- MODAL: CHANGE ATTENDANCE STATUS (WFH, WFH-FN, WFH-AN, PRESENT, ABSENT, AUTO) -->
-    <div id="modal-change-attendance-status" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs hidden p-4">
-      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div id="modal-change-attendance-status" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs hidden p-3 md:p-4 overflow-y-auto">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-auto">
         <!-- Modal Header -->
-        <div class="bg-gradient-to-r from-brand-navy to-blue-900 px-6 py-4 text-white flex items-center justify-between">
+        <div class="bg-gradient-to-r from-brand-navy to-blue-900 px-5 py-3.5 text-white flex items-center justify-between shrink-0">
           <div class="flex items-center space-x-2.5">
             <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-lg">📝</div>
             <div>
@@ -3103,13 +3108,14 @@
               <p id="modal-status-emp-sub" class="text-xs text-blue-100 mt-0.5">Emp: -- • Date: --</p>
             </div>
           </div>
-          <button type="button" onclick="closeModal('modal-change-attendance-status')" class="text-white/70 hover:text-white text-lg leading-none transition">&times;</button>
+          <button type="button" onclick="closeModal('modal-change-attendance-status')" class="text-white/70 hover:text-white text-xl leading-none transition cursor-pointer">&times;</button>
         </div>
 
-        <!-- Modal Body -->
-        <form id="form-change-status" onsubmit="submitAttendanceStatusChange(event)" class="p-6 space-y-4 text-xs">
-          <input type="hidden" id="status-change-emp-code" />
-          <input type="hidden" id="status-change-date" />
+        <!-- Modal Body & Footer in Form -->
+        <form id="form-change-status" onsubmit="submitAttendanceStatusChange(event)" class="flex flex-col flex-1 min-h-0 text-xs">
+          <div class="p-5 space-y-3.5 overflow-y-auto flex-1">
+            <input type="hidden" id="status-change-emp-code" />
+            <input type="hidden" id="status-change-date" />
 
           <!-- Employee and Date Selector Row -->
           <div id="status-change-picker-row" class="grid grid-cols-2 gap-3 pb-2 border-b border-slate-100">
@@ -3140,7 +3146,18 @@
           <div>
             <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Select New Status</label>
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" onclick="selectStatusOption('WFH')" id="opt-status-wfh" class="status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/40 text-left transition flex flex-col justify-between">
+              <button type="button" onclick="selectStatusOption('WO')" id="opt-status-wo" class="status-option-btn p-2.5 rounded-xl border-2 border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 text-left transition flex flex-col justify-between cursor-pointer">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-base">🏖️</span>
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800">Week Off / Leave</span>
+                </div>
+                <div class="mt-1.5">
+                  <div class="font-bold text-slate-800 text-xs">Leave / Week Off (WO)</div>
+                  <div class="text-[10px] text-slate-500">Holiday / Full Day Leave</div>
+                </div>
+              </button>
+
+              <button type="button" onclick="selectStatusOption('WFH')" id="opt-status-wfh" class="status-option-btn p-2.5 rounded-xl border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/40 text-left transition flex flex-col justify-between cursor-pointer">
                 <div class="flex items-center justify-between w-full">
                   <span class="text-base">🏠</span>
                   <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-100 text-indigo-800">Full Day</span>
@@ -3206,7 +3223,7 @@
                 </div>
               </button>
             </div>
-            <input type="hidden" id="selected-status-choice" value="WFH" />
+            <input type="hidden" id="selected-status-choice" value="WO" />
           </div>
 
           <!-- Notes / Reason -->
@@ -3215,19 +3232,24 @@
             <input type="text" id="status-change-notes" placeholder="e.g. Approved by HR / Manager, Client site work, etc." class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-navy" />
           </div>
 
-          <!-- Modal Footer Buttons -->
-          <div class="pt-2 flex items-center justify-end space-x-2 border-t border-slate-100">
-            <button type="button" onclick="closeModal('modal-change-attendance-status')" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">Cancel</button>
-            <button type="submit" id="btn-save-status-change" class="px-5 py-2 text-xs font-bold rounded-lg bg-brand-navy hover:bg-blue-900 text-white shadow-sm transition flex items-center space-x-1.5">
-              <span>Save Status</span>
+        </div>
+
+        <!-- Modal Footer (Fixed at bottom, ALWAYS VISIBLE!) -->
+        <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+          <span class="text-[11px] text-slate-500 font-medium">Click Save to apply immediately</span>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="closeModal('modal-change-attendance-status')" class="px-4 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 transition cursor-pointer">Cancel</button>
+            <button type="submit" id="btn-save-status-change" class="px-5 py-2 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+              <span>Apply Leave for All Employees</span>
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
+  </div>
 
 
-    <script src="/static/js/app.js?v=20261111_v4"></script>
+  <script src="/static/js/app.js?v=20261119_v10"></script>
 
 </body>
 
