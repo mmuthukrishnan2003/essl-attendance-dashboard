@@ -16,3 +16,7 @@ attendance.db
 
 # Environment secrets
 .env
+
+# Local runtime data
+attendance.db
+sessions.json
