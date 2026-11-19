@@ -55,8 +55,8 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         past_trend = []
         for day_offset in range(6, 0, -1):
             day_date = today - timedelta(days=day_offset)
-            if day_date.weekday() == 6:
-                continue
+            if day_date.weekday() in (5, 6):
+                continue  # Skip Saturdays and Sundays
             day_data = calculate_daily_attendance_for_date(target_date=day_date, db=db)
             present_cnt = day_data.get("present_count", day_data.get("punched_in_count", 0))
             total_cnt = day_data.get("total_employees", 0)

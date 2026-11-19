@@ -25,7 +25,7 @@ def get_monthly_attendance_matrix(
     Returns status per day:
       'P' = Present (punched in), includes first_in and last_out times
       'WFH' = Work From Home (WFH shift assigned)
-      'WO' = Weekly Off (Sundays)
+      'WO' = Weekly Off (Saturdays & Sundays) or Approved Company Leave
       'A' = Absent (working day without punch)
     """
     num_days = calendar.monthrange(year, month)[1]
@@ -93,13 +93,14 @@ def get_monthly_attendance_matrix(
 
     for d in range(1, num_days + 1):
         cur_date = date(year, month, d)
-        is_sun = (cur_date.weekday() == 6)
-        if not is_sun:
+        # Every Saturday (5) and Sunday (6) is a leave / week off
+        is_weekend = (cur_date.weekday() in (5, 6))
+        if not is_weekend:
             working_days_count += 1
         days_meta.append({
             "day": d,
             "weekday": cur_date.strftime("%a"),
-            "is_weekend": is_sun,
+            "is_weekend": is_weekend,
             "date": cur_date.strftime("%Y-%m-%d"),
             "is_past_or_today": (cur_date <= today)
         })
@@ -143,7 +144,8 @@ def get_monthly_attendance_matrix(
         for d in range(1, num_days + 1):
             cur_date = date(year, month, d)
             cur_date_str = cur_date.strftime("%Y-%m-%d")
-            is_sun = (cur_date.weekday() == 6)
+            # Every Saturday (5) and Sunday (6) is a leave / week off (WO)
+            is_weekend = (cur_date.weekday() in (5, 6))
             punches_list = emp_day_punches[emp.emp_code].get(d, [])
             ovr = emp_overrides.get(emp.emp_code, {}).get(d)
             is_overridden = bool(ovr)
@@ -152,7 +154,7 @@ def get_monthly_attendance_matrix(
             day_late_mins = 0
 
             # Default calculation from punches & shifts
-            if is_sun:
+            if is_weekend:
                 default_status = "WO"
                 f_in = punches_list[0].strftime("%H:%M:%S") if punches_list else None
                 l_out = punches_list[-1].strftime("%H:%M:%S") if len(punches_list) > 1 else f_in
@@ -208,7 +210,7 @@ def get_monthly_attendance_matrix(
                     abs_cnt += 1
                     day_is_late = False
                     day_late_mins = 0
-                elif status == "WO":
+                elif status in ("WO", "LEAVE", "HOLIDAY", "WEEK_OFF", "OFF"):
                     status = "WO"
                     wo_cnt += 1
                     day_is_late = False
@@ -233,8 +235,8 @@ def get_monthly_attendance_matrix(
                 "first_in": f_in,
                 "last_out": l_out,
                 "punches_count": len(punches_list),
-                "is_late": day_is_late if punches_list and not is_sun and status == "P" else False,
-                "late_mins": day_late_mins if punches_list and not is_sun and status == "P" else 0,
+                "is_late": day_is_late if punches_list and not is_weekend and status == "P" else False,
+                "late_mins": day_late_mins if punches_list and not is_weekend and status == "P" else 0,
                 "is_overridden": is_overridden,
                 "override_status": ovr.status if ovr else None,
                 "override_notes": override_notes
@@ -764,6 +766,8 @@ def get_monthly_exceeded_report(
         emp_dates = []
 
         for dt in sorted(days.keys()):
+            if dt.weekday() in (5, 6):
+                continue  # Skip Saturdays and Sundays (leaves / weekly off)
             p_list = days[dt]
             # Deduplicate scans within 45 seconds
             v_punches = []
@@ -1171,6 +1175,8 @@ def get_monthly_late_count_report(
         emp_incidents = []
 
         for dt in sorted(days.keys()):
+            if dt.weekday() in (5, 6):
+                continue  # Skip Saturdays and Sundays (leaves / weekly off)
             p_list = days[dt]
             v_punches = []
             for p in p_list:

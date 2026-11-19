@@ -6173,7 +6173,7 @@ function renderMonthlyMusterTable(data) {
   daysMeta.forEach(d => {
     const weekendClass = d.is_weekend ? 'bg-amber-100/70 text-amber-900 font-bold' : 'bg-slate-50 text-slate-700';
     const minW = monthlyGridMode === 'inout' ? 'min-w-[54px]' : 'min-w-[36px]';
-    row2 += `<th class="px-1 py-1 border-r border-slate-200 text-center text-[10px] ${minW} ${weekendClass}" title="${d.weekday}">
+    row2 += `<th onclick="openFullDayLeaveForAllModal('${d.date}')" class="px-1 py-1 border-r border-slate-200 text-center text-[10px] ${minW} ${weekendClass} cursor-pointer hover:bg-amber-200/90 transition select-none" title="Day ${d.day} (${d.weekday}) • Click to declare full day leave for ALL employees">
       <div class="font-bold">${d.day}</div>
       <div class="text-[8px] font-normal opacity-80 uppercase">${d.weekday.slice(0, 2)}</div>
       ${monthlyGridMode === 'inout' ? `<div class="text-[8px] font-mono flex justify-between px-1 border-t border-slate-200/50 mt-0.5 pt-0.5"><span class="text-emerald-700 font-bold">IN</span><span class="text-blue-700 font-bold">OUT</span></div>` : ''}
@@ -6489,11 +6489,13 @@ function populateStatusModalEmpSelect(selectedCode) {
   const sel = document.getElementById('status-change-emp-select');
   if (!sel) return;
   const emps = (monthlyMusterCache && monthlyMusterCache.records) ? monthlyMusterCache.records : (allEmployeesCache || []);
-  sel.innerHTML = emps.map(e => `
+  let html = `<option value="ALL" ${String(selectedCode).toUpperCase() === 'ALL' ? 'selected' : ''}>🌟 ALL EMPLOYEES (Entire Office - Full Day)</option>`;
+  html += emps.map(e => `
     <option value="${e.emp_code}" ${String(e.emp_code) === String(selectedCode) ? 'selected' : ''}>
       ${e.emp_code} - ${e.name}
     </option>
   `).join('');
+  sel.innerHTML = html;
 }
 
 function openBulkStatusModalFromToolbar() {
@@ -6510,26 +6512,92 @@ function openBulkStatusModalFromToolbar() {
   openAttendanceStatusModal(firstEmp.emp_code, firstEmp.name, dateStr, 'P', '', '');
 }
 
+function openFullDayLeaveForAllModal(targetDate) {
+  const m = document.getElementById('monthly-month-select')?.value || (new Date().getMonth() + 1);
+  const y = document.getElementById('monthly-year-select')?.value || new Date().getFullYear();
+  const dateStr = targetDate || `${y}-${String(m).padStart(2, '0')}-01`;
+
+  const codeEl = document.getElementById('status-change-emp-code');
+  const dateEl = document.getElementById('status-change-date');
+  const subEl = document.getElementById('modal-status-emp-sub');
+  const badgeEl = document.getElementById('status-change-current-badge');
+  const punchesEl = document.getElementById('status-change-punches-info');
+  const notesEl = document.getElementById('status-change-notes');
+  const dateInput = document.getElementById('status-change-date-input');
+  const saveBtn = document.getElementById('btn-save-status-change');
+
+  if (codeEl) codeEl.value = 'ALL';
+  if (dateEl) dateEl.value = dateStr;
+  if (dateInput) dateInput.value = dateStr;
+  if (subEl) subEl.textContent = `All Employees (Entire Office) • ${dateStr}`;
+
+  populateStatusModalEmpSelect('ALL');
+
+  if (badgeEl) {
+    badgeEl.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300';
+    badgeEl.textContent = '🌟 All Active Employees';
+  }
+
+  if (punchesEl) {
+    punchesEl.textContent = 'Leave will apply to all active employees for this full day';
+  }
+
+  if (notesEl) notesEl.value = 'Company Holiday / Declared Leave';
+
+  // Pre-select WO (Leave / Week Off)
+  selectStatusOption('WO');
+
+  if (saveBtn) saveBtn.innerHTML = '<span>Apply Leave for All Employees</span>';
+
+  openModal('modal-change-attendance-status');
+}
+
 function onStatusModalEmpSelect(empCode) {
+  const dateStr = document.getElementById('status-change-date-input')?.value;
+  const codeEl = document.getElementById('status-change-emp-code');
+  const subEl = document.getElementById('modal-status-emp-sub');
+  const badgeEl = document.getElementById('status-change-current-badge');
+  const punchesEl = document.getElementById('status-change-punches-info');
+  const saveBtn = document.getElementById('btn-save-status-change');
+
+  if (codeEl) codeEl.value = empCode;
+
+  if (String(empCode).toUpperCase() === 'ALL') {
+    if (subEl) subEl.textContent = `All Employees (Entire Office) • ${dateStr || '--'}`;
+    if (badgeEl) {
+      badgeEl.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300';
+      badgeEl.textContent = '🌟 All Active Employees';
+    }
+    if (punchesEl) punchesEl.textContent = 'Status change will apply to all active employees for this full day';
+    if (saveBtn) saveBtn.innerHTML = '<span>Apply Leave for All Employees</span>';
+    return;
+  }
+
+  if (saveBtn) saveBtn.innerHTML = '<span>Save Status</span>';
+
   const emps = (monthlyMusterCache && monthlyMusterCache.records) ? monthlyMusterCache.records : (allEmployeesCache || []);
   const emp = emps.find(e => String(e.emp_code) === String(empCode));
-  const dateStr = document.getElementById('status-change-date-input')?.value;
   if (emp && dateStr) {
-    const codeEl = document.getElementById('status-change-emp-code');
-    const subEl = document.getElementById('modal-status-emp-sub');
-    if (codeEl) codeEl.value = emp.emp_code;
     if (subEl) subEl.textContent = `${emp.name} (#${emp.emp_code}) • ${dateStr}`;
   }
 }
 
 function onStatusModalDateSelect(dateVal) {
   const empCode = document.getElementById('status-change-emp-select')?.value;
+  const codeEl = document.getElementById('status-change-emp-code');
+  const dateEl = document.getElementById('status-change-date');
+  const subEl = document.getElementById('modal-status-emp-sub');
+
+  if (dateEl) dateEl.value = dateVal;
+
+  if (String(empCode).toUpperCase() === 'ALL' || codeEl?.value === 'ALL') {
+    if (subEl) subEl.textContent = `All Employees (Entire Office) • ${dateVal}`;
+    return;
+  }
+
   const emps = (monthlyMusterCache && monthlyMusterCache.records) ? monthlyMusterCache.records : (allEmployeesCache || []);
   const emp = emps.find(e => String(e.emp_code) === String(empCode));
   if (emp && dateVal) {
-    const dateEl = document.getElementById('status-change-date');
-    const subEl = document.getElementById('modal-status-emp-sub');
-    if (dateEl) dateEl.value = dateVal;
     if (subEl) subEl.textContent = `${emp.name} (#${emp.emp_code}) • ${dateVal}`;
   }
 }
@@ -6542,39 +6610,52 @@ function openAttendanceStatusModal(empCode, empName, dateStr, currentStatus, fir
   const punchesEl = document.getElementById('status-change-punches-info');
   const notesEl = document.getElementById('status-change-notes');
   const dateInput = document.getElementById('status-change-date-input');
+  const saveBtn = document.getElementById('btn-save-status-change');
 
   if (codeEl) codeEl.value = empCode;
   if (dateEl) dateEl.value = dateStr;
   if (dateInput) dateInput.value = dateStr;
-  if (subEl) subEl.textContent = `${empName} (#${empCode}) • ${dateStr}`;
 
-  populateStatusModalEmpSelect(empCode);
+  if (String(empCode).toUpperCase() === 'ALL') {
+    if (subEl) subEl.textContent = `All Employees (Entire Office) • ${dateStr}`;
+    if (badgeEl) {
+      badgeEl.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300';
+      badgeEl.textContent = '🌟 All Active Employees';
+    }
+    if (punchesEl) punchesEl.textContent = 'Status change will apply to all active employees for this full day';
+    if (saveBtn) saveBtn.innerHTML = '<span>Apply Leave for All Employees</span>';
+  } else {
+    if (subEl) subEl.textContent = `${empName} (#${empCode}) • ${dateStr}`;
+    if (saveBtn) saveBtn.innerHTML = '<span>Save Status</span>';
 
-  if (badgeEl) {
-    let bClass = 'bg-slate-200 text-slate-800';
-    let bText = currentStatus || '--';
-    if (currentStatus === 'P') { bClass = 'bg-emerald-100 text-emerald-800'; bText = 'Present (P)'; }
-    else if (currentStatus === 'A') { bClass = 'bg-rose-100 text-rose-800'; bText = 'Absent (A)'; }
-    else if (currentStatus === 'WFH') { bClass = 'bg-indigo-100 text-indigo-800'; bText = 'WFH (Full Day)'; }
-    else if (currentStatus === 'WFH-FN') { bClass = 'bg-purple-100 text-purple-800'; bText = 'WFH-FN (Forenoon)'; }
-    else if (currentStatus === 'WFH-AN') { bClass = 'bg-sky-100 text-sky-800'; bText = 'WFH-AN (Afternoon)'; }
-    else if (currentStatus === 'WO') { bClass = 'bg-slate-100 text-slate-700'; bText = 'Week Off (WO)'; }
-    badgeEl.className = `px-2.5 py-0.5 rounded text-[11px] font-bold ${bClass}`;
-    badgeEl.textContent = bText;
-  }
+    if (badgeEl) {
+      let bClass = 'bg-slate-200 text-slate-800';
+      let bText = currentStatus || '--';
+      if (currentStatus === 'P') { bClass = 'bg-emerald-100 text-emerald-800'; bText = 'Present (P)'; }
+      else if (currentStatus === 'A') { bClass = 'bg-rose-100 text-rose-800'; bText = 'Absent (A)'; }
+      else if (currentStatus === 'WFH') { bClass = 'bg-indigo-100 text-indigo-800'; bText = 'WFH (Full Day)'; }
+      else if (currentStatus === 'WFH-FN') { bClass = 'bg-purple-100 text-purple-800'; bText = 'WFH-FN (Forenoon)'; }
+      else if (currentStatus === 'WFH-AN') { bClass = 'bg-sky-100 text-sky-800'; bText = 'WFH-AN (Afternoon)'; }
+      else if (currentStatus === 'WO') { bClass = 'bg-amber-100 text-amber-800'; bText = 'Leave / Week Off (WO)'; }
+      badgeEl.className = `px-2.5 py-0.5 rounded text-[11px] font-bold ${bClass}`;
+      badgeEl.textContent = bText;
+    }
 
-  if (punchesEl) {
-    if (firstIn && firstIn !== '--' && !firstIn.includes('WFH')) {
-      punchesEl.textContent = `IN: ${firstIn} | OUT: ${lastOut || '--'}`;
-    } else {
-      punchesEl.textContent = 'No biometric punches logged on this date';
+    if (punchesEl) {
+      if (firstIn && firstIn !== '--' && !firstIn.includes('WFH')) {
+        punchesEl.textContent = `IN: ${firstIn} | OUT: ${lastOut || '--'}`;
+      } else {
+        punchesEl.textContent = 'No biometric punches logged on this date';
+      }
     }
   }
+
+  populateStatusModalEmpSelect(empCode);
 
   if (notesEl) notesEl.value = '';
 
   // Pre-select choice
-  selectStatusOption(currentStatus && currentStatus.startsWith('WFH') ? currentStatus : 'WFH');
+  selectStatusOption(currentStatus && currentStatus.startsWith('WFH') ? currentStatus : (currentStatus === 'WO' ? 'WO' : 'WO'));
 
   openModal('modal-change-attendance-status');
 }
@@ -6584,31 +6665,36 @@ function selectStatusOption(status) {
   if (choiceEl) choiceEl.value = status;
 
   const btnMap = {
+    'WO': { id: 'opt-status-wo', activeBorder: 'border-amber-600 bg-amber-50/70 shadow-xs ring-2 ring-amber-200' },
     'WFH': { id: 'opt-status-wfh', activeBorder: 'border-indigo-600 bg-indigo-50/70 shadow-xs ring-2 ring-indigo-200' },
     'WFH-FN': { id: 'opt-status-wfh-fn', activeBorder: 'border-purple-600 bg-purple-50/70 shadow-xs ring-2 ring-purple-200' },
     'WFH-AN': { id: 'opt-status-wfh-an', activeBorder: 'border-sky-600 bg-sky-50/70 shadow-xs ring-2 ring-sky-200' },
     'PRESENT': { id: 'opt-status-present', activeBorder: 'border-emerald-600 bg-emerald-50/70 shadow-xs ring-2 ring-emerald-200' },
     'ABSENT': { id: 'opt-status-absent', activeBorder: 'border-rose-600 bg-rose-50/70 shadow-xs ring-2 ring-rose-200' },
-    'AUTO': { id: 'opt-status-auto', activeBorder: 'border-amber-600 bg-amber-50/70 shadow-xs ring-2 ring-amber-200' }
+    'AUTO': { id: 'opt-status-auto', activeBorder: 'border-slate-600 bg-slate-100 shadow-xs ring-2 ring-slate-300' }
   };
 
   document.querySelectorAll('.status-option-btn').forEach(btn => {
-    btn.className = 'status-option-btn p-3 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white text-left transition flex flex-col justify-between';
+    btn.className = 'status-option-btn p-2.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white text-left transition flex flex-col justify-between cursor-pointer';
   });
 
   const optKey = (status === 'P' ? 'PRESENT' : (status === 'A' ? 'ABSENT' : status));
-  const activeCfg = btnMap[optKey] || btnMap['WFH'];
+  const activeCfg = btnMap[optKey] || btnMap['WO'];
   const activeBtn = document.getElementById(activeCfg.id);
   if (activeBtn) {
-    activeBtn.className = `status-option-btn p-3 rounded-xl border-2 ${activeCfg.activeBorder} text-left transition flex flex-col justify-between`;
+    if (activeCfg.id === 'opt-status-auto') {
+      activeBtn.className = `status-option-btn col-span-2 p-2.5 rounded-xl border-2 ${activeCfg.activeBorder} text-left transition flex items-center justify-between cursor-pointer`;
+    } else {
+      activeBtn.className = `status-option-btn p-2.5 rounded-xl border-2 ${activeCfg.activeBorder} text-left transition flex flex-col justify-between cursor-pointer`;
+    }
   }
 }
 
 async function submitAttendanceStatusChange(e) {
   if (e) e.preventDefault();
-  const empCode = document.getElementById('status-change-emp-code')?.value;
-  const dateStr = document.getElementById('status-change-date')?.value;
-  const statusChoice = document.getElementById('selected-status-choice')?.value || 'WFH';
+  const empCode = document.getElementById('status-change-emp-code')?.value || document.getElementById('status-change-emp-select')?.value;
+  const dateStr = document.getElementById('status-change-date-input')?.value || document.getElementById('status-change-date')?.value;
+  const statusChoice = document.getElementById('selected-status-choice')?.value || 'WO';
   const notes = document.getElementById('status-change-notes')?.value || '';
   const saveBtn = document.getElementById('btn-save-status-change');
 
@@ -6617,30 +6703,52 @@ async function submitAttendanceStatusChange(e) {
     return;
   }
 
-  const origText = saveBtn ? saveBtn.innerHTML : 'Save Status';
+  const isAll = String(empCode).toUpperCase() === 'ALL';
+  const origText = saveBtn ? saveBtn.innerHTML : (isAll ? 'Apply Leave for All Employees' : 'Save Status');
   if (saveBtn) {
     saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="animate-spin inline-block mr-1">↻</span> Saving...';
+    saveBtn.innerHTML = '<span class="animate-spin inline-block mr-1">↻</span> Applying...';
   }
 
   try {
-    const res = await fetch('/api/attendance/override', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        emp_code: empCode,
-        date: dateStr,
-        status: statusChoice,
-        notes: notes
-      })
-    });
+    let res;
+    if (isAll) {
+      // Company-wide batch override for the selected full day
+      res = await fetch('/api/attendance/batch-override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emp_codes: ['ALL'],
+          start_date: dateStr,
+          end_date: dateStr,
+          status: statusChoice,
+          notes: notes || 'Company Leave'
+        })
+      });
+    } else {
+      res = await fetch('/api/attendance/override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emp_code: empCode,
+          date: dateStr,
+          status: statusChoice,
+          notes: notes
+        })
+      });
+    }
 
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data.detail || 'Failed to update attendance status');
     }
 
-    showToast(`✓ Attendance for ${empCode} on ${dateStr} changed to ${statusChoice}`, 'success');
+    if (isAll) {
+      showToast(`✓ Full day ${statusChoice} successfully applied to ALL employees on ${dateStr}`, 'success');
+    } else {
+      showToast(`✓ Attendance for ${empCode} on ${dateStr} changed to ${statusChoice}`, 'success');
+    }
+
     closeModal('modal-change-attendance-status');
 
     // Refresh monthly muster data to reflect change immediately

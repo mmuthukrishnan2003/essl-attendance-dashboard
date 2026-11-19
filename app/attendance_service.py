@@ -836,12 +836,12 @@ def calculate_weekly_overtime_trend(
     days: int = 7
 ) -> List[Dict[str, Any]]:
     """
-    Computes overtime metrics for the last N days (excluding Sundays) for the weekly overtime chart.
+    Computes overtime metrics for the last N days (excluding Saturdays and Sundays) for the weekly overtime chart.
     """
     trend = []
     for day_offset in range(days - 1, -1, -1):
         cur_date = end_date - timedelta(days=day_offset)
-        if cur_date.weekday() == 6:  # Skip Sunday
+        if cur_date.weekday() in (5, 6):  # Skip Saturdays and Sundays
             continue
         ot_summary = calculate_daily_overtime_summary(cur_date, db)
         trend.append({
