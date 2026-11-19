@@ -5,6 +5,16 @@ from pathlib import Path
 import uvicorn
 from app.main import app
 
+def _silence_proactor_reset(loop, context):
+    """Silences harmless WinError 10054 on Windows ProactorEventLoop when clients disconnect."""
+    exc = context.get("exception")
+    if isinstance(exc, (ConnectionResetError, BrokenPipeError)):
+        return
+    msg = context.get("message", "")
+    if "_call_connection_lost" in msg:
+        return
+    loop.default_exception_handler(context)
+
 CERTS_DIR = Path(__file__).resolve().parent / "certs"
 CERT_FILE = CERTS_DIR / "cert.pem"
 KEY_FILE = CERTS_DIR / "key.pem"
@@ -71,6 +81,9 @@ async def handle_mux_client(c_reader: asyncio.StreamReader, c_writer: asyncio.St
                 pass
 
 async def run_server():
+    loop = asyncio.get_running_loop()
+    loop.set_exception_handler(_silence_proactor_reset)
+
     disable_ssl = os.environ.get("DISABLE_SSL", "0").lower() in ("1", "true", "yes")
     has_ssl = (not disable_ssl) and CERT_FILE.exists() and KEY_FILE.exists()
 

@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, Set
 
 from zk import ZK
+from sqlalchemy.exc import IntegrityError
 from app.database import SessionLocal
 from app.models import Device, Employee, AttendancePunch, DeletedEmployee
 
@@ -294,6 +295,9 @@ class LiveSyncManager:
 
                 self.broadcast_punch(punch_data)
 
+        except IntegrityError:
+            db.rollback()
+            logger.debug(f"[{device_name}] Duplicate punch for emp {emp_code} at {punch_time} already captured in DB.")
         except Exception as e:
             logger.error(f"[{device_name}] Error saving live punch: {e}")
             db.rollback()
